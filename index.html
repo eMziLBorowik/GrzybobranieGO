@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -17,7 +18,8 @@ html,body{
 }
 
 #map{
-    height:100%;
+    height:100vh;
+    width:100%;
 }
 
 .panel{
@@ -39,6 +41,7 @@ button{
 
 </head>
 
+
 <body>
 
 
@@ -49,7 +52,7 @@ START
 </button>
 
 <div id="forestStatus">
-Sprawdzanie...
+Pobieranie GPS...
 </div>
 
 </div>
@@ -58,9 +61,11 @@ Sprawdzanie...
 <div id="map"></div>
 
 
+
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
+
 
 
 <script>
@@ -68,6 +73,7 @@ Sprawdzanie...
 
 const map = L.map('map')
 .setView([52.2297,21.0122],15);
+
 
 
 L.tileLayer(
@@ -79,15 +85,15 @@ attribution:'© OpenStreetMap'
 
 
 
-let tracking=false;
-let watchId=null;
-
+let userMarker=null;
 
 let userLat=null;
 let userLng=null;
 
 
-let userMarker=null;
+let tracking=false;
+
+let watchId=null;
 
 
 
@@ -125,14 +131,18 @@ weight:5
 
 
 
+
 function cellId(lat,lng){
 
 const size=0.0001;
 
-const x=Math.floor(lat/size);
-const y=Math.floor(lng/size);
-
-return `${x}_${y}`;
+return (
+Math.floor(lat/size)
++
+"_"
++
+Math.floor(lng/size)
+);
 
 }
 
@@ -154,7 +164,8 @@ Math.floor(lng/size)*size;
 
 
 
-const id=cellId(lat,lng);
+const id =
+cellId(lat,lng);
 
 
 
@@ -195,6 +206,7 @@ weight:1
 
 
 
+
 function redrawSaved(){
 
 
@@ -202,8 +214,8 @@ Object.keys(visitedCells)
 .forEach(id=>{
 
 
-const [x,y]=
-id.split("_").map(Number);
+const p=id.split("_")
+.map(Number);
 
 
 const size=0.0001;
@@ -211,8 +223,8 @@ const size=0.0001;
 
 L.rectangle(
 [
-[x*size,y*size],
-[x*size+size,y*size+size]
+[p[0]*size,p[1]*size],
+[p[0]*size+size,p[1]*size+size]
 ],
 {
 color:"#00aa00",
@@ -224,12 +236,10 @@ weight:1
 .addTo(gridLayer);
 
 
-
 });
 
 
 }
-
 
 
 redrawSaved();
@@ -239,11 +249,16 @@ redrawSaved();
 
 
 
+
+
+
 async function loadForests(lat,lng){
 
 
+try{
 
-const query = `
+
+const query=`
 
 [out:json];
 
@@ -265,6 +280,7 @@ encodeURIComponent(query);
 
 const response =
 await fetch(url);
+
 
 
 const data =
@@ -300,6 +316,9 @@ p.lon
 
 
 
+if(points.length<3)
+return;
+
 
 
 L.polygon(
@@ -316,6 +335,7 @@ weight:1
 
 
 
+try{
 
 
 const geo =
@@ -334,14 +354,44 @@ forests.push(geo);
 
 
 
+}
+catch(e){
+
+console.log(
+"Błędny las pominięty"
+);
+
+}
+
+
+
 });
 
+
+
+document.getElementById(
+"forestStatus"
+)
+.innerHTML=
+"GPS gotowy";
 
 
 console.log(
 "Lasy:",
 forests.length
 );
+
+
+
+}
+catch(e){
+
+console.log(
+"Błąd pobierania lasów",
+e
+);
+
+}
 
 
 
@@ -353,7 +403,12 @@ forests.length
 
 
 
+
 function checkForest(lat,lng){
+
+
+if(forests.length===0)
+return;
 
 
 
@@ -382,13 +437,13 @@ forest
 ){
 
 inside=true;
+
 break;
 
 }
 
 
 }
-
 
 
 
@@ -414,7 +469,6 @@ inside
 
 
 function getUserLocation(){
-
 
 
 navigator.geolocation.getCurrentPosition(
@@ -445,8 +499,7 @@ L.marker(
 .addTo(map)
 .bindPopup(
 "📍 Twoja lokalizacja"
-)
-.openPopup();
+);
 
 
 
@@ -462,8 +515,14 @@ userLng
 
 err=>{
 
+document.getElementById(
+"forestStatus"
+)
+.innerHTML=
+"Brak GPS";
+
 alert(
-"Brak dostępu do GPS"
+"Zezwól na lokalizację"
 );
 
 },
@@ -482,7 +541,10 @@ enableHighAccuracy:true
 
 
 
+
 getUserLocation();
+
+
 
 
 
@@ -505,7 +567,7 @@ tracking=!tracking;
 document.getElementById(
 "toggleBtn"
 )
-.textContent =
+.innerHTML =
 tracking
 ?
 "STOP"
@@ -522,8 +584,6 @@ if(tracking){
 watchId =
 navigator.geolocation.watchPosition(
 
-
-
 pos=>{
 
 
@@ -533,7 +593,6 @@ pos.coords.latitude;
 
 const lng =
 pos.coords.longitude;
-
 
 
 
@@ -554,7 +613,6 @@ lat,lng
 
 
 path.push(point);
-
 
 
 polyline.setLatLngs(
@@ -585,12 +643,9 @@ lat,lng
 },
 
 
-
 err=>{
 
-alert(
-"Problem z GPS"
-);
+console.log(err);
 
 },
 
@@ -600,7 +655,6 @@ enableHighAccuracy:true,
 maximumAge:0,
 timeout:10000
 }
-
 
 
 );
