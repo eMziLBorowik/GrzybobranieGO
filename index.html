@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zbieranie Lasu</title>
+
+<link rel="stylesheet"
+ href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+<style>
+html,body{
+    margin:0;
+    height:100%;
+}
+
+#map{
+    height:100%;
+}
+
+.panel{
+    position:absolute;
+    top:10px;
+    left:10px;
+    z-index:1000;
+    background:white;
+    padding:10px;
+    border-radius:10px;
+    box-shadow:0 0 10px rgba(0,0,0,.2);
+}
+
+button{
+    padding:10px 15px;
+    cursor:pointer;
+}
+</style>
+</head>
+<body>
+
+<div class="panel">
+    <button id="toggleBtn">START</button>
+</div>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+
+const map = L.map('map').setView([52.2297,21.0122], 15);
+
+L.tileLayer(
+'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+{
+    attribution:'© OpenStreetMap'
+}
+).addTo(map);
+
+let tracking = false;
+let watchId = null;
+
+const path = [];
+const visitedCells =
+JSON.parse(localStorage.getItem("visitedCells") || "{}");
+
+const gridLayer = L.layerGroup().addTo(map);
+
+const polyline = L.polyline([], {
+    weight:5
+}).addTo(map);
+
+function cellId(lat,lng){
+
+    const size = 0.0001;
+
+    const x = Math.floor(lat / size);
+    const y = Math.floor(lng / size);
+
+    return `${x}_${y}`;
+}
+
+function drawCell(lat,lng){
+
+    const size = 0.0001;
+
+    const lat1 = Math.floor(lat/size)*size;
+    const lng1 = Math.floor(lng/size)*size;
+
+    const id = cellId(lat,lng);
+
+    if(visitedCells[id]) return;
+
+    visitedCells[id] = true;
+
+    localStorage.setItem(
+        "visitedCells",
+        JSON.stringify(visitedCells)
+    );
+
+    L.rectangle([
+        [lat1,lng1],
+        [lat1+size,lng1+size]
+    ],{
+        color:"#00aa00",
+        fillColor:"#00ff00",
+        fillOpacity:0.4,
+        weight:1
+    }).addTo(gridLayer);
+}
+
+function redrawSaved(){
+
+    Object.keys(visitedCells).forEach(id=>{
+
+        const [x,y] = id.split("_").map(Number);
+
+        const size = 0.0001;
+
+        const lat = x*size;
+        const lng = y*size;
+
+        L.rectangle([
+            [lat,lng],
+            [lat+size,lng+size]
+        ],{
+            color:"#00aa00",
+            fillColor:"#00ff00",
+            fillOpacity:0.4,
+            weight:1
+        }).addTo(gridLayer);
+
+    });
+}
+
+redrawSaved();
+
+document.getElementById("toggleBtn")
+.addEventListener("click",()=>{
+
+    tracking = !tracking;
+
+    document.getElementById("toggleBtn")
+    .textContent = tracking ? "STOP" : "START";
+
+    if(tracking){
+
+        watchId =
+        navigator.geolocation.watchPosition(
+
+        pos=>{
+
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+
+            const point = [lat,lng];
+
+            path.push(point);
+
+            polyline.setLatLngs(path);
+
+            map.setView(point,18);
+
+            drawCell(lat,lng);
+
+        },
+
+        err=>{
+            alert("Brak GPS");
+        },
+
+        {
+            enableHighAccuracy:true,
+            maximumAge:0,
+            timeout:10000
+        });
+
+    }else{
+
+        if(watchId){
+            navigator.geolocation.clearWatch(
+                watchId
+            );
+        }
+
+    }
+
+});
+
+</script>
+
+</body>
+</html>
