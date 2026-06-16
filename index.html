@@ -3,12 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Zbieranie Lasu</title>
 
 <link rel="stylesheet"
- href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
 <style>
+
 html,body{
     margin:0;
     height:100%;
@@ -31,31 +33,388 @@ html,body{
 
 button{
     padding:10px 15px;
-    cursor:pointer;
 }
+
 </style>
+
 </head>
+
 <body>
 
+
 <div class="panel">
-    <button id="toggleBtn">START</button>
+
+<button id="toggleBtn">
+START
+</button>
+
+<div id="forestStatus">
+Sprawdzanie...
 </div>
+
+</div>
+
 
 <div id="map"></div>
 
+
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
+
 
 <script>
 
-const map = L.map('map').setView([52.2297,21.0122], 15);
 
-let userLat = null;
-let userLng = null;
+const map = L.map('map')
+.setView([52.2297,21.0122],15);
 
-let userMarker;
+
+L.tileLayer(
+'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+{
+attribution:'© OpenStreetMap'
+}
+).addTo(map);
+
+
+
+let tracking=false;
+let watchId=null;
+
+
+let userLat=null;
+let userLng=null;
+
+
+let userMarker=null;
+
+
+
+const path=[];
+
+
+const visitedCells =
+JSON.parse(
+localStorage.getItem("visitedCells") || "{}"
+);
+
+
+
+const gridLayer =
+L.layerGroup().addTo(map);
+
+
+
+const forestLayer =
+L.layerGroup().addTo(map);
+
+
+
+let forests=[];
+
+
+
+const polyline =
+L.polyline([],{
+weight:5
+})
+.addTo(map);
+
+
+
+
+
+function cellId(lat,lng){
+
+const size=0.0001;
+
+const x=Math.floor(lat/size);
+const y=Math.floor(lng/size);
+
+return `${x}_${y}`;
+
+}
+
+
+
+
+function drawCell(lat,lng){
+
+
+const size=0.0001;
+
+
+const lat1 =
+Math.floor(lat/size)*size;
+
+
+const lng1 =
+Math.floor(lng/size)*size;
+
+
+
+const id=cellId(lat,lng);
+
+
+
+if(visitedCells[id])
+return;
+
+
+
+visitedCells[id]=true;
+
+
+localStorage.setItem(
+"visitedCells",
+JSON.stringify(visitedCells)
+);
+
+
+
+L.rectangle(
+[
+[lat1,lng1],
+[lat1+size,lng1+size]
+],
+{
+color:"#00aa00",
+fillColor:"#00ff00",
+fillOpacity:0.4,
+weight:1
+}
+)
+.addTo(gridLayer);
+
+
+
+}
+
+
+
+
+
+function redrawSaved(){
+
+
+Object.keys(visitedCells)
+.forEach(id=>{
+
+
+const [x,y]=
+id.split("_").map(Number);
+
+
+const size=0.0001;
+
+
+L.rectangle(
+[
+[x*size,y*size],
+[x*size+size,y*size+size]
+],
+{
+color:"#00aa00",
+fillColor:"#00ff00",
+fillOpacity:0.4,
+weight:1
+}
+)
+.addTo(gridLayer);
+
+
+
+});
+
+
+}
+
+
+
+redrawSaved();
+
+
+
+
+
+
+async function loadForests(lat,lng){
+
+
+
+const query = `
+
+[out:json];
+
+way["landuse"="forest"]
+(around:5000,${lat},${lng});
+
+out geom;
+
+`;
+
+
+
+const url =
+"https://overpass-api.de/api/interpreter?data="
++
+encodeURIComponent(query);
+
+
+
+const response =
+await fetch(url);
+
+
+const data =
+await response.json();
+
+
+
+
+data.elements.forEach(forest=>{
+
+
+if(!forest.geometry)
+return;
+
+
+
+let points=[];
+
+
+
+forest.geometry.forEach(p=>{
+
+
+points.push(
+[
+p.lat,
+p.lon
+]
+);
+
+
+});
+
+
+
+
+
+L.polygon(
+points,
+{
+color:"green",
+fillColor:"green",
+fillOpacity:0.25,
+weight:1
+}
+)
+.addTo(forestLayer);
+
+
+
+
+
+
+const geo =
+turf.polygon(
+[
+points.map(p=>[
+p[1],
+p[0]
+])
+]
+);
+
+
+
+forests.push(geo);
+
+
+
+});
+
+
+
+console.log(
+"Lasy:",
+forests.length
+);
+
+
+
+}
+
+
+
+
+
+
+
+function checkForest(lat,lng){
+
+
+
+let point =
+turf.point(
+[
+lng,
+lat
+]
+);
+
+
+
+let inside=false;
+
+
+
+for(let forest of forests){
+
+
+if(
+turf.booleanPointInPolygon(
+point,
+forest
+)
+){
+
+inside=true;
+break;
+
+}
+
+
+}
+
+
+
+
+document.getElementById(
+"forestStatus"
+)
+.innerHTML =
+inside
+?
+"🌲 Jesteś w lesie"
+:
+"🏠 Poza lasem";
+
+
+
+}
+
+
+
+
+
+
 
 
 function getUserLocation(){
+
 
 
 navigator.geolocation.getCurrentPosition(
@@ -63,8 +422,13 @@ navigator.geolocation.getCurrentPosition(
 pos=>{
 
 
-userLat = pos.coords.latitude;
-userLng = pos.coords.longitude;
+userLat =
+pos.coords.latitude;
+
+
+userLng =
+pos.coords.longitude;
+
 
 
 map.setView(
@@ -74,7 +438,8 @@ map.setView(
 
 
 
-userMarker = L.marker(
+userMarker =
+L.marker(
 [userLat,userLng]
 )
 .addTo(map)
@@ -91,13 +456,14 @@ userLng
 );
 
 
+
 },
 
 
 err=>{
 
 alert(
-"Nie udało się pobrać lokalizacji"
+"Brak dostępu do GPS"
 );
 
 },
@@ -111,142 +477,160 @@ enableHighAccuracy:true
 );
 
 
+
 }
+
 
 
 getUserLocation();
 
-let tracking = false;
-let watchId = null;
 
-const path = [];
-const visitedCells =
-JSON.parse(localStorage.getItem("visitedCells") || "{}");
 
-const gridLayer = L.layerGroup().addTo(map);
 
-const polyline = L.polyline([], {
-    weight:5
-}).addTo(map);
 
-function cellId(lat,lng){
 
-    const size = 0.0001;
 
-    const x = Math.floor(lat / size);
-    const y = Math.floor(lng / size);
+document.getElementById(
+"toggleBtn"
+)
+.addEventListener(
+"click",
+()=>{
 
-    return `${x}_${y}`;
+
+tracking=!tracking;
+
+
+
+document.getElementById(
+"toggleBtn"
+)
+.textContent =
+tracking
+?
+"STOP"
+:
+"START";
+
+
+
+
+if(tracking){
+
+
+
+watchId =
+navigator.geolocation.watchPosition(
+
+
+
+pos=>{
+
+
+const lat =
+pos.coords.latitude;
+
+
+const lng =
+pos.coords.longitude;
+
+
+
+
+if(userMarker){
+
+userMarker.setLatLng(
+[lat,lng]
+);
+
 }
 
-function drawCell(lat,lng){
 
-    const size = 0.0001;
 
-    const lat1 = Math.floor(lat/size)*size;
-    const lng1 = Math.floor(lng/size)*size;
+const point=[
+lat,lng
+];
 
-    const id = cellId(lat,lng);
 
-    if(visitedCells[id]) return;
 
-    visitedCells[id] = true;
+path.push(point);
 
-    localStorage.setItem(
-        "visitedCells",
-        JSON.stringify(visitedCells)
-    );
 
-    L.rectangle([
-        [lat1,lng1],
-        [lat1+size,lng1+size]
-    ],{
-        color:"#00aa00",
-        fillColor:"#00ff00",
-        fillOpacity:0.4,
-        weight:1
-    }).addTo(gridLayer);
+
+polyline.setLatLngs(
+path
+);
+
+
+
+map.setView(
+point,
+18
+);
+
+
+
+drawCell(
+lat,lng
+);
+
+
+
+checkForest(
+lat,lng
+);
+
+
+
+},
+
+
+
+err=>{
+
+alert(
+"Problem z GPS"
+);
+
+},
+
+
+{
+enableHighAccuracy:true,
+maximumAge:0,
+timeout:10000
 }
 
-function redrawSaved(){
 
-    Object.keys(visitedCells).forEach(id=>{
 
-        const [x,y] = id.split("_").map(Number);
+);
 
-        const size = 0.0001;
 
-        const lat = x*size;
-        const lng = y*size;
 
-        L.rectangle([
-            [lat,lng],
-            [lat+size,lng+size]
-        ],{
-            color:"#00aa00",
-            fillColor:"#00ff00",
-            fillOpacity:0.4,
-            weight:1
-        }).addTo(gridLayer);
-
-    });
 }
 
-redrawSaved();
+else{
 
-document.getElementById("toggleBtn")
-.addEventListener("click",()=>{
 
-    tracking = !tracking;
+if(watchId){
 
-    document.getElementById("toggleBtn")
-    .textContent = tracking ? "STOP" : "START";
+navigator.geolocation.clearWatch(
+watchId
+);
 
-    if(tracking){
+}
 
-        watchId =
-        navigator.geolocation.watchPosition(
 
-        pos=>{
+}
 
-            const lat = pos.coords.latitude;
-            const lng = pos.coords.longitude;
 
-            const point = [lat,lng];
-
-            path.push(point);
-
-            polyline.setLatLngs(path);
-
-            map.setView(point,18);
-
-            drawCell(lat,lng);
-
-        },
-
-        err=>{
-            alert("Brak GPS");
-        },
-
-        {
-            enableHighAccuracy:true,
-            maximumAge:0,
-            timeout:10000
-        });
-
-    }else{
-
-        if(watchId){
-            navigator.geolocation.clearWatch(
-                watchId
-            );
-        }
-
-    }
 
 });
 
+
+
 </script>
+
 
 </body>
 </html>
