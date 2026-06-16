@@ -130,8 +130,6 @@ weight:5
 
 
 
-
-
 function cellId(lat,lng){
 
 const size=0.0001;
@@ -151,7 +149,6 @@ Math.floor(lng/size)
 
 function drawCell(lat,lng){
 
-
 const size=0.0001;
 
 
@@ -161,7 +158,6 @@ Math.floor(lat/size)*size;
 
 const lng1 =
 Math.floor(lng/size)*size;
-
 
 
 const id =
@@ -206,52 +202,6 @@ weight:1
 
 
 
-
-function redrawSaved(){
-
-
-Object.keys(visitedCells)
-.forEach(id=>{
-
-
-const p=id.split("_")
-.map(Number);
-
-
-const size=0.0001;
-
-
-L.rectangle(
-[
-[p[0]*size,p[1]*size],
-[p[0]*size+size,p[1]*size+size]
-],
-{
-color:"#00aa00",
-fillColor:"#00ff00",
-fillOpacity:0.4,
-weight:1
-}
-)
-.addTo(gridLayer);
-
-
-});
-
-
-}
-
-
-redrawSaved();
-
-
-
-
-
-
-
-
-
 async function loadForests(lat,lng){
 
 
@@ -288,7 +238,6 @@ await response.json();
 
 
 
-
 data.elements.forEach(forest=>{
 
 
@@ -318,6 +267,7 @@ p.lon
 
 if(points.length<3)
 return;
+
 
 
 
@@ -354,8 +304,7 @@ forests.push(geo);
 
 
 
-}
-catch(e){
+}catch(e){
 
 console.log(
 "Błędny las pominięty"
@@ -383,8 +332,7 @@ forests.length
 
 
 
-}
-catch(e){
+}catch(e){
 
 console.log(
 "Błąd pobierania lasów",
@@ -396,9 +344,6 @@ e
 
 
 }
-
-
-
 
 
 
@@ -437,7 +382,6 @@ forest
 ){
 
 inside=true;
-
 break;
 
 }
@@ -465,23 +409,26 @@ inside
 
 
 
-
-
+// NOWA FUNKCJA GPS DZIAŁAJĄCA NA TELEFONIE
 
 function getUserLocation(){
 
+if(!navigator.geolocation){
 
-navigator.geolocation.getCurrentPosition(
+alert("Twoje urządzenie nie obsługuje GPS");
+return;
+
+}
+
+
+navigator.geolocation.watchPosition(
 
 pos=>{
 
 
-userLat =
-pos.coords.latitude;
+userLat = pos.coords.latitude;
 
-
-userLng =
-pos.coords.longitude;
+userLng = pos.coords.longitude;
 
 
 
@@ -492,6 +439,9 @@ map.setView(
 
 
 
+if(!userMarker){
+
+
 userMarker =
 L.marker(
 [userLat,userLng]
@@ -499,52 +449,97 @@ L.marker(
 .addTo(map)
 .bindPopup(
 "📍 Twoja lokalizacja"
+)
+.openPopup();
+
+
+
+}else{
+
+
+userMarker.setLatLng(
+[userLat,userLng]
 );
 
+
+}
+
+
+
+
+if(forests.length===0){
 
 
 loadForests(
 userLat,
 userLng
+)
+.catch(
+err=>console.log(
+"Błąd lasów:",
+err
+)
 );
 
 
+}
 
-},
 
-
-err=>{
 
 document.getElementById(
 "forestStatus"
 )
-.innerHTML=
-"Brak GPS";
+.innerHTML =
+"📍 GPS działa";
 
-alert(
-"Zezwól na lokalizację"
-);
 
 },
 
 
+
+err=>{
+
+
+console.log(
+"GPS ERROR:",
+err
+);
+
+
+
+document.getElementById(
+"forestStatus"
+)
+.innerHTML =
+"❌ GPS: " + err.message;
+
+
+
+},
+
+
+
 {
-enableHighAccuracy:true
+
+enableHighAccuracy:true,
+
+maximumAge:0,
+
+timeout:30000
+
 }
 
 
 );
 
 
-
 }
+
 
 
 
 
 getUserLocation();
-
-
 
 
 
@@ -567,7 +562,7 @@ tracking=!tracking;
 document.getElementById(
 "toggleBtn"
 )
-.innerHTML =
+.textContent =
 tracking
 ?
 "STOP"
@@ -596,6 +591,7 @@ pos.coords.longitude;
 
 
 
+
 if(userMarker){
 
 userMarker.setLatLng(
@@ -606,6 +602,7 @@ userMarker.setLatLng(
 
 
 
+
 const point=[
 lat,lng
 ];
@@ -613,6 +610,7 @@ lat,lng
 
 
 path.push(point);
+
 
 
 polyline.setLatLngs(
@@ -651,9 +649,13 @@ console.log(err);
 
 
 {
+
 enableHighAccuracy:true,
+
 maximumAge:0,
+
 timeout:10000
+
 }
 
 
@@ -661,9 +663,7 @@ timeout:10000
 
 
 
-}
-
-else{
+}else{
 
 
 if(watchId){
