@@ -49,12 +49,72 @@ button{
 
 const map = L.map('map').setView([52.2297,21.0122], 15);
 
-L.tileLayer(
-'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+let userLat = null;
+let userLng = null;
+
+let userMarker;
+
+
+function getUserLocation(){
+
+
+navigator.geolocation.getCurrentPosition(
+
+pos=>{
+
+
+userLat = pos.coords.latitude;
+userLng = pos.coords.longitude;
+
+
+map.setView(
+[userLat,userLng],
+16
+);
+
+
+
+userMarker = L.marker(
+[userLat,userLng]
+)
+.addTo(map)
+.bindPopup(
+"📍 Twoja lokalizacja"
+)
+.openPopup();
+
+
+
+loadForests(
+userLat,
+userLng
+);
+
+
+},
+
+
+err=>{
+
+alert(
+"Nie udało się pobrać lokalizacji"
+);
+
+},
+
+
 {
-    attribution:'© OpenStreetMap'
+enableHighAccuracy:true
 }
-).addTo(map);
+
+
+);
+
+
+}
+
+
+getUserLocation();
 
 let tracking = false;
 let watchId = null;
