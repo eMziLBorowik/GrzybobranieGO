@@ -7,13 +7,10 @@
 
 <title>Zbieranie Lasu</title>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
 <link rel="stylesheet"
 href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
 <style>
-html,body{margin:0;height:100%}
-#map{height:100vh;width:100%}
 
 html,body{
     margin:0;
@@ -26,14 +23,6 @@ html,body{
 }
 
 .panel{
-position:absolute;
-top:10px;
-left:10px;
-z-index:1000;
-background:white;
-padding:12px;
-border-radius:12px;
-box-shadow:0 0 10px #555;
     position:absolute;
     top:10px;
     left:10px;
@@ -43,7 +32,6 @@ box-shadow:0 0 10px #555;
     border-radius:10px;
     box-shadow:0 0 10px rgba(0,0,0,.2);
 }
-button{padding:10px 20px}
 
 button{
     padding:10px 15px;
@@ -58,8 +46,6 @@ button{
 
 
 <div class="panel">
-<button id="startBtn">START</button>
-<div id="status">Pobieranie GPS...</div>
 
 <button id="toggleBtn">
 START
@@ -84,9 +70,7 @@ Pobieranie GPS...
 
 <script>
 
-const map=L.map('map').setView([52.2297,21.0122],15);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
 const map = L.map('map')
 .setView([52.2297,21.0122],15);
 
@@ -96,7 +80,6 @@ L.tileLayer(
 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
 {
 attribution:'© OpenStreetMap'
-}).addTo(map);
 }
 ).addTo(map);
 
@@ -135,14 +118,9 @@ L.layerGroup().addTo(map);
 
 
 let forests=[];
-let path=[];
 
-const forestLayer=L.layerGroup().addTo(map);
-const exploredLayer=L.layerGroup().addTo(map);
 
-const visited=JSON.parse(localStorage.getItem("visitedForest")||"{}");
 
-const line=L.polyline([],{weight:5}).addTo(map);
 const polyline =
 L.polyline([],{
 weight:5
@@ -233,7 +211,6 @@ try{
 const query=`
 
 [out:json];
-way["landuse"="forest"](around:5000,${lat},${lng});
 
 way["landuse"="forest"]
 (around:5000,${lat},${lng});
@@ -242,10 +219,7 @@ out geom;
 
 `;
 
-try{
 
-const r=await fetch(
-"https://overpass-api.de/api/interpreter?data="+encodeURIComponent(query)
 
 const url =
 "https://overpass-api.de/api/interpreter?data="
@@ -286,20 +260,15 @@ p.lon
 ]
 );
 
-const data=await r.json();
 
-data.elements.forEach(f=>{
 });
 
 
 
-if(!f.geometry || f.geometry.length<3)return;
 if(points.length<3)
 return;
 
-let pts=f.geometry.map(p=>[p.lat,p.lon]);
 
-L.polygon(pts,{
 
 
 L.polygon(
@@ -307,8 +276,6 @@ points,
 {
 color:"green",
 fillColor:"green",
-fillOpacity:.25
-}).addTo(forestLayer);
 fillOpacity:0.25,
 weight:1
 }
@@ -319,9 +286,6 @@ weight:1
 
 
 try{
-forests.push(
-turf.polygon([
-pts.map(p=>[p[1],p[0]])
 
 
 const geo =
@@ -333,19 +297,14 @@ p[0]
 ])
 ]
 );
-}catch(e){}
 
-});
 
-document.getElementById("status").innerHTML="🌲 Lasy gotowe";
 
 forests.push(geo);
 
 
 
 }catch(e){
-console.log(e);
-}
 
 console.log(
 "Błędny las pominięty"
@@ -354,17 +313,10 @@ console.log(
 }
 
 
-function inForest(lat,lng){
 
-let p=turf.point([lng,lat]);
 });
 
-for(let f of forests){
-if(turf.booleanPointInPolygon(p,f)) return true;
-}
 
-return false;
-}
 
 document.getElementById(
 "forestStatus"
@@ -373,16 +325,13 @@ document.getElementById(
 "GPS gotowy";
 
 
-function cellId(lat,lng){
 console.log(
 "Lasy:",
 forests.length
 );
 
 
-let s=0.0001;
 
-return Math.floor(lat/s)+"_"+Math.floor(lng/s);
 }catch(e){
 
 console.log(
@@ -393,20 +342,12 @@ e
 }
 
 
-function explore(lat,lng){
 
-if(!inForest(lat,lng))return;
 }
 
-let id=cellId(lat,lng);
 
-if(visited[id])return;
 
-visited[id]=true;
 
-localStorage.setItem(
-"visitedForest",
-JSON.stringify(visited)
 
 function checkForest(lat,lng){
 
@@ -424,7 +365,6 @@ lat
 ]
 );
 
-drawCell(lat,lng);
 
 
 let inside=false;
@@ -447,22 +387,10 @@ break;
 }
 
 
-function drawCell(lat,lng){
 }
 
-let s=.0001;
 
-let a=Math.floor(lat/s)*s;
-let b=Math.floor(lng/s)*s;
 
-L.rectangle([
-[a,b],
-[a+s,b+s]
-],{
-color:"#006600",
-fillColor:"#00ff00",
-fillOpacity:.45
-}).addTo(exploredLayer);
 document.getElementById(
 "forestStatus"
 )
@@ -479,7 +407,6 @@ inside
 
 
 
-function startGPS(){
 
 
 // NOWA FUNKCJA GPS DZIAŁAJĄCA NA TELEFONIE
@@ -496,13 +423,9 @@ return;
 
 navigator.geolocation.watchPosition(
 
-function(pos){
 pos=>{
 
-let lat = pos.coords.latitude;
-let lng = pos.coords.longitude;
 
-console.log("GPS OK:", lat, lng);
 userLat = pos.coords.latitude;
 
 userLng = pos.coords.longitude;
@@ -515,15 +438,10 @@ map.setView(
 );
 
 
-document.getElementById("status").innerHTML =
-"📍 GPS działa";
 
 if(!userMarker){
 
-userMarker = L.marker([lat,lng])
-.addTo(map);
 
-map.setView([lat,lng],17);
 userMarker =
 L.marker(
 [userLat,userLng]
@@ -535,11 +453,9 @@ L.marker(
 .openPopup();
 
 
-loadForests(lat,lng);
 
 }else{
 
-userMarker.setLatLng([lat,lng]);
 
 userMarker.setLatLng(
 [userLat,userLng]
@@ -579,11 +495,8 @@ document.getElementById(
 
 },
 
-function(err){
 
-console.log(err);
 
-document.getElementById("status").innerHTML =
 err=>{
 
 
@@ -611,7 +524,6 @@ document.getElementById(
 enableHighAccuracy:true,
 
 maximumAge:0,
-timeout:15000
 
 timeout:30000
 
@@ -662,10 +574,7 @@ tracking
 
 if(tracking){
 
-path.push([lat,lng]);
-line.setLatLngs(path);
 
-explore(lat,lng);
 
 watchId =
 navigator.geolocation.watchPosition(
@@ -692,11 +601,8 @@ userMarker.setLatLng(
 }
 
 
-document.getElementById("status").innerHTML =
-inForest(lat,lng) ? "🌲 Jesteś w lesie" : "🏠 Poza lasem";
 
 
-},{
 const point=[
 lat,lng
 ];
@@ -747,49 +653,31 @@ console.log(err);
 enableHighAccuracy:true,
 
 maximumAge:0,
-timeout:30000
-});
 
 timeout:10000
 
 }
 
 
-document.getElementById("startBtn").onclick=function(){
 );
 
-tracking=!tracking;
 
-this.innerHTML=tracking?"STOP":"START";
 
-};
 }else{
 
 
-startGPS();
 if(watchId){
 
 navigator.geolocation.clearWatch(
 watchId
 );
 
-Object.keys(visited).forEach(id=>{
 }
 
 
 }
 
-let p=id.split("_").map(Number);
-let s=.0001;
 
-L.rectangle([
-[p[0]*s,p[1]*s],
-[p[0]*s+s,p[1]*s+s]
-],{
-color:"#006600",
-fillColor:"#00ff00",
-fillOpacity:.45
-}).addTo(exploredLayer);
 
 });
 
