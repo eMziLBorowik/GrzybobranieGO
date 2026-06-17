@@ -28,30 +28,34 @@ html,body{
     left:10px;
     z-index:1000;
     background:white;
-    padding:10px;
-    border-radius:10px;
-    box-shadow:0 0 10px rgba(0,0,0,.2);
+    padding:12px;
+    border-radius:12px;
+    box-shadow:0 0 10px #555;
 }
 
 button{
-    padding:10px 15px;
+    padding:10px 20px;
+    font-size:16px;
+}
+
+#status{
+    margin-top:8px;
 }
 
 </style>
 
 </head>
 
-
 <body>
 
 
 <div class="panel">
 
-<button id="toggleBtn">
+<button id="startBtn">
 START
 </button>
 
-<div id="forestStatus">
+<div id="status">
 Pobieranie GPS...
 </div>
 
@@ -71,6 +75,8 @@ Pobieranie GPS...
 <script>
 
 
+// MAPA
+
 const map = L.map('map')
 .setView([52.2297,21.0122],15);
 
@@ -85,127 +91,78 @@ attribution:'© OpenStreetMap'
 
 
 
+
+// ZMIENNE GPS
+
 let userMarker=null;
 
 let userLat=null;
 let userLng=null;
 
+let gpsWatch=null;
 
 let tracking=false;
 
-let watchId=null;
 
 
 
-const path=[];
-
-
-const visitedCells =
-JSON.parse(
-localStorage.getItem("visitedCells") || "{}"
-);
-
-
-
-const gridLayer =
-L.layerGroup().addTo(map);
-
-
+// WARSTWY
 
 const forestLayer =
 L.layerGroup().addTo(map);
 
 
+const exploredLayer =
+L.layerGroup().addTo(map);
+
+
+
+// LASY Z OSM
 
 let forests=[];
 
 
 
-const polyline =
-L.polyline([],{
+
+// PRZEJŚCIE
+
+let path=[];
+
+
+const line =
+L.polyline(
+[],
+{
 weight:5
-})
+}
+)
 .addTo(map);
 
 
 
 
-function cellId(lat,lng){
+// ODKRYTE KOMÓRKI
 
-const size=0.0001;
-
-return (
-Math.floor(lat/size)
-+
-"_"
-+
-Math.floor(lng/size)
-);
-
-}
-
-
-
-
-function drawCell(lat,lng){
-
-const size=0.0001;
-
-
-const lat1 =
-Math.floor(lat/size)*size;
-
-
-const lng1 =
-Math.floor(lng/size)*size;
-
-
-const id =
-cellId(lat,lng);
-
-
-
-if(visitedCells[id])
-return;
-
-
-
-visitedCells[id]=true;
-
-
-localStorage.setItem(
-"visitedCells",
-JSON.stringify(visitedCells)
+const visited =
+JSON.parse(
+localStorage.getItem("visitedForest")
+||
+"{}"
 );
 
 
 
-L.rectangle(
-[
-[lat1,lng1],
-[lat1+size,lng1+size]
-],
-{
-color:"#00aa00",
-fillColor:"#00ff00",
-fillOpacity:0.4,
-weight:1
-}
-)
-.addTo(gridLayer);
 
 
-
-}
-
-
-
+// POBIERANIE LASÓW Z OSM
 
 
 async function loadForests(lat,lng){
 
 
-try{
+document.getElementById("status")
+.innerHTML="🌲 Pobieranie lasów...";
+
 
 
 const query=`
@@ -221,15 +178,15 @@ out geom;
 
 
 
-const url =
-"https://overpass-api.de/api/interpreter?data="
-+
-encodeURIComponent(query);
-
+try{
 
 
 const response =
-await fetch(url);
+await fetch(
+"https://overpass-api.de/api/interpreter?data="
++
+encodeURIComponent(query)
+);
 
 
 
@@ -238,7 +195,9 @@ await response.json();
 
 
 
-data.elements.forEach(forest=>{
+
+data.elements.forEach(
+forest=>{
 
 
 if(!forest.geometry)
@@ -249,8 +208,8 @@ return;
 let points=[];
 
 
-
-forest.geometry.forEach(p=>{
+forest.geometry.forEach(
+p=>{
 
 
 points.push(
@@ -271,12 +230,15 @@ return;
 
 
 
+// RYSOWANIE LASU
+
+
 L.polygon(
 points,
 {
 color:"green",
 fillColor:"green",
-fillOpacity:0.25,
+fillOpacity:0.2,
 weight:1
 }
 )
@@ -285,76 +247,76 @@ weight:1
 
 
 
+
+// GEOJSON DO SPRAWDZANIA GPS
+
+
 try{
 
 
-const geo =
+let poly =
 turf.polygon(
 [
-points.map(p=>[
+points.map(
+p=>[
 p[1],
 p[0]
-])
+]
+)
 ]
 );
 
 
-
-forests.push(geo);
-
+forests.push(poly);
 
 
-}catch(e){
 
-console.log(
-"Błędny las pominięty"
-);
-
-}
+}catch(e){}
 
 
 
 });
 
 
-
-document.getElementById(
-"forestStatus"
-)
+document.getElementById("status")
 .innerHTML=
-"GPS gotowy";
+"🌲 Lasy gotowe";
+
 
 
 console.log(
-"Lasy:",
+"Załadowano lasów:",
 forests.length
 );
 
 
 
-}catch(e){
+}
+catch(e){
 
-console.log(
-"Błąd pobierania lasów",
-e
-);
+
+console.log(e);
+
+
+document.getElementById("status")
+.innerHTML=
+"❌ Błąd lasów";
+
+
+}
+
 
 }
 
 
 
-}
 
 
 
+// SPRAWDZANIE CZY W LESIE
 
 
-function checkForest(lat,lng){
-
-
-if(forests.length===0)
-return;
-
+function inForest(lat,lng){
 
 
 let point =
@@ -367,40 +329,22 @@ lat
 
 
 
-let inside=false;
-
-
-
-for(let forest of forests){
+for(let f of forests){
 
 
 if(
 turf.booleanPointInPolygon(
 point,
-forest
+f
 )
-){
-
-inside=true;
-break;
-
-}
-
-
-}
-
-
-
-document.getElementById(
-"forestStatus"
 )
-.innerHTML =
-inside
-?
-"🌲 Jesteś w lesie"
-:
-"🏠 Poza lasem";
+return true;
 
+
+}
+
+
+return false;
 
 
 }
@@ -409,16 +353,11 @@ inside
 
 
 
-// NOWA FUNKCJA GPS DZIAŁAJĄCA NA TELEFONIE
 
-function getUserLocation(){
+// GPS START
 
-if(!navigator.geolocation){
 
-alert("Twoje urządzenie nie obsługuje GPS");
-return;
-
-}
+function startGPS(){
 
 
 navigator.geolocation.watchPosition(
@@ -426,16 +365,12 @@ navigator.geolocation.watchPosition(
 pos=>{
 
 
-userLat = pos.coords.latitude;
-
-userLng = pos.coords.longitude;
-
+userLat =
+pos.coords.latitude;
 
 
-map.setView(
-[userLat,userLng],
-16
-);
+userLng =
+pos.coords.longitude;
 
 
 
@@ -444,41 +379,43 @@ if(!userMarker){
 
 userMarker =
 L.marker(
-[userLat,userLng]
+[
+userLat,
+userLng
+]
 )
 .addTo(map)
 .bindPopup(
-"📍 Twoja lokalizacja"
-)
-.openPopup();
-
-
-
-}else{
-
-
-userMarker.setLatLng(
-[userLat,userLng]
+"📍 Ty"
 );
 
 
-}
+map.setView(
+[
+userLat,
+userLng
+],
+17
+);
 
-
-
-
-if(forests.length===0){
 
 
 loadForests(
 userLat,
 userLng
-)
-.catch(
-err=>console.log(
-"Błąd lasów:",
-err
-)
+);
+
+
+
+}
+else{
+
+
+userMarker.setLatLng(
+[
+userLat,
+userLng
+]
 );
 
 
@@ -486,37 +423,72 @@ err
 
 
 
-document.getElementById(
-"forestStatus"
+if(tracking){
+
+
+path.push(
+[
+userLat,
+userLng
+]
+);
+
+
+line.setLatLngs(
+path
+);
+
+
+
+explore(
+userLat,
+userLng
+);
+
+
+
+}
+
+
+
+if(
+inForest(
+userLat,
+userLng
 )
-.innerHTML =
-"📍 GPS działa";
+){
+
+
+document.getElementById("status")
+.innerHTML=
+"🌲 Jesteś w lesie";
+
+
+}
+else{
+
+
+document.getElementById("status")
+.innerHTML=
+"🏠 Poza lasem";
+
+
+}
+
 
 
 },
-
 
 
 err=>{
 
 
-console.log(
-"GPS ERROR:",
-err
-);
-
-
-
-document.getElementById(
-"forestStatus"
-)
-.innerHTML =
-"❌ GPS: " + err.message;
-
+document.getElementById("status")
+.innerHTML=
+"❌ Brak GPS";
 
 
 },
-
 
 
 {
@@ -539,30 +511,24 @@ timeout:30000
 
 
 
-getUserLocation();
+
+startGPS();
 
 
 
 
 
+// PRZYCISK START
 
 
-document.getElementById(
-"toggleBtn"
-)
-.addEventListener(
-"click",
-()=>{
+document.getElementById("startBtn")
+.onclick=function(){
 
 
 tracking=!tracking;
 
 
-
-document.getElementById(
-"toggleBtn"
-)
-.textContent =
+this.innerHTML =
 tracking
 ?
 "STOP"
@@ -570,121 +536,209 @@ tracking
 "START";
 
 
+};
+// ===============================
+// ODKRYWANIE LASU
+// ===============================
 
 
-if(tracking){
+function forestCellId(lat,lng){
 
 
-
-watchId =
-navigator.geolocation.watchPosition(
-
-pos=>{
+const size=0.0001;
 
 
-const lat =
-pos.coords.latitude;
-
-
-const lng =
-pos.coords.longitude;
-
-
-
-
-if(userMarker){
-
-userMarker.setLatLng(
-[lat,lng]
+return (
+Math.floor(lat/size)
++
+"_"
++
+Math.floor(lng/size)
 );
+
 
 }
 
 
 
 
-const point=[
-lat,lng
-];
+
+function explore(lat,lng){
+
+
+if(!inForest(lat,lng))
+return;
 
 
 
-path.push(point);
-
-
-
-polyline.setLatLngs(
-path
+const id =
+forestCellId(
+lat,
+lng
 );
 
 
 
-map.setView(
-point,
-18
+if(visited[id])
+return;
+
+
+
+visited[id]=true;
+
+
+
+localStorage.setItem(
+"visitedForest",
+JSON.stringify(visited)
 );
 
 
 
-drawCell(
-lat,lng
+drawExploredCell(
+lat,
+lng
 );
 
 
 
-checkForest(
-lat,lng
-);
+}
 
 
 
-},
 
 
-err=>{
-
-console.log(err);
-
-},
+function drawExploredCell(lat,lng){
 
 
+
+const size=0.0001;
+
+
+const lat1 =
+Math.floor(lat/size)*size;
+
+
+const lng1 =
+Math.floor(lng/size)*size;
+
+
+
+
+L.rectangle(
+[
+[lat1,lng1],
+[
+lat1+size,
+lng1+size
+]
+],
 {
 
-enableHighAccuracy:true,
+color:"#006600",
 
-maximumAge:0,
+fillColor:"#00ff00",
 
-timeout:10000
+fillOpacity:0.45,
+
+weight:1
+
+}
+
+)
+.addTo(exploredLayer);
+
+
 
 }
 
 
-);
 
 
 
-}else{
+
+// ODTWARZANIE ODKRYTYCH MIEJSC PO PONOWNYM WEJŚCIU
 
 
-if(watchId){
+function loadExplored(){
 
-navigator.geolocation.clearWatch(
-watchId
-);
+
+Object.keys(visited)
+.forEach(id=>{
+
+
+const p =
+id.split("_")
+.map(Number);
+
+
+
+const size=0.0001;
+
+
+
+L.rectangle(
+[
+[
+p[0]*size,
+p[1]*size
+],
+
+[
+p[0]*size+size,
+p[1]*size+size
+]
+
+],
+{
+
+color:"#006600",
+
+fillColor:"#00ff00",
+
+fillOpacity:0.45,
+
+weight:1
 
 }
 
-
-}
+)
+.addTo(exploredLayer);
 
 
 
 });
 
 
+}
 
-</script>
 
 
-</body>
-</html>
+loadExplored();
+
+
+
+
+// LICZNIK ODKRYCIA
+
+
+function exploredCount(){
+
+
+return Object.keys(visited).length;
+
+
+}
+
+
+
+console.log(
+"Odkryte pola lasu:",
+exploredCount()
+);
+
+
+
+// ===============================
+// KONIEC
+// ===============================
