@@ -10,34 +10,192 @@
 <link rel="stylesheet"
 href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
-<style>
-
 html,body{
     margin:0;
     height:100%;
+    font-family:Arial,sans-serif;
+    background:#1b2417;
 }
+
+
+/* MAPA */
 
 #map{
-    height:100vh;
-    width:100%;
+    position:absolute;
+    top:90px;
+    bottom:70px;
+    left:10px;
+    right:10px;
+
+    border-radius:20px;
+
+    box-shadow:
+    0 0 20px black;
+
+    overflow:hidden;
+
 }
+
+
+
+/* GÓRNY PANEL */
 
 .panel{
+
     position:absolute;
-    top:10px;
-    left:10px;
-    z-index:1000;
-    background:white;
-    padding:10px;
-    border-radius:10px;
-    box-shadow:0 0 10px rgba(0,0,0,.2);
+
+    top:0;
+    left:0;
+
+    width:100%;
+    height:80px;
+
+    z-index:2000;
+
+    background:
+    linear-gradient(
+    135deg,
+    #243b1b,
+    #557a32
+    );
+
+    color:white;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    padding:10px 20px;
+
+    box-sizing:border-box;
+
+    border-bottom:
+    3px solid #a57a32;
+
 }
+
+
+
+.logo{
+
+font-size:22px;
+font-weight:bold;
+
+}
+
+
+.subtitle{
+
+font-size:12px;
+color:#ddd;
+
+}
+
+
+
+/* STATUS */
+
+#forestStatus{
+
+background:#182014;
+
+padding:8px 12px;
+
+border-radius:15px;
+
+font-size:13px;
+
+}
+
+
+
+/* PRZYCISK */
 
 button{
-    padding:10px 15px;
+
+background:#6b8f3d;
+
+color:white;
+
+border:none;
+
+padding:10px 18px;
+
+border-radius:15px;
+
+font-size:15px;
+
+cursor:pointer;
+
 }
 
-</style>
+
+
+button:hover{
+
+background:#86ad4c;
+
+}
+
+
+
+/* DOLNE MENU */
+
+.bottomMenu{
+
+position:absolute;
+
+bottom:0;
+
+left:0;
+
+width:100%;
+
+height:65px;
+
+z-index:2000;
+
+
+background:#172014;
+
+
+display:flex;
+
+justify-content:space-around;
+
+align-items:center;
+
+
+border-top:
+
+3px solid #a57a32;
+
+
+}
+
+
+
+.bottomMenu div{
+
+
+text-align:center;
+
+font-size:12px;
+
+color:white;
+
+}
+
+
+.icon{
+
+font-size:25px;
+
+display:block;
+
+}
 
 </head>
 
