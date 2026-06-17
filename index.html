@@ -170,25 +170,51 @@ fillOpacity:.45
 
 function startGPS(){
 
-navigator.geolocation.watchPosition(pos=>{
+navigator.geolocation.watchPosition(
 
-let lat=pos.coords.latitude;
-let lng=pos.coords.longitude;
+function(pos){
 
+let lat = pos.coords.latitude;
+let lng = pos.coords.longitude;
+
+console.log("GPS OK:", lat, lng);
+
+document.getElementById("status").innerHTML =
+"📍 GPS działa";
 
 if(!userMarker){
 
-userMarker=L.marker([lat,lng])
-.addTo(map)
-.bindPopup("📍 Ty");
+userMarker = L.marker([lat,lng])
+.addTo(map);
 
 map.setView([lat,lng],17);
 
 loadForests(lat,lng);
 
 }else{
+
 userMarker.setLatLng([lat,lng]);
+
 }
+
+},
+
+function(err){
+
+console.log(err);
+
+document.getElementById("status").innerHTML =
+"❌ GPS: " + err.message;
+
+},
+
+{
+enableHighAccuracy:true,
+maximumAge:0,
+timeout:15000
+}
+
+);
 
 
 if(tracking){
