@@ -31,23 +31,38 @@
 
 <div id="grzybdex">
 <h2>🧠 GrzybDex AI</h2>
+
+
 <div class="card">
-📸 Rozpoznawanie grzybów AI<br><br>
-<input type="file" id="imgInput" accept="image/*">
+
+📸 Skanuj grzyba aparatem
+
 <br><br>
-<button id="aiBtn">Rozpoznaj</button>
-<div id="aiResult"></div>
-</div>
-<div class="card">📊 Statystyki<div id="stats"></div></div>
-<div class="card">⚠️ Ostrzeżenia<div id="warnings"></div></div>
+
+
+<input 
+type="file"
+id="cameraInput"
+accept="image/*"
+capture="environment">
+
+
+<br><br>
+
+
+<div id="aiResult">
+Brak skanu
 </div>
 
-<div class="bottomMenu">
-<div id="tabMap">🗺 Mapa</div>
-<div>🌲 Lasy</div>
-<div id="tabDex">🍄 GrzybDex</div>
-<div>⚙</div>
+
 </div>
+
+
+
+<h2>🍄 Atlas odkryć</h2>
+
+
+<div id="atlas"></div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
