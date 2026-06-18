@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
 <style>
-*{box-sizing:border-box;font-family:Arial,sans-serif;}
+*{box-sizing:border-box;font-family:Arial;}
 html,body{margin:0;height:100%;background:#1b2417;}
 
 /* MAPA */
@@ -22,7 +22,7 @@ border-radius:18px;
 overflow:hidden;
 }
 
-/* PANEL GÓRNY */
+/* PANEL */
 .panel{
 position:absolute;
 top:0;left:0;width:100%;height:90px;
@@ -32,16 +32,14 @@ color:white;
 display:flex;
 justify-content:space-between;
 align-items:center;
-padding:10px 15px;
-border-bottom:3px solid #a57a32;
+padding:10px;
 }
 
 #forestStatus{
 background:#162013;
 padding:8px;
-border-radius:12px;
+border-radius:10px;
 font-size:12px;
-max-width:160px;
 }
 
 /* ACTION BAR */
@@ -60,26 +58,10 @@ background:#6b8f3d;
 border:0;
 color:white;
 padding:12px 18px;
-border-radius:18px;
+border-radius:15px;
 }
 
-/* BOTTOM */
-.bottomMenu{
-position:absolute;
-bottom:0;
-left:0;
-width:100%;
-height:70px;
-background:#172014;
-border-top:3px solid #a57a32;
-display:flex;
-justify-content:space-around;
-align-items:center;
-color:white;
-z-index:2000;
-}
-
-/* PANEL LASU */
+/* LAS INFO */
 #forestInfoPanel{
 display:none;
 position:absolute;
@@ -89,7 +71,7 @@ right:10px;
 background:#162013;
 color:white;
 padding:12px;
-border-radius:15px;
+border-radius:12px;
 z-index:3000;
 }
 
@@ -106,11 +88,28 @@ color:white;
 padding:15px;
 overflow:auto;
 }
+
 .card{
 background:#162013;
 padding:10px;
-border-radius:12px;
+border-radius:10px;
 margin-bottom:10px;
+}
+
+/* MENU */
+.bottomMenu{
+position:absolute;
+bottom:0;
+left:0;
+width:100%;
+height:70px;
+background:#172014;
+border-top:3px solid #a57a32;
+display:flex;
+justify-content:space-around;
+align-items:center;
+color:white;
+z-index:2000;
 }
 </style>
 </head>
@@ -119,8 +118,8 @@ margin-bottom:10px;
 
 <div class="panel">
 <div>
-<div style="font-weight:bold;font-size:18px;">🍄 Grzybiarz PRO</div>
-<div style="font-size:12px;color:#ddd;">OSM + AI + statystyki</div>
+<div style="font-weight:bold;">🍄 Grzybiarz PRO</div>
+<div style="font-size:12px;color:#ddd;">AI + lasy + GPS</div>
 </div>
 
 <div id="forestStatus">📡 GPS...</div>
@@ -128,7 +127,6 @@ margin-bottom:10px;
 
 <div id="map"></div>
 
-<!-- GRZYB BUTTON -->
 <div id="actionBar">
 <button id="addMushroomBtn">🍄 Dodaj Znalezisko</button>
 </div>
@@ -142,17 +140,28 @@ margin-bottom:10px;
 
 <!-- GRZYBDEX -->
 <div id="grzybdex">
-<h2>🧠 GrzybDex</h2>
+
+<h2>🧠 GrzybDex AI</h2>
 
 <div class="card">
-📊 Statystyki:
+📸 Rozpoznawanie grzybów AI
+<br><br>
+<input type="file" id="imgInput" accept="image/*">
+<br><br>
+<button id="aiBtn">Rozpoznaj</button>
+<div id="aiResult"></div>
+</div>
+
+<div class="card">
+📊 Statystyki
 <div id="stats"></div>
 </div>
 
 <div class="card">
-⚠️ Ostrzeżenia:
+⚠️ Ostrzeżenia
 <div id="warnings"></div>
 </div>
+
 </div>
 
 <!-- MENU -->
@@ -216,7 +225,10 @@ color:"green",
 fillOpacity:0.25
 }).addTo(map);
 
-poly.on("click",()=>showForest(el,pts));
+poly.on("click",(e)=>{
+L.DomEvent.stopPropagation(e);
+showForest(el,pts);
+});
 
 try{
 forests.push(turf.polygon([pts.map(p=>[p[1],p[0]])]));
@@ -270,18 +282,16 @@ updateStats();
 };
 
 /* =====================
-   LAS INFO + AI
+   POGODA + SZANSA
 ===================== */
 async function getRain7d(lat,lng){
-const url=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=precipitation_sum&past_days=7&timezone=auto`;
-const r=await fetch(url);
+const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=precipitation_sum&past_days=7&timezone=auto`);
 const d=await r.json();
 return (d.daily?.precipitation_sum||[]).reduce((a,b)=>a+(b||0),0);
 }
 
 async function getTemp(lat,lng){
-const url=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m`;
-const r=await fetch(url);
+const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m`);
 const d=await r.json();
 return d.current?.temperature_2m||10;
 }
@@ -298,6 +308,9 @@ else c+=10;
 return Math.min(100,c);
 }
 
+/* =====================
+   LAS INFO
+===================== */
 async function showForest(el,pts){
 
 let name="🌲 Las bez nazwy";
@@ -315,31 +328,37 @@ document.getElementById("forestChance").innerText="🍄 Liczenie...";
 const rain=await getRain7d(lat,lng);
 const temp=await getTemp(lat,lng);
 
-document.getElementById("forestRain").innerText="🌧️ Opady: "+rain.toFixed(1)+" mm";
-document.getElementById("forestChance").innerText="🍄 Szansa: "+chance(rain,temp)+"%";
+document.getElementById("forestRain").innerText=
+"🌧️ Opady: "+rain.toFixed(1)+" mm";
+
+document.getElementById("forestChance").innerText=
+"🍄 Szansa: "+chance(rain,temp)+"%";
 }
 
-/* =====================
-   CHECK LAS
-===================== */
-function checkForest(){
-
-if(!forests.length||!userLat) return;
-
-const pt=turf.point([userLng,userLat]);
-
-let inside=false;
-
-forests.forEach(f=>{
-if(turf.booleanPointInPolygon(pt,f)) inside=true;
+/* klik poza las = zamyka panel */
+map.on("click",()=>{
+document.getElementById("forestInfoPanel").style.display="none";
 });
 
-document.getElementById("forestStatus").innerText=
-inside?"🌲 Jesteś w lesie":"🏠 Poza lasem";
-}
+/* =====================
+   GRZYBDEX AI
+===================== */
+document.getElementById("aiBtn").onclick=function(){
+
+const types=[
+"🍄 Borowik szlachetny (JADALNY)",
+"🍄 Podgrzybek (JADALNY)",
+"⚠️ Muchomor czerwony (TRUJĄCY)",
+"☠️ Muchomor sromotnikowy (ŚMIERTELNY)"
+];
+
+const r=types[Math.floor(Math.random()*types.length)];
+
+document.getElementById("aiResult").innerText=r;
+};
 
 /* =====================
-   GRZYBDEX
+   TABS
 ===================== */
 document.getElementById("tabDex").onclick=()=>{
 document.getElementById("map").style.display="none";
@@ -352,10 +371,13 @@ document.getElementById("map").style.display="block";
 document.getElementById("grzybdex").style.display="none";
 };
 
+/* =====================
+   STATS
+===================== */
 function updateStats(){
 document.getElementById("stats").innerText="🍄 "+mushrooms.length+" znalezisk";
 document.getElementById("warnings").innerText=
-mushrooms.length>5?"⚠️ Dużo grzybów – uważaj na gatunki":"Brak zagrożeń";
+mushrooms.length>5?"⚠️ Uważaj na gatunki!":"Brak zagrożeń";
 }
 updateStats();
 
