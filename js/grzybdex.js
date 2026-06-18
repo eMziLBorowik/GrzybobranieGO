@@ -1,9 +1,1 @@
-document.getElementById('aiBtn').onclick=()=>{
-const t=[
-'🍄 Borowik szlachetny (JADALNY)',
-'🍄 Podgrzybek (JADALNY)',
-'⚠️ Muchomor czerwony (TRUJĄCY)',
-'☠️ Muchomor sromotnikowy'
-];
-document.getElementById('aiResult').innerText=t[Math.floor(Math.random()*t.length)];
-};
+document.getElementById('aiBtn').onclick=()=>document.getElementById('aiResult').innerText='🍄 Wynik AI';
