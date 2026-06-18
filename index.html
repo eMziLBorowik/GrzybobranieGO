@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grzybiarz PRO</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="panel">
+<div>
+<div class="title">🍄 Grzybiarz PRO</div>
+<div class="sub">AI + lasy + GPS</div>
+</div>
+<div id="forestStatus">📡 GPS...</div>
+</div>
+
+<div id="map"></div>
+
+<div id="actionBar">
+<button id="addMushroomBtn">🍄 Dodaj Znalezisko</button>
+</div>
+
+<div id="forestInfoPanel">
+<div id="forestName">🌲 Las</div>
+<div id="forestRain">🌧️ Opady</div>
+<div id="forestChance">🍄 Szansa</div>
+</div>
+
+<div id="grzybdex">
+<h2>🧠 GrzybDex AI</h2>
+<div class="card">
+📸 Rozpoznawanie grzybów AI<br><br>
+<input type="file" id="imgInput" accept="image/*">
+<br><br>
+<button id="aiBtn">Rozpoznaj</button>
+<div id="aiResult"></div>
+</div>
+<div class="card">📊 Statystyki<div id="stats"></div></div>
+<div class="card">⚠️ Ostrzeżenia<div id="warnings"></div></div>
+</div>
+
+<div class="bottomMenu">
+<div id="tabMap">🗺 Mapa</div>
+<div>🌲 Lasy</div>
+<div id="tabDex">🍄 GrzybDex</div>
+<div>⚙</div>
+</div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
+
+<script src="js/map.js"></script>
+<script src="js/weather.js"></script>
+<script src="js/forests.js"></script>
+<script src="js/mushrooms.js"></script>
+<script src="js/grzybdex.js"></script>
+<script src="js/stats.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

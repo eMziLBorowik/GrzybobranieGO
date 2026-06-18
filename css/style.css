@@ -1,0 +1,12 @@
+*{box-sizing:border-box;font-family:Arial}
+html,body{margin:0;height:100%;background:#1b2417}
+#map{position:absolute;top:90px;bottom:120px;left:10px;right:10px;border-radius:18px;overflow:hidden}
+.panel{position:absolute;top:0;left:0;width:100%;height:90px;z-index:2000;background:linear-gradient(135deg,#203719,#557a32);color:white;display:flex;justify-content:space-between;align-items:center;padding:10px}
+.title{font-weight:bold}.sub{font-size:12px;color:#ddd}
+#forestStatus{background:#162013;padding:8px;border-radius:10px;font-size:12px}
+#actionBar{position:absolute;bottom:75px;left:10px;right:10px;z-index:2000;text-align:center}
+button{background:#6b8f3d;border:0;color:white;padding:12px 18px;border-radius:15px}
+#forestInfoPanel,#grzybdex{display:none;position:absolute;z-index:3000;background:#162013;color:white;padding:12px;border-radius:12px;left:10px;right:10px;top:90px}
+#grzybdex{bottom:70px;overflow:auto;background:#1b2417}
+.card{background:#162013;padding:10px;border-radius:10px;margin-bottom:10px}
+.bottomMenu{position:absolute;bottom:0;width:100%;height:70px;background:#172014;border-top:3px solid #a57a32;display:flex;justify-content:space-around;align-items:center;color:white;z-index:2000}

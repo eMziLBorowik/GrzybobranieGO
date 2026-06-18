@@ -1,0 +1,1 @@
+function updateStats(){document.getElementById('stats').innerText='🍄 '+mushrooms.length+' znalezisk'}
