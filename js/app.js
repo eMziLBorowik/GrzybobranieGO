@@ -1,39 +1,75 @@
-document.addEventListener("DOMContentLoaded",()=>{
+window.onload=function(){
 
 
-let mapReady=setInterval(()=>{
+document.getElementById("tabDex").onclick=function(){
 
-if(typeof map==="undefined") return;
+document.getElementById("map").style.display="none";
 
-clearInterval(mapReady);
+document.getElementById("grzybdex").style.display="block";
+
+updateStats();
+
+};
+
+
+
+document.getElementById("tabMap").onclick=function(){
+
+document.getElementById("map").style.display="block";
+
+document.getElementById("grzybdex").style.display="none";
+
+setTimeout(()=>{
+
+map.invalidateSize();
+
+},200);
+
+};
+
+
+
+
+if(!navigator.geolocation){
+
+document.getElementById("forestStatus").innerHTML="❌ Brak GPS";
+
+return;
+
+}
 
 
 
 navigator.geolocation.watchPosition(
 
-(pos)=>{
+function(pos){
+
 
 userLat=pos.coords.latitude;
+
 userLng=pos.coords.longitude;
 
 
-document.getElementById(
-"forestStatus"
-).innerText=
-"📍 GPS działa";
+document.getElementById("forestStatus").innerHTML=
+"📍 GPS OK";
+
 
 
 if(!userMarker){
 
+
 userMarker=L.marker(
 [userLat,userLng]
-).addTo(map);
+)
+.addTo(map);
+
 
 
 map.setView(
 [userLat,userLng],
 16
 );
+
 
 
 }else{
@@ -48,6 +84,8 @@ userMarker.setLatLng(
 
 
 
+if(typeof loadForests==="function"){
+
 if(forests.length===0){
 
 loadForests(
@@ -57,21 +95,21 @@ userLng
 
 }
 
+}
+
 
 
 },
 
 
-(err)=>{
+function(error){
 
 
-document.getElementById(
-"forestStatus"
-).innerText=
-"❌ Brak GPS";
+document.getElementById("forestStatus").innerHTML=
+"❌ GPS zablokowany";
 
 
-console.log(err);
+console.log(error);
 
 
 },
@@ -79,68 +117,13 @@ console.log(err);
 
 {
 enableHighAccuracy:true,
-maximumAge:0,
-timeout:10000
+timeout:15000,
+maximumAge:0
 }
-
 
 
 );
 
 
 
-// ZAKŁADKI
-
-
-document.getElementById(
-"tabDex"
-).onclick=()=>{
-
-
-document.getElementById(
-"map"
-).style.display="none";
-
-
-document.getElementById(
-"grzybdex"
-).style.display="block";
-
-
-updateStats();
-
-
 };
-
-
-
-document.getElementById(
-"tabMap"
-).onclick=()=>{
-
-
-document.getElementById(
-"map"
-).style.display="block";
-
-
-document.getElementById(
-"grzybdex"
-).style.display="none";
-
-
-map.invalidateSize();
-
-
-};
-
-
-
-}
-
-
-},100);
-
-
-
-});
