@@ -14,27 +14,27 @@ const q=`
 
 /* zwykłe lasy */
 
-way["landuse"="forest"](around:8000,${lat},${lng});
+way["landuse"="forest"](around:15000,${lat},${lng});
 
-way["natural"="wood"](around:8000,${lat},${lng});
+way["natural"="wood"](around:15000,${lat},${lng});
 
 
 
 /* parki krajobrazowe i obszary chronione */
 
-relation["boundary"="protected_area"](around:8000,${lat},${lng});
+relation["boundary"="protected_area"](around:15000,${lat},${lng});
 
 
-relation["protect_class"](around:8000,${lat},${lng});
+relation["protect_class"](around:15000,${lat},${lng});
 
 
 
 /* parki i większe tereny zielone */
 
-way["leisure"="park"](around:8000,${lat},${lng});
+way["leisure"="park"](around:15000,${lat},${lng});
 
 
-way["boundary"="protected_area"](around:8000,${lat},${lng});
+way["boundary"="protected_area"](around:15000,${lat},${lng});
 
 
 );
