@@ -68,20 +68,31 @@ const data = JSON.parse(text);
 // 🧠 RENDER
 data.elements.forEach(el=>{
 
-// 🚫 brak geometrii = skip
 if(!el || !el.geometry || !Array.isArray(el.geometry)) return;
 
-// 🚫 drogi
+// 🚫 drogi / miasta / śmieci
 if(el.tags?.highway) return;
+if(el.tags?.building) return;
+if(el.tags?.amenity) return;
+if(el.tags?.landuse === "residential") return;
+if(el.tags?.landuse === "grass") return;
 
-// 🔥 bezpieczne punkty
+// 🔥 punkty
 const pts = el.geometry
 .filter(p => p && typeof p.lat === "number" && typeof p.lon === "number")
 .map(p => [p.lat, p.lon]);
 
 if(pts.length < 4) return;
 
-// 🔥 WAŻNE: stabilny polygon (Leaflet fix)
+// 📏 filtr “mini parków” (KLUCZ FIX)
+let area = 0;
+for(let i=0;i<pts.length-1;i++){
+area += pts[i][0] * pts[i+1][1] - pts[i+1][0] * pts[i][1];
+}
+area = Math.abs(area);
+
+if(area < 0.0003) return; // 🚫 usuwa skwery i trawniki
+
 let poly;
 try{
 poly = L.polygon(pts,{
