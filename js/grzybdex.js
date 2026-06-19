@@ -1,138 +1,170 @@
+const client = window.supabaseClient;
 
-const mushroomsAtlas = [
+// 📦 atlas lokalny (fallback z mushrooms.js)
+let mushroomsAtlas = window.mushroomsAtlas || [];
 
-{ name:"Borowik szlachetny", type:"Jadalny", icon:"🍄", found:false },
-{ name:"Podgrzybek brunatny", type:"Jadalny", icon:"🍄", found:false },
-{ name:"Koźlarz czerwony", type:"Jadalny", icon:"🍄", found:false },
-{ name:"Koźlarz babka", type:"Jadalny", icon:"🍄", found:false },
-{ name:"Maślak zwyczajny", type:"Jadalny", icon:"🍄", found:false },
-{ name:"Pieprznik jadalny (kurka)", type:"Jadalny", icon:"🍄", found:false },
-{ name:"Czubajka kania", type:"Jadalny", icon:"🍄", found:false },
-{ name:"Opieńka miodowa", type:"Jadalny", icon:"🍄", found:false },
-{ name:"Mleczaj rydz (rydz)", type:"Jadalny", icon:"🍄", found:false },
-{ name:"Gąska zielonka", type:"Jadalny", icon:"🍄", found:false },
-{ name:"Gąska siwa", type:"Jadalny", icon:"🍄", found:false },
-{ name:"Mleczaj świerkowy", type:"Jadalny", icon:"🍄", found:false },
-{ name:"Pieczarka polna", type:"Jadalny", icon:"🍄", found:false },
-{ name:"Pieczarka leśna", type:"Jadalny", icon:"🍄", found:false },
+// 👤 aktualny user
+let currentUser = null;
 
-{ name:"Muchomor czerwony", type:"Trujący", icon:"⚠️", found:false },
-{ name:"Muchomor plamisty", type:"Trujący", icon:"⚠️", found:false },
-{ name:"Borowik szatański", type:"Trujący", icon:"⚠️", found:false },
-{ name:"Muchomor sromotnikowy", type:"Śmiertelnie trujący", icon:"☠️", found:false }
 
-];
+// 🔐 pobranie usera
+async function getUser(){
+const { data } = await client.auth.getUser();
+currentUser = data.user;
+return currentUser;
+}
 
 
 // 📸 INIT
-document.addEventListener("DOMContentLoaded", ()=>{
+document.addEventListener("DOMContentLoaded", async ()=>{
+
+await getUser();
+await loadUserProgress();
 
 renderAtlas();
+
+setupScanner();
+
+});
+
+
+// 📷 SCANNER
+function setupScanner(){
 
 const scanBtn = document.getElementById("scanBtn");
 const input = document.getElementById("cameraInput");
 
-if(scanBtn && input){
+if(!scanBtn || !input) return;
 
+
+// otwarcie kamery
 scanBtn.addEventListener("click", ()=>{
 input.click();
 });
 
+
+// skan
 input.addEventListener("change", async (e)=>{
 
 if(!e.target.files.length) return;
 
-let detected = await fakeAI();
+const mushroom = await detectMushroom();
 
-handleDetection(detected);
+await handleDetection(mushroom);
 
 });
 
 }
 
-});
 
+// 🧠 DETEKCJA (NIE LOSOWA)
+async function detectMushroom(){
 
-// 🧠 AI (BEZ LOSOWOŚCI)
-async function fakeAI(){
+// bierzemy pierwszy NIEODKRYTY dla usera
+const hidden = mushroomsAtlas.find(m => !m.found);
 
-let hidden = mushroomsAtlas.find(m => !m.found);
-
-// koniec gry
 if(!hidden){
-return {
-name:"Wszystkie grzyby odkryte",
-type:"info",
-icon:"🏆",
-found:true
-};
+return { name:"Wszystko odkryte", done:true };
 }
 
-// zwracamy kopię (stabilność)
-return structuredClone
-? structuredClone(hidden)
-: JSON.parse(JSON.stringify(hidden));
-
+return hidden;
 }
 
 
-// 🎮 DETEKCJA
-function handleDetection(m){
+// 🎮 OBSŁUGA SKANU
+async function handleDetection(m){
 
 const result = document.getElementById("scanResult");
 
-if(!result){
-console.error("Brak scanResult w HTML");
-return;
-}
+if(!result) return;
 
-if(!m){
-result.innerHTML = "❌ Nie rozpoznano grzyba";
-return;
-}
 
 // koniec gry
-if(m.name === "Wszystkie grzyby odkryte"){
-result.innerHTML = `
-🏆 KONIEC GRY<br><br>
-Wszystkie grzyby zostały odkryte!
-`;
+if(m.done){
+result.innerHTML = "🏆 Wszystkie grzyby odkryte!";
 return;
 }
+
 
 // już odkryty
 if(m.found){
-result.innerHTML = `
-🔎 Już odkryty grzyb<br><br>
-<b>${m.name}</b><br>
-ℹ️ Jest już w atlasie
-`;
+result.innerHTML = `🔎 Już znany: <b>${m.name}</b>`;
 return;
 }
 
-// NOWE ODKRYCIE
+
+// 🔥 NOWE ODKRYCIE
 m.found = true;
 
 result.innerHTML = `
-🎉 NOWY GATUNEK ODKRYTY!<br><br>
-🍄 <b>${m.name}</b><br>
-Typ: ${m.type}
+🎉 ODKRYTO!<br><br>
+🍄 <b>${m.name}</b>
 `;
+
+
+// zapis do bazy
+await saveDiscovery(m);
 
 renderAtlas();
 
 }
 
 
-// 🗂️ ATLAS
+// 💾 ZAPIS DO SUPABASE
+async function saveDiscovery(m){
+
+if(!currentUser) return;
+
+const { error } = await client
+.from("user_mushrooms")
+.insert([{
+user_id: currentUser.id,
+mushroom_id: m.name
+}]);
+
+if(error){
+console.log("Błąd zapisu:", error);
+}
+
+}
+
+
+// 📥 LOAD POSTĘPU
+async function loadUserProgress(){
+
+if(!currentUser) return;
+
+const { data, error } = await client
+.from("user_mushrooms")
+.select("*")
+.eq("user_id", currentUser.id);
+
+if(error){
+console.log(error);
+return;
+}
+
+
+// oznacz znalezione
+data.forEach(row=>{
+
+const m = mushroomsAtlas.find(x => x.name === row.mushroom_id);
+
+if(m){
+m.found = true;
+}
+
+});
+
+}
+
+
+// 🗂️ RENDER ATLAS
 function renderAtlas(){
 
 const box = document.getElementById("atlas");
 
-if(!box){
-console.error("Brak atlas w HTML");
-return;
-}
+if(!box) return;
 
 box.innerHTML = "";
 
