@@ -19,19 +19,27 @@ const q = `
 [out:json];
 
 (
-way["landuse"="forest"](around:15000,${lat},${lng});
-way["natural"="wood"](around:15000,${lat},${lng});
-way["leisure"="park"](around:15000,${lat},${lng});
-relation["boundary"="protected_area"](around:15000,${lat},${lng});
-relation["protect_class"](around:15000,${lat},${lng});
-relation["name"~"Park|Krajobrazowy|Rezerwat"](around:15000,${lat},${lng});
+  way["landuse"="forest"](around:15000,${lat},${lng});
+  relation["landuse"="forest"](around:15000,${lat},${lng});
+
+  way["natural"="wood"](around:15000,${lat},${lng});
+  relation["natural"="wood"](around:15000,${lat},${lng});
+
+  way["natural"="scrub"](around:15000,${lat},${lng});
+  relation["natural"="scrub"](around:15000,${lat},${lng});
+
+  way["leisure"="park"](around:15000,${lat},${lng});
+  relation["leisure"="park"](around:15000,${lat},${lng});
+
+  relation["boundary"="protected_area"](around:15000,${lat},${lng});
+  relation["protect_class"](around:15000,${lat},${lng});
+
+  relation["name"~"Park|Krajobrazowy|Rezerwat"](around:15000,${lat},${lng});
 );
 
 out geom;
->;
-out geom;
 `;
-
+  
 
 const url =
 "https://overpass-api.de/api/interpreter?data=" +
@@ -70,7 +78,7 @@ data.elements.forEach(el=>{
 
 if(!el || !el.geometry || !Array.isArray(el.geometry)) return;
 
-// 🚫 DROGI + MIASTA + ŚMIECI (WAŻNE FIX)
+// 🚫 DROGI + MIASTA + ŚMIECI
 if(el.tags?.highway) return;
 if(el.tags?.building) return;
 if(el.tags?.amenity) return;
@@ -82,21 +90,25 @@ if(el.tags?.landuse === "grass") return;
 if(el.tags?.landuse === "meadow") return;
 if(el.tags?.landuse === "recreation_ground") return;
 
+
 // 🔥 punkty
 const pts = el.geometry
 .filter(p => p && typeof p.lat === "number" && typeof p.lon === "number")
 .map(p => [p.lat, p.lon]);
 
-if(pts.length < 4) return;
+if(pts.length < 3) return;
 
-// 📏 filtr “mini parków”
+
+// 📏 minimalny filtr (dużo lżejszy niż wcześniej)
 let area = 0;
 for(let i=0;i<pts.length-1;i++){
 area += pts[i][0] * pts[i+1][1] - pts[i+1][0] * pts[i][1];
 }
 area = Math.abs(area);
 
-if(area < 0.0005) return; // trochę ostrzej niż wcześniej
+// tylko bardzo mikro śmieci
+if(area < 0.00001) return;
+
 
 let poly;
 try{
