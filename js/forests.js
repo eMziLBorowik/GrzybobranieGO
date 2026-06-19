@@ -70,12 +70,17 @@ data.elements.forEach(el=>{
 
 if(!el || !el.geometry || !Array.isArray(el.geometry)) return;
 
-// 🚫 drogi / miasta / śmieci
+// 🚫 DROGI + MIASTA + ŚMIECI (WAŻNE FIX)
 if(el.tags?.highway) return;
 if(el.tags?.building) return;
 if(el.tags?.amenity) return;
+
 if(el.tags?.landuse === "residential") return;
+if(el.tags?.landuse === "industrial") return;
+if(el.tags?.landuse === "commercial") return;
 if(el.tags?.landuse === "grass") return;
+if(el.tags?.landuse === "meadow") return;
+if(el.tags?.landuse === "recreation_ground") return;
 
 // 🔥 punkty
 const pts = el.geometry
@@ -84,14 +89,14 @@ const pts = el.geometry
 
 if(pts.length < 4) return;
 
-// 📏 filtr “mini parków” (KLUCZ FIX)
+// 📏 filtr “mini parków”
 let area = 0;
 for(let i=0;i<pts.length-1;i++){
 area += pts[i][0] * pts[i+1][1] - pts[i+1][0] * pts[i][1];
 }
 area = Math.abs(area);
 
-if(area < 0.0003) return; // 🚫 usuwa skwery i trawniki
+if(area < 0.0005) return; // trochę ostrzej niż wcześniej
 
 let poly;
 try{
