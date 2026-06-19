@@ -9,6 +9,10 @@ console.log("🧠 GrzybDex start");
 
 mushroomsAtlas = window.mushroomsAtlas || [];
 
+if(!mushroomsAtlas.length){
+console.warn("⚠️ atlas pusty - sprawdź mushrooms.js");
+}
+
 await getUser();
 
 await loadUserProgress();
@@ -78,14 +82,15 @@ input.value = "";
 // 🧠 DETEKCJA
 async function detectMushroom(){
 
-const hidden = mushroomsAtlas.find(m => !m.found);
+const hidden = mushroomsAtlas.filter(m => !m.found);
 
-if(!hidden){
+// 🔥 zabezpieczenie
+if(hidden.length === 0){
 return { done:true };
 }
 
-return hidden;
-
+// stabilnie zawsze pierwszy
+return hidden[0];
 }
 
 
@@ -95,6 +100,11 @@ async function handleDetection(m){
 const result = document.getElementById("scanResult");
 
 if(!result) return;
+
+if(!m){
+result.innerHTML = "❌ Nie rozpoznano";
+return;
+}
 
 if(m.done){
 result.innerHTML = "🏆 Wszystkie grzyby odkryte!";
@@ -163,7 +173,9 @@ if(!data) return;
 
 data.forEach(row => {
 
-const m = mushroomsAtlas.find(x => x.name === row.mushroom_id);
+const id = (row.mushroom_id || "").trim();
+
+const m = mushroomsAtlas.find(x => x.name === id);
 
 if(m){
 m.found = true;
