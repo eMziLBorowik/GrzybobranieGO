@@ -3,8 +3,6 @@ let forests = [];
 // ⏳ COOLDOWN
 let lastForestRequest = 0;
 
-
-
 async function loadForests(lat, lng){
 
 const now = Date.now();
@@ -31,7 +29,7 @@ way["landuse"="forest"](around:15000,${lat},${lng});
 
 way["natural"="wood"](around:15000,${lat},${lng});
 
-way["leisure"="park"](around:15000,${lat},${lng});
+way["leisure"="park"](around:15000,${lat},${lng})["highway"!~"."];
 
 relation["boundary"="protected_area"](around:15000,${lat},${lng});
 
@@ -41,10 +39,16 @@ relation["name"~"Park|Krajobrazowy|Rezerwat"](around:15000,${lat},${lng});
 
 );
 
+// 🚫 usuń drogi z wyników
+way["highway"]->.roads;
+
+(
+  ._;
+  - .roads;
+);
+
 out geom;
-
 >;
-
 out geom;
 
 `;
@@ -106,15 +110,13 @@ if(!el.geometry) return;
 
 
 
-const pts =
-el.geometry.map(p=>[p.lat,p.lon]);
+const pts = el.geometry.map(p=>[p.lat,p.lon]);
 
 if(pts.length < 3) return;
 
 
 
-let poly =
-L.polygon(pts,{
+let poly = L.polygon(pts,{
 color:"#2e8b57",
 fillColor:"#3cb371",
 fillOpacity:0.25,
@@ -231,11 +233,10 @@ let temps = d.daily.temperature_2m_max || [];
 
 
 
-// 🌧️ LEPSZY MODEL SUSZY
+// 🌧️ LEPSZE LICZENIE SUSZY
 let rain30 = rains.reduce((a,b)=>a+(b||0),0);
 let avgRain = rain30 / 30;
 
-// ostatnie 7 dni (ważniejsze!)
 let rain7 = rains.slice(-7).reduce((a,b)=>a+(b||0),0) / 7;
 
 
@@ -250,7 +251,7 @@ let chance = 30;
 
 
 
-// 🌧️ wilgoć (30 dni + 7 dni ważone)
+// 🌧️ wilgotność
 if(avgRain > 4 && rain7 > 5){
 chance += 35;
 }
@@ -258,7 +259,7 @@ else if(avgRain > 2){
 chance += 15;
 }
 else{
-chance -= 20;
+chance -= 25;
 }
 
 
@@ -273,7 +274,7 @@ chance -= 15;
 
 
 
-// 🌡️ temperatura (ważna dla grzybów)
+// 🌡️ temperatura
 if(temp >= 10 && temp <= 22){
 chance += 15;
 }
@@ -288,7 +289,7 @@ chance -= 20;
 
 
 
-// 🌱 SEZON
+// 🌱 sezon
 let month = new Date().getMonth()+1;
 
 if(month===9 || month===10){
