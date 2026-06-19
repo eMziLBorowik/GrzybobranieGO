@@ -1,3 +1,4 @@
+
 let forests = [];
 
 // ⏳ COOLDOWN
@@ -34,9 +35,9 @@ const q = `
   relation["boundary"="national_park"](around:15000,${lat},${lng});
 
 
-  // 🟢 REZERWATY + PARKI KRAJOBRAZOWE (PEWNE TAGI)
+  // 🟢 REZERWATY + PARKI KRAJOBRAZOWE
   relation["boundary"="protected_area"](around:15000,${lat},${lng});
-  relation["protect_class"~"2|3"](around:15000,${lat},${lng});
+  relation["protect_class"~"2|3|4"](around:15000,${lat},${lng});
 
   relation["protection_title"~"Rezerwat|Park Krajobrazowy|Park Narodowy"](around:15000,${lat},${lng});
   relation["name"~"Rezerwat|Park Krajobrazowy|Park Narodowy"](around:15000,${lat},${lng});
@@ -81,14 +82,14 @@ const data = JSON.parse(text);
 // 🧠 RENDER
 data.elements.forEach(el=>{
 
-if(!el || !el.geometry || !Array.isArray(el.geometry)) return;
+if(!el) return;
 
-// 🚫 ŚMIECI
+// 🚫 śmieci
 if(el.tags?.highway) return;
 if(el.tags?.building) return;
 if(el.tags?.amenity) return;
 
-// 🚫 TYLKO MIEJSKIE PARKI WYŁĄCZAMY
+// 🚫 miejskie parki OFF
 if(el.tags?.leisure === "park" && !el.tags?.boundary) return;
 
 if(el.tags?.landuse === "residential") return;
@@ -99,25 +100,45 @@ if(el.tags?.landuse === "meadow") return;
 if(el.tags?.landuse === "recreation_ground") return;
 
 
-// 🔥 punkty
-const pts = el.geometry
-.filter(p => p && typeof p.lat === "number" && typeof p.lon === "number")
-.map(p => [p.lat, p.lon]);
+// 🔥 GEOMETRIA FIX (KLUCZ DO GWPK)
+let pts = [];
+
+// normalna geometria
+if(el.geometry && Array.isArray(el.geometry)){
+  pts = el.geometry
+    .filter(p => p && typeof p.lat === "number" && typeof p.lon === "number")
+    .map(p => [p.lat, p.lon]);
+}
+
+// fallback dla RELATION (GWPK FIX)
+if(pts.length < 3 && el.members){
+  for(const m of el.members){
+    if(m.geometry && Array.isArray(m.geometry)){
+      const sub = m.geometry
+        .filter(p => p && typeof p.lat === "number" && typeof p.lon === "number")
+        .map(p => [p.lat, p.lon]);
+
+      if(sub.length > 3){
+        pts = pts.concat(sub);
+      }
+    }
+  }
+}
 
 if(pts.length < 3) return;
 
 
-// 📏 minimalny filtr (małe lasy zostają!)
+// 📏 filtr śmieci (lekki)
 let area = 0;
 for(let i=0;i<pts.length-1;i++){
 area += pts[i][0] * pts[i+1][1] - pts[i+1][0] * pts[i][1];
 }
 area = Math.abs(area);
 
-// tylko mikro-śmieci
 if(area < 0.00001) return;
 
 
+// 🟢 RYSOWANIE
 let poly;
 try{
 poly = L.polygon(pts,{
