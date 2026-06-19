@@ -1,1 +1,1 @@
-let mushrooms=JSON.parse(localStorage.getItem('mushrooms')||'[]');
+window.mushroomsAtlas = window.mushroomsAtlas || [];
