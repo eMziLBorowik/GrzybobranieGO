@@ -50,7 +50,6 @@ out geom;
 `;
 
 
-
 const url =
 "https://overpass-api.de/api/interpreter?data=" +
 encodeURIComponent(q);
@@ -74,7 +73,6 @@ loadForests(lat,lng);
 
 },10000);
 
-
 return;
 
 }
@@ -87,18 +85,10 @@ const text = await res.text();
 
 if(!text.startsWith("{")){
 
+console.error("❌ Overpass error:", text);
 
-console.error(
-"❌ Overpass error:",
-text
-);
-
-
-document.getElementById(
-"forestStatus"
-).innerText =
+document.getElementById("forestStatus").innerText =
 "❌ Błąd lasów";
-
 
 return;
 
@@ -112,41 +102,24 @@ const data = JSON.parse(text);
 
 data.elements.forEach(el=>{
 
-
-if(!el.geometry)
-return;
+if(!el.geometry) return;
 
 
 
 const pts =
-el.geometry.map(
-p=>[p.lat,p.lon]
-);
+el.geometry.map(p=>[p.lat,p.lon]);
 
-
-
-if(pts.length < 3)
-return;
-
+if(pts.length < 3) return;
 
 
 
 let poly =
-L.polygon(
-pts,
-{
-
+L.polygon(pts,{
 color:"#2e8b57",
-
 fillColor:"#3cb371",
-
 fillOpacity:0.25,
-
 weight:2
-
-}
-
-).addTo(map);
+}).addTo(map);
 
 
 
@@ -154,19 +127,11 @@ forests.push(poly);
 
 
 
-
 poly.on("click",(e)=>{
-
 
 L.DomEvent.stopPropagation(e);
 
-
-showForestInfo(
-el,
-pts
-);
-
-
+showForestInfo(el,pts);
 
 });
 
@@ -176,9 +141,7 @@ pts
 
 
 
-document.getElementById(
-"forestStatus"
-).innerText =
+document.getElementById("forestStatus").innerText =
 "🌲 Lasy i parki gotowe";
 
 
@@ -189,23 +152,14 @@ document.getElementById(
 
 catch(e){
 
-
 console.log(e);
 
-
-document.getElementById(
-"forestStatus"
-).innerText =
+document.getElementById("forestStatus").innerText =
 "❌ Błąd lasów";
 
-
 }
 
-
-
 }
-
-
 
 
 
@@ -217,347 +171,166 @@ async function showForestInfo(el,pts){
 
 
 
-let panel =
-document.getElementById(
-"forestInfoPanel"
-);
-
-
+let panel = document.getElementById("forestInfoPanel");
 
 panel.style.display="block";
 
 
 
-
-
 // 🌲 NAZWA
 
-let name =
-"🌲 Teren zielony";
-
-
+let name = "🌲 Teren zielony";
 
 if(el.tags){
 
-
 if(el.tags.name){
-
-name =
-"🌲 " + el.tags.name;
-
+name = "🌲 " + el.tags.name;
 }
-
 
 else if(el.tags.official_name){
-
-name =
-"🌲 " + el.tags.official_name;
-
+name = "🌲 " + el.tags.official_name;
 }
-
 
 else if(el.tags.protected_name){
-
-name =
-"🌲 " + el.tags.protected_name;
-
+name = "🌲 " + el.tags.protected_name;
 }
-
 
 else if(el.tags.short_name){
-
-name =
-"🌲 " + el.tags.short_name;
-
+name = "🌲 " + el.tags.short_name;
 }
-
 
 }
 
 
 
-document.getElementById(
-"forestName"
-).innerText =
-name;
+document.getElementById("forestName").innerText = name;
 
 
 
-
-
-document.getElementById(
-"forestRain"
-).innerText =
-"🌧️ Sprawdzanie...";
+document.getElementById("forestRain").innerText = "🌧️ Sprawdzanie...";
+document.getElementById("forestChance").innerText = "🍄 Liczenie...";
 
 
 
-document.getElementById(
-"forestChance"
-).innerText =
-"🍄 Liczenie...";
-
-
-
-
-
-let lat =
-pts[0][0];
-
-let lng =
-pts[0][1];
-
-
+let lat = pts[0][0];
+let lng = pts[0][1];
 
 
 
 try{
 
-
-// 🌧️ 30 DNI HISTORII
-
-let r =
-await fetch(
-
+// 🌧️ 30 DNI
+let r = await fetch(
 `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=precipitation_sum,temperature_2m_max&past_days=30&timezone=auto`
-
 );
 
+let d = await r.json();
 
+let rains = d.daily.precipitation_sum || [];
+let temps = d.daily.temperature_2m_max || [];
 
-let d =
-await r.json();
 
 
+// 🌧️ LEPSZY MODEL SUSZY
+let rain30 = rains.reduce((a,b)=>a+(b||0),0);
+let avgRain = rain30 / 30;
 
-
-
-let rains =
-d.daily.precipitation_sum || [];
-
-
-
-let temps =
-d.daily.temperature_2m_max || [];
-
-
-
-
-
-// suma deszczu
-
-let rain =
-rains.reduce(
-(a,b)=>a+(b||0),
-0
-);
-
-
-
-
-
-// średnia temperatura
-
-let temp =
-temps.reduce(
-(a,b)=>a+b,
-0
-)
-/
-(temps.length || 1);
-
-
-
-
-
-// średnia dzienna wilgotność terenu
-
-let avgRain =
-rain / 30;
-
-
-
-
-
-// 🍄 SZANSA START
-
-let chance = 35;
-
-
-
-
-
-// 🌧️ OPADY 30 DNI
-
-if(avgRain > 5){
-
-chance += 35;
-
-}
-
-else if(avgRain > 2){
-
-chance += 15;
-
-}
-
-else{
-
-chance -= 25;
-
-}
-
-
-
-
-
-// 🔥 SUSZA
-
-if(avgRain < 1){
-
-chance -= 30;
-
-}
-
-else if(avgRain < 2){
-
-chance -= 15;
-
-}
-
-
-
-
-
-// 🌱 PORA ROKU
-
-let month =
-new Date().getMonth()+1;
-
-
-
-if(
-month===9 ||
-month===10
-){
-
-chance += 25;
-
-}
-
-
-
-if(
-month===7 ||
-month===8
-){
-
-chance -= 10;
-
-}
-
-
-
-if(
-month===12 ||
-month===1 ||
-month===2
-){
-
-chance -= 25;
-
-}
-
-
+// ostatnie 7 dni (ważniejsze!)
+let rain7 = rains.slice(-7).reduce((a,b)=>a+(b||0),0) / 7;
 
 
 
 // 🌡️ temperatura
+let temp = temps.reduce((a,b)=>a+b,0)/(temps.length||1);
+
+
+
+// 🍄 START
+let chance = 30;
+
+
+
+// 🌧️ wilgoć (30 dni + 7 dni ważone)
+if(avgRain > 4 && rain7 > 5){
+chance += 35;
+}
+else if(avgRain > 2){
+chance += 15;
+}
+else{
+chance -= 20;
+}
+
+
+
+// 🔥 SUSZA REALNA
+if(avgRain < 2 && rain7 < 2){
+chance -= 35;
+}
+else if(avgRain < 3){
+chance -= 15;
+}
+
+
+
+// 🌡️ temperatura (ważna dla grzybów)
+if(temp >= 10 && temp <= 22){
+chance += 15;
+}
 
 if(temp < 5){
-
-chance -= 10;
-
+chance -= 15;
 }
-
-
 
 if(temp > 28){
+chance -= 20;
+}
 
+
+
+// 🌱 SEZON
+let month = new Date().getMonth()+1;
+
+if(month===9 || month===10){
+chance += 30;
+}
+
+if(month===7 || month===8){
 chance -= 15;
+}
 
+if(month===12 || month===1 || month===2){
+chance -= 25;
 }
 
 
 
-
-
-// limity
-
-if(chance > 95){
-
-chance = 95;
-
-}
+// clamp
+if(chance > 95) chance = 95;
+if(chance < 5) chance = 5;
 
 
 
-if(chance < 5){
+document.getElementById("forestRain").innerText =
+"🌧️ 30 dni: " + rain30.toFixed(1) + " mm";
 
-chance = 5;
-
-}
-
-
-
-
-
-
-document.getElementById(
-"forestRain"
-).innerText =
-
-"🌧️ 30 dni: " +
-rain.toFixed(1) +
-" mm";
-
-
-
-
-
-document.getElementById(
-"forestChance"
-).innerText =
-
-"🍄 Szansa: " +
-Math.round(chance) +
-"%";
+document.getElementById("forestChance").innerText =
+"🍄 Szansa: " + Math.round(chance) + "%";
 
 
 
 }
-
-
 
 catch(e){
 
-
 console.log(e);
 
-
-document.getElementById(
-"forestRain"
-).innerText =
+document.getElementById("forestRain").innerText =
 "🌧️ Brak danych";
 
-
 }
 
-
-
 }
-
-
 
 
 
@@ -567,51 +340,22 @@ document.getElementById(
 
 // 🔥 ZAMYKANIE PANELU
 
-document.addEventListener(
-"click",
-(e)=>{
+document.addEventListener("click",(e)=>{
 
+const panel = document.getElementById("forestInfoPanel");
 
-const panel =
-document.getElementById(
-"forestInfoPanel"
-);
+if(!panel) return;
 
+if(panel.contains(e.target)) return;
 
-
-if(!panel)
-return;
-
-
-
-if(panel.contains(e.target))
-return;
-
-
-
-if(
-e.target.closest(".leaflet-interactive")
-)
-return;
-
-
+if(e.target.closest(".leaflet-interactive")) return;
 
 panel.style.display="none";
 
-
 });
-
-
-
-
-
 
 map.on("click",()=>{
 
-
-document.getElementById(
-"forestInfoPanel"
-).style.display="none";
-
+document.getElementById("forestInfoPanel").style.display="none";
 
 });
