@@ -8,49 +8,28 @@ async function loadForests(lat, lng){
 const now = Date.now();
 
 if(now - lastForestRequest < 15000){
-
 console.log("⏳ cooldown forests API");
-
 return;
-
 }
 
 lastForestRequest = now;
 
 
-
 const q = `
-
 [out:json];
 
 (
-
 way["landuse"="forest"](around:15000,${lat},${lng});
-
 way["natural"="wood"](around:15000,${lat},${lng});
-
-way["leisure"="park"](around:15000,${lat},${lng})["highway"!~"."];
-
+way["leisure"="park"](around:15000,${lat},${lng});
 relation["boundary"="protected_area"](around:15000,${lat},${lng});
-
 relation["protect_class"](around:15000,${lat},${lng});
-
 relation["name"~"Park|Krajobrazowy|Rezerwat"](around:15000,${lat},${lng});
-
-);
-
-// 🚫 usuń drogi z wyników
-way["highway"]->.roads;
-
-(
-  ._;
-  - .roads;
 );
 
 out geom;
 >;
 out geom;
-
 `;
 
 
@@ -59,61 +38,44 @@ const url =
 encodeURIComponent(q);
 
 
-
 try{
-
 
 const res = await fetch(url);
 
-
-
 if(res.status === 429){
-
 console.warn("⚠️ Overpass limit");
 
 setTimeout(()=>{
-
 loadForests(lat,lng);
-
 },10000);
 
 return;
-
 }
-
 
 
 const text = await res.text();
 
-
-
 if(!text.startsWith("{")){
-
 console.error("❌ Overpass error:", text);
-
 document.getElementById("forestStatus").innerText =
 "❌ Błąd lasów";
-
 return;
-
 }
-
-
 
 const data = JSON.parse(text);
 
 
-
+// 🧠 RENDER
 data.elements.forEach(el=>{
 
 if(!el.geometry) return;
 
-
+// 🚫 BLOKADA ULIC / DRÓG
+if(el.tags?.highway) return;
 
 const pts = el.geometry.map(p=>[p.lat,p.lon]);
 
 if(pts.length < 3) return;
-
 
 
 let poly = L.polygon(pts,{
@@ -124,53 +86,35 @@ weight:2
 }).addTo(map);
 
 
-
 forests.push(poly);
 
 
-
 poly.on("click",(e)=>{
-
 L.DomEvent.stopPropagation(e);
-
 showForestInfo(el,pts);
-
 });
 
-
-
 });
-
 
 
 document.getElementById("forestStatus").innerText =
 "🌲 Lasy i parki gotowe";
 
 
-
 }
-
-
 
 catch(e){
-
 console.log(e);
-
 document.getElementById("forestStatus").innerText =
 "❌ Błąd lasów";
-
 }
 
 }
-
-
-
 
 
 
 
 async function showForestInfo(el,pts){
-
 
 
 let panel = document.getElementById("forestInfoPanel");
@@ -188,15 +132,12 @@ if(el.tags){
 if(el.tags.name){
 name = "🌲 " + el.tags.name;
 }
-
 else if(el.tags.official_name){
 name = "🌲 " + el.tags.official_name;
 }
-
 else if(el.tags.protected_name){
 name = "🌲 " + el.tags.protected_name;
 }
-
 else if(el.tags.short_name){
 name = "🌲 " + el.tags.short_name;
 }
@@ -204,19 +145,15 @@ name = "🌲 " + el.tags.short_name;
 }
 
 
-
 document.getElementById("forestName").innerText = name;
-
 
 
 document.getElementById("forestRain").innerText = "🌧️ Sprawdzanie...";
 document.getElementById("forestChance").innerText = "🍄 Liczenie...";
 
 
-
 let lat = pts[0][0];
 let lng = pts[0][1];
-
 
 
 try{
@@ -233,7 +170,7 @@ let temps = d.daily.temperature_2m_max || [];
 
 
 
-// 🌧️ LEPSZE LICZENIE SUSZY
+// 🌧️ SUSZA + WILGOĆ
 let rain30 = rains.reduce((a,b)=>a+(b||0),0);
 let avgRain = rain30 / 30;
 
@@ -241,7 +178,7 @@ let rain7 = rains.slice(-7).reduce((a,b)=>a+(b||0),0) / 7;
 
 
 
-// 🌡️ temperatura
+// 🌡️ TEMP
 let temp = temps.reduce((a,b)=>a+b,0)/(temps.length||1);
 
 
@@ -251,7 +188,7 @@ let chance = 30;
 
 
 
-// 🌧️ wilgotność
+// 🌧️ wilgoć
 if(avgRain > 4 && rain7 > 5){
 chance += 35;
 }
@@ -278,28 +215,24 @@ chance -= 15;
 if(temp >= 10 && temp <= 22){
 chance += 15;
 }
-
 if(temp < 5){
 chance -= 15;
 }
-
 if(temp > 28){
 chance -= 20;
 }
 
 
 
-// 🌱 sezon
+// 🌱 SEZON
 let month = new Date().getMonth()+1;
 
 if(month===9 || month===10){
 chance += 30;
 }
-
 if(month===7 || month===8){
 chance -= 15;
 }
-
 if(month===12 || month===1 || month===2){
 chance -= 25;
 }
@@ -318,23 +251,15 @@ document.getElementById("forestRain").innerText =
 document.getElementById("forestChance").innerText =
 "🍄 Szansa: " + Math.round(chance) + "%";
 
-
-
 }
 
 catch(e){
-
 console.log(e);
-
 document.getElementById("forestRain").innerText =
 "🌧️ Brak danych";
-
 }
 
 }
-
-
-
 
 
 
