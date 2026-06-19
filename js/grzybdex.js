@@ -131,21 +131,31 @@ found:false
 
 
 // 📸 SCAN BUTTON
-document.getElementById("scanBtn")
-.addEventListener("click", ()=>{
-document.getElementById("cameraInput").click();
+document.addEventListener("DOMContentLoaded", ()=>{
+
+renderAtlas();
+
+const scanBtn = document.getElementById("scanBtn");
+const input = document.getElementById("cameraInput");
+
+if(scanBtn){
+scanBtn.addEventListener("click", ()=>{
+input.click();
 });
+}
 
-
-// 📷 INPUT ZDJĘCIA
-document.getElementById("cameraInput")
-.addEventListener("change", async (e)=>{
+// 📷 SKAN
+if(input){
+input.addEventListener("change", async (e)=>{
 
 if(!e.target.files.length) return;
 
 let detected = await fakeAI();
 
 handleDetection(detected);
+
+});
+}
 
 });
 
@@ -162,20 +172,28 @@ return hidden;
 }
 
 
-// 🎮 ODKRYWANIE
+// 🎮 DETEKCJA + ODKRYWANIE
 function handleDetection(m){
 
 let result = document.getElementById("scanResult");
 
-if(!m) return;
+if(!result){
+console.error("Brak scanResult w HTML");
+return;
+}
+
+if(!m){
+result.innerHTML = "❌ Nie rozpoznano grzyba";
+return;
+}
 
 // już odkryty
 if(m.found){
 
 result.innerHTML = `
-🔎 Już odkryty grzyb:<br>
+🔎 Już odkryty grzyb<br><br>
 <b>${m.name}</b><br>
-ℹ️ Ten grzyb jest już w Twoim atlasie
+ℹ️ Masz go już w atlasie
 `;
 
 return;
@@ -200,11 +218,14 @@ function renderAtlas(){
 
 let box = document.getElementById("atlas");
 
-if(!box) return;
+if(!box){
+console.error("Brak atlas w HTML");
+return;
+}
 
 box.innerHTML = "";
 
-mushroomsAtlas.forEach((m)=>{
+mushroomsAtlas.forEach(m=>{
 
 let div = document.createElement("div");
 div.className = "card";
@@ -226,9 +247,3 @@ box.appendChild(div);
 });
 
 }
-
-
-// 🚀 START
-document.addEventListener("DOMContentLoaded", ()=>{
-renderAtlas();
-});
