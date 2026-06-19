@@ -6,7 +6,6 @@ let lastForestRequest = 0;
 
 async function loadForests(lat, lng){
 
-// 🔥 anti-spam (Overpass limit fix)
 const now = Date.now();
 
 if(now - lastForestRequest < 15000){
@@ -68,11 +67,13 @@ if(res.status === 429){
 
 console.warn("⚠️ Overpass limit - retry za 10s");
 
+
 setTimeout(()=>{
 
 loadForests(lat,lng);
 
 },10000);
+
 
 return;
 
@@ -86,16 +87,19 @@ const text = await res.text();
 
 if(!text.startsWith("{")){
 
+
 console.error(
 "❌ Overpass error response:",
 text
 );
 
 
+
 document.getElementById(
 "forestStatus"
 ).innerText =
 "❌ Błąd lasów (API)";
+
 
 
 return;
@@ -224,15 +228,39 @@ panel.style.display="block";
 
 
 
+// 🌲 NAZWA LASU / PARKU
+
 let name =
 "🌲 Teren zielony";
 
 
 
-if(el.tags?.name){
+if(el.tags){
+
+
+if(el.tags.name){
 
 name =
 "🌲 " + el.tags.name;
+
+}
+
+
+else if(el.tags.official_name){
+
+name =
+"🌲 " + el.tags.official_name;
+
+}
+
+
+else if(el.tags.short_name){
+
+name =
+"🌲 " + el.tags.short_name;
+
+}
+
 
 }
 
@@ -274,7 +302,7 @@ try{
 let r =
 await fetch(
 
-`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=precipitation_sum&past_days=7&timezone=auto`
+`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=precipitation_sum,temperature_2m_max&past_days=7&timezone=auto`
 
 );
 
@@ -285,6 +313,9 @@ await r.json();
 
 
 
+
+
+// 🌧️ OPADY
 
 let rain =
 (d.daily.precipitation_sum || [])
@@ -297,21 +328,140 @@ let rain =
 
 
 
-let chance = 20;
+
+// 🌡️ TEMPERATURA
+
+let temp =
+(d.daily.temperature_2m_max || [])
+
+.reduce(
+(a,b)=>a+b,
+0
+)
+/
+(d.daily.temperature_2m_max.length || 1);
 
 
 
-if(rain > 30){
 
-chance = 75;
+
+// 🍄 SZANSA
+
+let chance = 30;
+
+
+
+
+// deszcz
+
+if(rain > 40){
+
+chance += 40;
 
 }
 
-else if(rain > 15){
+else if(rain > 20){
 
-chance = 50;
+chance += 25;
 
 }
+
+else if(rain < 10){
+
+chance -= 25;
+
+}
+
+
+
+
+
+// SUSZA
+
+if(rain < 5){
+
+chance -= 20;
+
+}
+
+
+
+
+
+// 🌱 PORA ROKU
+
+let month =
+new Date().getMonth()+1;
+
+
+
+// najlepszy sezon
+
+if(month===9 || month===10){
+
+chance += 25;
+
+}
+
+
+// lato
+
+if(month===7 || month===8){
+
+chance -= 10;
+
+}
+
+
+// zima
+
+if(
+month===12 ||
+month===1 ||
+month===2
+){
+
+chance -= 20;
+
+}
+
+
+
+
+// temperatura
+
+if(temp < 5){
+
+chance -= 10;
+
+}
+
+
+if(temp > 28){
+
+chance -= 15;
+
+}
+
+
+
+
+
+// ograniczenie
+
+if(chance > 95){
+
+chance = 95;
+
+}
+
+
+if(chance < 5){
+
+chance = 5;
+
+}
+
 
 
 
@@ -322,6 +472,7 @@ document.getElementById(
 "🌧️ Opady: " +
 rain.toFixed(1) +
 " mm";
+
 
 
 
@@ -378,14 +529,10 @@ return;
 
 
 
-// klik w sam panel zostawia
-
 if(panel.contains(e.target))
 return;
 
 
-
-// klik w podświetlony las nie zamyka
 
 if(
 e.target.closest(".leaflet-interactive")
@@ -399,6 +546,7 @@ panel.style.display="none";
 
 
 });
+
 
 
 
