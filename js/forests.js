@@ -3,6 +3,9 @@ let forests = [];
 // ⏳ COOLDOWN
 let lastForestRequest = 0;
 
+// 🧠 FIX: anty-duplikaty OSM
+let forestIds = new Set();
+
 async function loadForests(lat, lng){
 
 const now = Date.now();
@@ -13,6 +16,12 @@ return;
 }
 
 lastForestRequest = now;
+
+
+// 🧹 FIX: usuń stare poligony przed nowym ładowaniem
+forests.forEach(p => map.removeLayer(p));
+forests = [];
+forestIds.clear();
 
 
 const q = `
@@ -27,9 +36,9 @@ relation["protect_class"](around:15000,${lat},${lng});
 relation["name"~"Park|Krajobrazowy|Rezerwat"](around:15000,${lat},${lng});
 );
 
-out geom;
+out body;
 >;
-out geom;
+out skel qt;
 `;
 
 
@@ -70,12 +79,19 @@ data.elements.forEach(el=>{
 
 if(!el || !el.geometry || !Array.isArray(el.geometry)) return;
 
-// 🚫 drogi / miasta / śmieci
+// 🧠 FIX: usuń duplikaty way/relation
+const uid = el.type + "_" + el.id;
+if(forestIds.has(uid)) return;
+forestIds.add(uid);
+
+
+// 🚫 śmieci
 if(el.tags?.highway) return;
 if(el.tags?.building) return;
 if(el.tags?.amenity) return;
 if(el.tags?.landuse === "residential") return;
 if(el.tags?.landuse === "grass") return;
+
 
 // 🔥 punkty
 const pts = el.geometry
@@ -84,16 +100,26 @@ const pts = el.geometry
 
 if(pts.length < 4) return;
 
-// 📏 filtr “mini parków” (KLUCZ FIX)
+
+// 🔁 FIX: domknięcie poligonu (ważne dla Leaflet)
+if(pts[0][0] !== pts[pts.length-1][0] || pts[0][1] !== pts[pts.length-1][1]){
+pts.push(pts[0]);
+}
+
+
+// 📏 filtr “mini parków” (zostawiony bez zmian)
 let area = 0;
 for(let i=0;i<pts.length-1;i++){
 area += pts[i][0] * pts[i+1][1] - pts[i+1][0] * pts[i][1];
 }
 area = Math.abs(area);
 
-if(area < 0.0003) return; // 🚫 usuwa skwery i trawniki
+if(area < 0.0003) return;
 
+
+// 🟢 RYSOWANIE
 let poly;
+
 try{
 poly = L.polygon(pts,{
 color:"#2e8b57",
@@ -101,6 +127,7 @@ fillColor:"#3cb371",
 fillOpacity:0.25,
 weight:2
 }).addTo(map);
+
 }catch(err){
 console.log("polygon skip:", err);
 return;
@@ -133,7 +160,6 @@ document.getElementById("forestStatus").innerText =
 
 
 async function showForestInfo(el,pts){
-
 
 let panel = document.getElementById("forestInfoPanel");
 
@@ -195,7 +221,7 @@ let rain7 = rains.slice(-7).reduce((a,b)=>a+(b||0),0) / 7;
 let temp = temps.reduce((a,b)=>a+b,0)/(temps.length||1);
 
 
-// 🍄 START
+// 🍄 START (NIE ZMIENIONE)
 let chance = 30;
 
 
