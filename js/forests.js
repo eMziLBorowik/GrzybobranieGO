@@ -19,7 +19,6 @@ const q = `
 [out:json];
 
 (
-  // 🌲 LASY
   way["landuse"="forest"](around:15000,${lat},${lng});
   relation["landuse"="forest"](around:15000,${lat},${lng});
 
@@ -29,12 +28,8 @@ const q = `
   way["natural"="scrub"](around:15000,${lat},${lng});
   relation["natural"="scrub"](around:15000,${lat},${lng});
 
-
-  // 🟢 PARKI NARODOWE
   relation["boundary"="national_park"](around:15000,${lat},${lng});
 
-
-  // 🟢 REZERWATY + PARKI KRAJOBRAZOWE
   relation["boundary"="protected_area"](around:15000,${lat},${lng});
   relation["protect_class"~"2|3|4"](around:15000,${lat},${lng});
 
@@ -44,7 +39,7 @@ const q = `
 
 out geom;
 `;
-  
+
 
 const url =
 "https://overpass-api.de/api/interpreter?data=" +
@@ -65,23 +60,13 @@ loadForests(lat,lng);
 return;
 }
 
-
-const text = await res.text();
-
-if(!text.startsWith("{")){
-console.error("❌ Overpass error:", text);
-document.getElementById("forestStatus").innerText =
-"❌ Błąd lasów";
-return;
-}
-
-const data = JSON.parse(text);
+const data = await res.json();
 
 
-// 🧠 RENDER
+// 🧠 CLEAN RENDER
 data.elements.forEach(el=>{
 
-if(!el) return;
+if(!el?.geometry) return;
 
 // 🚫 śmieci
 if(el.tags?.highway) return;
@@ -91,6 +76,7 @@ if(el.tags?.amenity) return;
 // 🚫 miejskie parki OFF
 if(el.tags?.leisure === "park" && !el.tags?.boundary) return;
 
+// 🚫 landuse
 if(el.tags?.landuse === "residential") return;
 if(el.tags?.landuse === "industrial") return;
 if(el.tags?.landuse === "commercial") return;
@@ -99,46 +85,17 @@ if(el.tags?.landuse === "meadow") return;
 if(el.tags?.landuse === "recreation_ground") return;
 
 
-// 🔥 GEOMETRIA FIX (GWPK + PARKI DZIAŁAJĄ)
-let pts = [];
+// 🔥 GEOMETRIA (TYLKO PEWNA)
+const pts = el.geometry
+.filter(p => p?.lat && p?.lon)
+.map(p => [p.lat, p.lon]);
 
-// normalna geometria
-if(el.geometry && Array.isArray(el.geometry)){
-  pts = el.geometry
-    .filter(p => p && typeof p.lat === "number" && typeof p.lon === "number")
-    .map(p => [p.lat, p.lon]);
-}
-
-// fallback RELATION
-if(pts.length < 3 && el.members){
-  for(const m of el.members){
-    if(m.geometry && Array.isArray(m.geometry)){
-      const sub = m.geometry
-        .filter(p => p && typeof p.lat === "number" && typeof p.lon === "number")
-        .map(p => [p.lat, p.lon]);
-
-      if(sub.length > 3){
-        pts = pts.concat(sub);
-      }
-    }
-  }
-}
-
-if(pts.length < 3) return;
-
-
-// 📏 filtr
-let area = 0;
-for(let i=0;i<pts.length-1;i++){
-area += pts[i][0] * pts[i+1][1] - pts[i+1][0] * pts[i][1];
-}
-area = Math.abs(area);
-
-if(area < 0.00001) return;
+if(pts.length < 4) return;
 
 
 // 🟢 RYSOWANIE
 let poly;
+
 try{
 poly = L.polygon(pts,{
 color:"#2e8b57",
@@ -147,21 +104,18 @@ fillOpacity:0.25,
 weight:2
 }).addTo(map);
 }catch(err){
-console.log("polygon skip:", err);
 return;
 }
 
 forests.push(poly);
 
 
-// ✅ FIX: STABILNE INFO O OBIEKCIE (KLUCZ DO GWPK)
+// ✅ STABILNY CLICK (FIX FINAL)
 poly.on("click",(e)=>{
 L.DomEvent.stopPropagation(e);
 
 showForestInfo({
-  tags: el?.tags || {},
-  id: el?.id,
-  type: el?.type
+  tags: el.tags || {}
 }, pts);
 
 });
