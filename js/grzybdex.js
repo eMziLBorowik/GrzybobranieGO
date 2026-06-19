@@ -1,9 +1,5 @@
-const client = window.supabaseClient;
-
-// 📦 atlas globalny (ważne!)
+// 👤 user + supabase (GLOBALNIE)
 let mushroomsAtlas = [];
-
-// 👤 user
 let currentUser = null;
 
 
@@ -28,6 +24,8 @@ setupScanner();
 // 👤 USER
 async function getUser(){
 
+const client = window.supabaseClient;
+
 const { data, error } = await client.auth.getUser();
 
 if(error){
@@ -42,37 +40,26 @@ console.log("👤 user:", currentUser?.email);
 }
 
 
-// 📷 SCANNER FIX
+// 📷 SCANNER
 function setupScanner(){
 
 const scanBtn = document.getElementById("scanBtn");
 const input = document.getElementById("cameraInput");
 
-if(!scanBtn){
-console.error("❌ brak scanBtn");
-return;
-}
-
-if(!input){
-console.error("❌ brak cameraInput");
+if(!scanBtn || !input){
+console.error("❌ brak scanBtn lub cameraInput");
 return;
 }
 
 console.log("📷 scanner ready");
 
 scanBtn.onclick = () => {
-console.log("📸 klik scan");
 input.click();
 };
 
 input.onchange = async (e) => {
 
-if(!e.target.files || !e.target.files.length){
-console.log("brak pliku");
-return;
-}
-
-console.log("📸 zdjęcie wykryte");
+if(!e.target.files || !e.target.files.length) return;
 
 const mushroom = await detectMushroom();
 await handleDetection(mushroom);
@@ -103,24 +90,19 @@ async function handleDetection(m){
 
 const result = document.getElementById("scanResult");
 
-if(!result){
-console.error("brak scanResult");
-return;
-}
+if(!result) return;
 
-// koniec
 if(m.done){
 result.innerHTML = "🏆 Wszystkie grzyby odkryte!";
 return;
 }
 
-// już
 if(m.found){
 result.innerHTML = `🔎 Już znany: <b>${m.name}</b>`;
 return;
 }
 
-// nowy
+// NOWE ODKRYCIE
 m.found = true;
 
 result.innerHTML = `
@@ -138,10 +120,9 @@ renderAtlas();
 // 💾 SAVE
 async function saveDiscovery(m){
 
-if(!currentUser){
-console.log("brak usera");
-return;
-}
+if(!currentUser) return;
+
+const client = window.supabaseClient;
 
 const { error } = await client
 .from("user_mushrooms")
@@ -161,6 +142,8 @@ console.log("SAVE ERROR:", error);
 async function loadUserProgress(){
 
 if(!currentUser) return;
+
+const client = window.supabaseClient;
 
 const { data, error } = await client
 .from("user_mushrooms")
@@ -192,10 +175,7 @@ function renderAtlas(){
 
 const box = document.getElementById("atlas");
 
-if(!box){
-console.error("brak atlas");
-return;
-}
+if(!box) return;
 
 box.innerHTML = "";
 
