@@ -7,10 +7,15 @@ const msg = document.getElementById("authMsg");
 const panel = document.getElementById("authPanel");
 
 
-// 🔐 AUTOSTART SESJI (PO ODŚWIEŻENIU)
+// 🔐 AUTOSTART SESJI
 document.addEventListener("DOMContentLoaded", async () => {
 
-const { data } = await client.auth.getSession();
+const { data, error } = await client.auth.getSession();
+
+if (error) {
+console.log("SESSION ERROR:", error);
+return;
+}
 
 if (data.session) {
 panel.style.display = "none";
@@ -23,13 +28,15 @@ console.log("🔓 brak sesji");
 });
 
 
-// 🔁 REAKCJA NA ZMIANĘ LOGOWANIA
+// 🔁 REAKCJA NA ZMIANY AUTH (POPRAWIONE)
 client.auth.onAuthStateChange((event, session) => {
 
 if (session) {
 panel.style.display = "none";
+console.log("🔐 login state change: logged in");
 } else {
 panel.style.display = "flex";
+console.log("🔓 login state change: logged out");
 }
 
 });
@@ -46,7 +53,7 @@ email,
 password
 });
 
-if(error){
+if (error) {
 console.log(error);
 msg.innerText = "❌ Błąd logowania: " + error.message;
 return;
@@ -70,11 +77,12 @@ email,
 password
 });
 
-if(error){
+if (error) {
 console.log(error);
 msg.innerText = "❌ Błąd rejestracji: " + error.message;
 return;
 }
 
 msg.innerText = "✅ Konto utworzone (sprawdź email)";
+panel.style.display = "flex";
 });
