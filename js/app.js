@@ -161,6 +161,13 @@ document.getElementById(
 
 
 
+// chowamy informacje o lesie
+document.getElementById(
+"forestInfoPanel"
+).style.display="none";
+
+
+
 document.getElementById(
 "map"
 ).style.display="none";
