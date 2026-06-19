@@ -1,137 +1,162 @@
 let forests = [];
+let forestGroups = [];
 
 // ⏳ COOLDOWN
 let lastForestRequest = 0;
 
+function getArea(points){
+  // uproszczony “score” powierzchni
+  let area = 0;
+  for(let i=0;i<points.length-1;i++){
+    area += points[i][0] * points[i+1][1] - points[i+1][0] * points[i][1];
+  }
+  return Math.abs(area);
+}
+
+// sprawdza czy punkt jest w przybliżeniu w poligonie (bounding box hack)
+function isInside(polyA, polyB){
+  const lats = polyA.map(p=>p[0]);
+  const lngs = polyA.map(p=>p[1]);
+
+  const minLat = Math.min(...lats);
+  const maxLat = Math.max(...lats);
+  const minLng = Math.min(...lngs);
+  const maxLng = Math.max(...lngs);
+
+  return polyB.some(p =>
+    p[0] >= minLat && p[0] <= maxLat &&
+    p[1] >= minLng && p[1] <= maxLng
+  );
+}
+
 async function loadForests(lat, lng){
 
-const now = Date.now();
+  const now = Date.now();
 
-if(now - lastForestRequest < 15000){
-console.log("⏳ cooldown forests API");
-return;
-}
+  if(now - lastForestRequest < 15000){
+    console.log("⏳ cooldown forests API");
+    return;
+  }
 
-lastForestRequest = now;
+  lastForestRequest = now;
 
+  const q = `
+  [out:json];
 
-const q = `
-[out:json];
+  (
+    way["landuse"="forest"](around:15000,${lat},${lng});
+    relation["landuse"="forest"](around:15000,${lat},${lng});
 
-(
-  way["landuse"="forest"](around:15000,${lat},${lng});
-  relation["landuse"="forest"](around:15000,${lat},${lng});
+    way["natural"="wood"](around:15000,${lat},${lng});
+    relation["natural"="wood"](around:15000,${lat},${lng});
 
-  way["natural"="wood"](around:15000,${lat},${lng});
-  relation["natural"="wood"](around:15000,${lat},${lng});
+    relation["boundary"="national_park"](around:15000,${lat},${lng});
+    relation["boundary"="protected_area"](around:15000,${lat},${lng});
+  );
 
-  way["natural"="scrub"](around:15000,${lat},${lng});
-  relation["natural"="scrub"](around:15000,${lat},${lng});
+  out geom;
+  `;
 
-  relation["boundary"="national_park"](around:15000,${lat},${lng});
+  const url =
+  "https://overpass-api.de/api/interpreter?data=" +
+  encodeURIComponent(q);
 
-  relation["boundary"="protected_area"](around:15000,${lat},${lng});
-  relation["protect_class"~"2|3|4"](around:15000,${lat},${lng});
+  try{
 
-  relation["protection_title"~"Rezerwat|Park Krajobrazowy|Park Narodowy"](around:15000,${lat},${lng});
-  relation["name"~"Rezerwat|Park Krajobrazowy|Park Narodowy"](around:15000,${lat},${lng});
-);
+    const res = await fetch(url);
 
-out geom;
-`;
+    if(res.status === 429){
+      setTimeout(()=>loadForests(lat,lng),10000);
+      return;
+    }
 
+    const data = await res.json();
 
-const url =
-"https://overpass-api.de/api/interpreter?data=" +
-encodeURIComponent(q);
+    // 🔥 RESET
+    forests.forEach(f => map.removeLayer(f));
+    forests = [];
+    forestGroups = [];
 
+    // 🔥 PREPARE DATA
+    let raw = [];
 
-try{
+    data.elements.forEach(el=>{
+      if(!el?.geometry) return;
 
-const res = await fetch(url);
+      const pts = el.geometry
+        .filter(p => p?.lat && p?.lon)
+        .map(p => [p.lat, p.lon]);
 
-if(res.status === 429){
-console.warn("⚠️ Overpass limit");
+      if(pts.length < 4) return;
 
-setTimeout(()=>{
-loadForests(lat,lng);
-},10000);
+      raw.push({
+        pts,
+        tags: el.tags || {},
+        area: getArea(pts)
+      });
+    });
 
-return;
-}
+    // 🔥 SORT BIGGEST FIRST
+    raw.sort((a,b)=>b.area - a.area);
 
-const data = await res.json();
+    const used = new Set();
 
+    // 🔥 GROUPING (big eats small)
+    for(let i=0;i<raw.length;i++){
 
-// 🧠 CLEAN RENDER
-data.elements.forEach(el=>{
+      if(used.has(i)) continue;
 
-if(!el?.geometry) return;
+      const main = raw[i];
+      const group = {
+        main,
+        children: []
+      };
 
-// 🚫 śmieci
-if(el.tags?.highway) return;
-if(el.tags?.building) return;
-if(el.tags?.amenity) return;
+      for(let j=i+1;j<raw.length;j++){
 
-// 🚫 miejskie parki OFF
-if(el.tags?.leisure === "park" && !el.tags?.boundary) return;
+        if(used.has(j)) continue;
 
-// 🚫 landuse
-if(el.tags?.landuse === "residential") return;
-if(el.tags?.landuse === "industrial") return;
-if(el.tags?.landuse === "commercial") return;
-if(el.tags?.landuse === "grass") return;
-if(el.tags?.landuse === "meadow") return;
-if(el.tags?.landuse === "recreation_ground") return;
+        const other = raw[j];
 
+        if(isInside(main.pts, other.pts)){
+          group.children.push(other);
+          used.add(j);
+        }
+      }
 
-// 🔥 GEOMETRIA (TYLKO PEWNA)
-const pts = el.geometry
-.filter(p => p?.lat && p?.lon)
-.map(p => [p.lat, p.lon]);
+      used.add(i);
+      forestGroups.push(group);
+    }
 
-if(pts.length < 4) return;
+    // 🔥 RENDER ONLY GROUP MASTERS
+    forestGroups.forEach(group=>{
 
+      const poly = L.polygon(group.main.pts,{
+        color:"#2e8b57",
+        fillColor:"#3cb371",
+        fillOpacity:0.25,
+        weight:2
+      }).addTo(map);
 
-// 🟢 RYSOWANIE
-let poly;
+      forests.push(poly);
 
-try{
-poly = L.polygon(pts,{
-color:"#2e8b57",
-fillColor:"#3cb371",
-fillOpacity:0.25,
-weight:2
-}).addTo(map);
-}catch(err){
-return;
-}
+      poly.on("click",(e)=>{
+        L.DomEvent.stopPropagation(e);
 
-forests.push(poly);
+        showForestInfo({
+          tags: group.main.tags,
+          subForests: group.children.length
+        }, group.main.pts);
+      });
 
+    });
 
-// ✅ STABILNY CLICK (FIX FINAL)
-poly.on("click",(e)=>{
-L.DomEvent.stopPropagation(e);
+    document.getElementById("forestStatus").innerText =
+    "🌲 Lasy zgrupowane i gotowe";
 
-showForestInfo({
-  tags: el.tags || {}
-}, pts);
-
-});
-
-});
-
-
-document.getElementById("forestStatus").innerText =
-"🌲 Lasy, parki i rezerwaty gotowe";
-
-}
-
-catch(e){
-console.log(e);
-document.getElementById("forestStatus").innerText =
-"❌ Błąd lasów";
-}
-
+  } catch(e){
+    console.log(e);
+    document.getElementById("forestStatus").innerText =
+    "❌ Błąd lasów";
+  }
 }
