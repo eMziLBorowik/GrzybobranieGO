@@ -1,7 +1,6 @@
 let forests=[];
 
 
-
 async function loadForests(lat,lng){
 
 
@@ -12,15 +11,13 @@ const q=`
 
 (
 
-/* zwykłe lasy */
-
 way["landuse"="forest"](around:15000,${lat},${lng});
 
 way["natural"="wood"](around:15000,${lat},${lng});
 
 
+way["leisure"="park"](around:15000,${lat},${lng});
 
-/* parki krajobrazowe i obszary chronione */
 
 relation["boundary"="protected_area"](around:15000,${lat},${lng});
 
@@ -28,17 +25,15 @@ relation["boundary"="protected_area"](around:15000,${lat},${lng});
 relation["protect_class"](around:15000,${lat},${lng});
 
 
-
-/* parki i większe tereny zielone */
-
-way["leisure"="park"](around:15000,${lat},${lng});
-
-
-way["boundary"="protected_area"](around:15000,${lat},${lng});
+relation["name"~"Park Krajobrazowy"](around:15000,${lat},${lng});
 
 
 );
 
+
+out geom;
+
+>;
 
 out geom;
 
@@ -57,7 +52,6 @@ try{
 
 
 const res=await fetch(url);
-
 
 const data=await res.json();
 
@@ -81,24 +75,20 @@ if(pts.length<3)return;
 
 
 
+
 let poly=L.polygon(
 
 pts,
 
 {
 
-
 color:"#2e8b57",
-
 
 fillColor:"#3cb371",
 
-
 fillOpacity:0.25,
 
-
 weight:2
-
 
 }
 
@@ -107,7 +97,9 @@ weight:2
 
 
 
+
 forests.push(poly);
+
 
 
 
@@ -121,19 +113,19 @@ L.DomEvent.stopPropagation(e);
 showForestInfo(el,pts);
 
 
-
 });
 
 
 
 });
+
 
 
 
 document.getElementById(
 "forestStatus"
 ).innerText=
-"🌲 Lasy i tereny zielone gotowe";
+"🌲 Lasy i parki gotowe";
 
 
 
@@ -142,10 +134,7 @@ document.getElementById(
 catch(e){
 
 
-console.log(
-"Błąd pobierania terenów:",
-e
-);
+console.log(e);
 
 
 document.getElementById(
@@ -164,8 +153,8 @@ document.getElementById(
 
 
 
-async function showForestInfo(el,pts){
 
+async function showForestInfo(el,pts){
 
 
 let panel =
@@ -179,14 +168,13 @@ panel.style.display="block";
 
 
 
-let name="🌲 Teren leśny";
+let name="🌲 Teren zielony";
 
 
 
 if(el.tags?.name){
 
 name="🌲 "+el.tags.name;
-
 
 }
 
@@ -204,10 +192,12 @@ document.getElementById(
 "🌧️ Sprawdzanie...";
 
 
+
 document.getElementById(
 "forestChance"
 ).innerText=
 "🍄 Liczenie...";
+
 
 
 
@@ -245,11 +235,18 @@ let chance=20;
 
 
 
-if(rain>30)
+if(rain>30){
+
 chance=75;
 
-else if(rain>15)
+}
+
+else if(rain>15){
+
 chance=50;
+
+}
+
 
 
 
@@ -259,6 +256,7 @@ document.getElementById(
 "🌧️ Opady: "+
 rain.toFixed(1)+
 " mm";
+
 
 
 
@@ -276,7 +274,6 @@ chance+
 catch(e){
 
 
-
 document.getElementById(
 "forestRain"
 ).innerText=
@@ -287,15 +284,13 @@ document.getElementById(
 
 
 
-
 }
 
 
 
 
-map.on(
-"click",
-()=>{
+
+map.on("click",()=>{
 
 
 document.getElementById(
