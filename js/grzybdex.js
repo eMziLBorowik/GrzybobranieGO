@@ -1,4 +1,3 @@
-// 👤 user + supabase (GLOBALNIE)
 let mushroomsAtlas = [];
 let currentUser = null;
 
@@ -25,6 +24,11 @@ setupScanner();
 async function getUser(){
 
 const client = window.supabaseClient;
+
+if(!client){
+console.error("❌ brak supabaseClient");
+return;
+}
 
 const { data, error } = await client.auth.getUser();
 
@@ -154,6 +158,8 @@ if(error){
 console.log("LOAD ERROR:", error);
 return;
 }
+
+if(!data) return;
 
 data.forEach(row => {
 
