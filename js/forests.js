@@ -1,4 +1,3 @@
-
 let forests = [];
 
 // ⏳ COOLDOWN
@@ -100,7 +99,7 @@ if(el.tags?.landuse === "meadow") return;
 if(el.tags?.landuse === "recreation_ground") return;
 
 
-// 🔥 GEOMETRIA FIX (KLUCZ DO GWPK)
+// 🔥 GEOMETRIA FIX (GWPK + PARKI DZIAŁAJĄ)
 let pts = [];
 
 // normalna geometria
@@ -110,7 +109,7 @@ if(el.geometry && Array.isArray(el.geometry)){
     .map(p => [p.lat, p.lon]);
 }
 
-// fallback dla RELATION (GWPK FIX)
+// fallback RELATION
 if(pts.length < 3 && el.members){
   for(const m of el.members){
     if(m.geometry && Array.isArray(m.geometry)){
@@ -128,7 +127,7 @@ if(pts.length < 3 && el.members){
 if(pts.length < 3) return;
 
 
-// 📏 filtr śmieci (lekki)
+// 📏 filtr
 let area = 0;
 for(let i=0;i<pts.length-1;i++){
 area += pts[i][0] * pts[i+1][1] - pts[i+1][0] * pts[i][1];
@@ -154,9 +153,17 @@ return;
 
 forests.push(poly);
 
+
+// ✅ FIX: STABILNE INFO O OBIEKCIE (KLUCZ DO GWPK)
 poly.on("click",(e)=>{
 L.DomEvent.stopPropagation(e);
-showForestInfo(el,pts);
+
+showForestInfo({
+  tags: el?.tags || {},
+  id: el?.id,
+  type: el?.type
+}, pts);
+
 });
 
 });
