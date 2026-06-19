@@ -51,7 +51,9 @@ color:white;
 
 display:flex;
 
+
 justify-content:space-between;
+
 
 align-items:center;
 
@@ -571,4 +573,59 @@ font-size:14px;
 }
 
 
+}
+
+
+
+
+
+
+/* ========================= */
+/* 🔐 LOGIN / AUTH PANEL */
+/* ========================= */
+
+.authPanel{
+position: fixed;
+inset: 0;
+background: rgba(0,0,0,0.88);
+display: flex;
+align-items: center;
+justify-content: center;
+z-index: 99999;
+}
+
+.authBox{
+width: 280px;
+background: #162013;
+border: 1px solid #314b25;
+border-radius: 15px;
+padding: 20px;
+text-align: center;
+color: white;
+box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+}
+
+.authBox h2{
+margin: 5px 0 10px;
+}
+
+.authBox p{
+font-size: 12px;
+color: #ccc;
+}
+
+.authBox input{
+width: 100%;
+margin: 6px 0;
+padding: 10px;
+border-radius: 10px;
+border: none;
+outline: none;
+background: #203719;
+color: white;
+}
+
+.authBox button{
+width: 100%;
+margin-top: 8px;
 }
