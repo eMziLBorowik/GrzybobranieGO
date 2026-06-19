@@ -5,16 +5,46 @@ let lastForestRequest = 0;
 
 
 
+function isUrban(el){
+
+if(!el.tags) return false;
+
+const t = el.tags;
+
+// 🚫 typowe miejskie obszary
+if(
+t.landuse === "residential" ||
+t.landuse === "industrial" ||
+t.landuse === "commercial" ||
+t.landuse === "retail" ||
+t.landuse === "construction"
+) return true;
+
+// 🚫 parkingi i zabudowa
+if(
+t.amenity === "parking" ||
+t.building
+) return true;
+
+// 🚫 centra miejscowości
+if(
+t.place === "city" ||
+t.place === "town" ||
+t.place === "village"
+) return true;
+
+return false;
+}
+
+
+
 async function loadForests(lat, lng){
 
 const now = Date.now();
 
 if(now - lastForestRequest < 15000){
-
 console.log("⏳ cooldown forests API");
-
 return;
-
 }
 
 lastForestRequest = now;
@@ -22,79 +52,46 @@ lastForestRequest = now;
 
 
 const q = `
-
 [out:json];
 
 (
-
 way["landuse"="forest"](around:15000,${lat},${lng});
-
 way["natural"="wood"](around:15000,${lat},${lng});
-
 way["leisure"="park"](around:15000,${lat},${lng});
-
 relation["boundary"="protected_area"](around:15000,${lat},${lng});
-
 relation["protect_class"](around:15000,${lat},${lng});
-
 relation["name"~"Park|Krajobrazowy|Rezerwat"](around:15000,${lat},${lng});
-
 );
 
 out geom;
-
 >;
-
 out geom;
-
 `;
-
 
 const url =
 "https://overpass-api.de/api/interpreter?data=" +
 encodeURIComponent(q);
 
-
-
 try{
-
 
 const res = await fetch(url);
 
-
-
 if(res.status === 429){
-
 console.warn("⚠️ Overpass limit");
-
 setTimeout(()=>{
-
 loadForests(lat,lng);
-
 },10000);
-
 return;
-
 }
-
-
 
 const text = await res.text();
 
-
-
 if(!text.startsWith("{")){
-
 console.error("❌ Overpass error:", text);
-
 document.getElementById("forestStatus").innerText =
 "❌ Błąd lasów";
-
 return;
-
 }
-
-
 
 const data = JSON.parse(text);
 
@@ -104,14 +101,15 @@ data.elements.forEach(el=>{
 
 if(!el.geometry) return;
 
+// 🚫 NOWE: filtr miast
+if(isUrban(el)) return;
+
 
 
 const pts =
 el.geometry.map(p=>[p.lat,p.lon]);
 
 if(pts.length < 3) return;
-
-
 
 let poly =
 L.polygon(pts,{
@@ -121,42 +119,24 @@ fillOpacity:0.25,
 weight:2
 }).addTo(map);
 
-
-
 forests.push(poly);
 
-
-
 poly.on("click",(e)=>{
-
 L.DomEvent.stopPropagation(e);
-
 showForestInfo(el,pts);
-
 });
 
-
-
 });
-
-
 
 document.getElementById("forestStatus").innerText =
 "🌲 Lasy i parki gotowe";
 
-
-
 }
 
-
-
 catch(e){
-
 console.log(e);
-
 document.getElementById("forestStatus").innerText =
 "❌ Błąd lasów";
-
 }
 
 }
@@ -219,7 +199,6 @@ let lng = pts[0][1];
 
 try{
 
-// 🌧️ 30 DNI
 let r = await fetch(
 `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=precipitation_sum,temperature_2m_max&past_days=30&timezone=auto`
 );
@@ -231,26 +210,19 @@ let temps = d.daily.temperature_2m_max || [];
 
 
 
-// 🌧️ LEPSZY MODEL SUSZY
 let rain30 = rains.reduce((a,b)=>a+(b||0),0);
 let avgRain = rain30 / 30;
 
-// ostatnie 7 dni (ważniejsze!)
 let rain7 = rains.slice(-7).reduce((a,b)=>a+(b||0),0) / 7;
 
-
-
-// 🌡️ temperatura
 let temp = temps.reduce((a,b)=>a+b,0)/(temps.length||1);
 
 
 
-// 🍄 START
 let chance = 30;
 
 
 
-// 🌧️ wilgoć (30 dni + 7 dni ważone)
 if(avgRain > 4 && rain7 > 5){
 chance += 35;
 }
@@ -261,9 +233,6 @@ else{
 chance -= 20;
 }
 
-
-
-// 🔥 SUSZA REALNA
 if(avgRain < 2 && rain7 < 2){
 chance -= 35;
 }
@@ -271,9 +240,6 @@ else if(avgRain < 3){
 chance -= 15;
 }
 
-
-
-// 🌡️ temperatura (ważna dla grzybów)
 if(temp >= 10 && temp <= 22){
 chance += 15;
 }
@@ -286,9 +252,6 @@ if(temp > 28){
 chance -= 20;
 }
 
-
-
-// 🌱 SEZON
 let month = new Date().getMonth()+1;
 
 if(month===9 || month===10){
@@ -303,9 +266,6 @@ if(month===12 || month===1 || month===2){
 chance -= 25;
 }
 
-
-
-// clamp
 if(chance > 95) chance = 95;
 if(chance < 5) chance = 5;
 
@@ -317,17 +277,12 @@ document.getElementById("forestRain").innerText =
 document.getElementById("forestChance").innerText =
 "🍄 Szansa: " + Math.round(chance) + "%";
 
-
-
 }
 
 catch(e){
-
 console.log(e);
-
 document.getElementById("forestRain").innerText =
 "🌧️ Brak danych";
-
 }
 
 }
@@ -335,10 +290,6 @@ document.getElementById("forestRain").innerText =
 
 
 
-
-
-
-// 🔥 ZAMYKANIE PANELU
 
 document.addEventListener("click",(e)=>{
 
