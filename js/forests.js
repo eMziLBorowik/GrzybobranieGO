@@ -68,26 +68,34 @@ const data = JSON.parse(text);
 // 🧠 RENDER
 data.elements.forEach(el=>{
 
-if(!el.geometry) return;
+// 🚫 brak geometrii = skip
+if(!el || !el.geometry || !Array.isArray(el.geometry)) return;
 
-// 🚫 BLOKADA ULIC / DRÓG
+// 🚫 drogi
 if(el.tags?.highway) return;
 
-const pts = el.geometry.map(p=>[p.lat,p.lon]);
+// 🔥 bezpieczne punkty
+const pts = el.geometry
+.filter(p => p && typeof p.lat === "number" && typeof p.lon === "number")
+.map(p => [p.lat, p.lon]);
 
-if(pts.length < 3) return;
+if(pts.length < 4) return;
 
-
-let poly = L.polygon(pts,{
+// 🔥 WAŻNE: stabilny polygon (Leaflet fix)
+let poly;
+try{
+poly = L.polygon(pts,{
 color:"#2e8b57",
 fillColor:"#3cb371",
 fillOpacity:0.25,
 weight:2
 }).addTo(map);
-
+}catch(err){
+console.log("polygon skip:", err);
+return;
+}
 
 forests.push(poly);
-
 
 poly.on("click",(e)=>{
 L.DomEvent.stopPropagation(e);
@@ -99,7 +107,6 @@ showForestInfo(el,pts);
 
 document.getElementById("forestStatus").innerText =
 "🌲 Lasy i parki gotowe";
-
 
 }
 
@@ -124,7 +131,6 @@ panel.style.display="block";
 
 
 // 🌲 NAZWA
-
 let name = "🌲 Teren zielony";
 
 if(el.tags){
@@ -147,7 +153,6 @@ name = "🌲 " + el.tags.short_name;
 
 document.getElementById("forestName").innerText = name;
 
-
 document.getElementById("forestRain").innerText = "🌧️ Sprawdzanie...";
 document.getElementById("forestChance").innerText = "🍄 Liczenie...";
 
@@ -158,7 +163,6 @@ let lng = pts[0][1];
 
 try{
 
-// 🌧️ 30 DNI
 let r = await fetch(
 `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=precipitation_sum,temperature_2m_max&past_days=30&timezone=auto`
 );
@@ -169,7 +173,6 @@ let rains = d.daily.precipitation_sum || [];
 let temps = d.daily.temperature_2m_max || [];
 
 
-
 // 🌧️ SUSZA + WILGOĆ
 let rain30 = rains.reduce((a,b)=>a+(b||0),0);
 let avgRain = rain30 / 30;
@@ -177,15 +180,12 @@ let avgRain = rain30 / 30;
 let rain7 = rains.slice(-7).reduce((a,b)=>a+(b||0),0) / 7;
 
 
-
 // 🌡️ TEMP
 let temp = temps.reduce((a,b)=>a+b,0)/(temps.length||1);
 
 
-
 // 🍄 START
 let chance = 30;
-
 
 
 // 🌧️ wilgoć
@@ -200,7 +200,6 @@ chance -= 25;
 }
 
 
-
 // 🔥 SUSZA REALNA
 if(avgRain < 2 && rain7 < 2){
 chance -= 35;
@@ -208,7 +207,6 @@ chance -= 35;
 else if(avgRain < 3){
 chance -= 15;
 }
-
 
 
 // 🌡️ temperatura
@@ -221,7 +219,6 @@ chance -= 15;
 if(temp > 28){
 chance -= 20;
 }
-
 
 
 // 🌱 SEZON
@@ -238,11 +235,9 @@ chance -= 25;
 }
 
 
-
 // clamp
 if(chance > 95) chance = 95;
 if(chance < 5) chance = 5;
-
 
 
 document.getElementById("forestRain").innerText =
@@ -265,7 +260,6 @@ document.getElementById("forestRain").innerText =
 
 
 // 🔥 ZAMYKANIE PANELU
-
 document.addEventListener("click",(e)=>{
 
 const panel = document.getElementById("forestInfoPanel");
