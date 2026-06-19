@@ -5,33 +5,35 @@ let lastForestRequest = 0;
 
 
 
-function isUrban(el){
+// 🚫 NOWY LEPSZY FILTR (zamiast isUrban)
+function isBadForest(el, pts){
 
-if(!el.tags) return false;
+if(!el.tags) return true;
 
-const t = el.tags;
+// 🌆 miejskie tereny zielone
+const urbanGreen = [
+"park",
+"garden",
+"grass",
+"village_green",
+"recreation_ground",
+"meadow"
+];
 
-// 🚫 typowe miejskie obszary
-if(
-t.landuse === "residential" ||
-t.landuse === "industrial" ||
-t.landuse === "commercial" ||
-t.landuse === "retail" ||
-t.landuse === "construction"
-) return true;
+if(urbanGreen.includes(el.tags.leisure)) return true;
 
-// 🚫 parkingi i zabudowa
-if(
-t.amenity === "parking" ||
-t.building
-) return true;
+// 🚫 za małe obiekty = skwery / patche miasta
+if(pts.length < 25) return true;
 
-// 🚫 centra miejscowości
-if(
-t.place === "city" ||
-t.place === "town" ||
-t.place === "village"
-) return true;
+// 🚫 pseudo-lasy w mieście
+if(el.tags.landuse === "forest" && pts.length < 40){
+return true;
+}
+
+// 🚫 place = centrum miasta/wsi
+if(el.tags.place){
+return true;
+}
 
 return false;
 }
@@ -101,13 +103,11 @@ data.elements.forEach(el=>{
 
 if(!el.geometry) return;
 
-// 🚫 NOWE: filtr miast
-if(isUrban(el)) return;
-
-
-
 const pts =
 el.geometry.map(p=>[p.lat,p.lon]);
+
+// 🚫 FILTR KLUCZOWY (usuwa miasta ze screena)
+if(isBadForest(el, pts)) return;
 
 if(pts.length < 3) return;
 
@@ -140,8 +140,6 @@ document.getElementById("forestStatus").innerText =
 }
 
 }
-
-
 
 
 
