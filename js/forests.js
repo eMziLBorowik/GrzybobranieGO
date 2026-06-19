@@ -1,7 +1,8 @@
 let forests = [];
 
-// ⏳ COOLDOWN (NAPRAWA 429)
+// ⏳ COOLDOWN
 let lastForestRequest = 0;
+
 
 
 async function loadForests(lat, lng){
@@ -36,7 +37,7 @@ relation["boundary"="protected_area"](around:15000,${lat},${lng});
 
 relation["protect_class"](around:15000,${lat},${lng});
 
-relation["name"~"Park Krajobrazowy"](around:15000,${lat},${lng});
+relation["name"~"Park|Krajobrazowy|Rezerwat"](around:15000,${lat},${lng});
 
 );
 
@@ -65,8 +66,7 @@ const res = await fetch(url);
 
 if(res.status === 429){
 
-console.warn("⚠️ Overpass limit - retry za 10s");
-
+console.warn("⚠️ Overpass limit");
 
 setTimeout(()=>{
 
@@ -89,17 +89,15 @@ if(!text.startsWith("{")){
 
 
 console.error(
-"❌ Overpass error response:",
+"❌ Overpass error:",
 text
 );
-
 
 
 document.getElementById(
 "forestStatus"
 ).innerText =
-"❌ Błąd lasów (API)";
-
+"❌ Błąd lasów";
 
 
 return;
@@ -213,6 +211,8 @@ document.getElementById(
 
 
 
+
+
 async function showForestInfo(el,pts){
 
 
@@ -228,7 +228,9 @@ panel.style.display="block";
 
 
 
-// 🌲 NAZWA LASU / PARKU
+
+
+// 🌲 NAZWA
 
 let name =
 "🌲 Teren zielony";
@@ -254,6 +256,14 @@ name =
 }
 
 
+else if(el.tags.protected_name){
+
+name =
+"🌲 " + el.tags.protected_name;
+
+}
+
+
 else if(el.tags.short_name){
 
 name =
@@ -273,6 +283,8 @@ name;
 
 
 
+
+
 document.getElementById(
 "forestRain"
 ).innerText =
@@ -289,9 +301,12 @@ document.getElementById(
 
 
 
-let lat = pts[0][0];
+let lat =
+pts[0][0];
 
-let lng = pts[0][1];
+let lng =
+pts[0][1];
+
 
 
 
@@ -299,10 +314,12 @@ let lng = pts[0][1];
 try{
 
 
+// 🌧️ 30 DNI HISTORII
+
 let r =
 await fetch(
 
-`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=precipitation_sum,temperature_2m_max&past_days=7&timezone=auto`
+`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=precipitation_sum,temperature_2m_max&past_days=30&timezone=auto`
 
 );
 
@@ -315,12 +332,22 @@ await r.json();
 
 
 
-// 🌧️ OPADY
+let rains =
+d.daily.precipitation_sum || [];
+
+
+
+let temps =
+d.daily.temperature_2m_max || [];
+
+
+
+
+
+// suma deszczu
 
 let rain =
-(d.daily.precipitation_sum || [])
-
-.reduce(
+rains.reduce(
 (a,b)=>a+(b||0),
 0
 );
@@ -329,44 +356,52 @@ let rain =
 
 
 
-// 🌡️ TEMPERATURA
+// średnia temperatura
 
 let temp =
-(d.daily.temperature_2m_max || [])
-
-.reduce(
+temps.reduce(
 (a,b)=>a+b,
 0
 )
 /
-(d.daily.temperature_2m_max.length || 1);
+(temps.length || 1);
 
 
 
 
 
-// 🍄 SZANSA
+// średnia dzienna wilgotność terenu
 
-let chance = 30;
+let avgRain =
+rain / 30;
 
 
 
 
-// deszcz
 
-if(rain > 40){
+// 🍄 SZANSA START
 
-chance += 40;
+let chance = 35;
+
+
+
+
+
+// 🌧️ OPADY 30 DNI
+
+if(avgRain > 5){
+
+chance += 35;
 
 }
 
-else if(rain > 20){
+else if(avgRain > 2){
 
-chance += 25;
+chance += 15;
 
 }
 
-else if(rain < 10){
+else{
 
 chance -= 25;
 
@@ -376,11 +411,17 @@ chance -= 25;
 
 
 
-// SUSZA
+// 🔥 SUSZA
 
-if(rain < 5){
+if(avgRain < 1){
 
-chance -= 20;
+chance -= 30;
+
+}
+
+else if(avgRain < 2){
+
+chance -= 15;
 
 }
 
@@ -395,25 +436,27 @@ new Date().getMonth()+1;
 
 
 
-// najlepszy sezon
-
-if(month===9 || month===10){
+if(
+month===9 ||
+month===10
+){
 
 chance += 25;
 
 }
 
 
-// lato
 
-if(month===7 || month===8){
+if(
+month===7 ||
+month===8
+){
 
 chance -= 10;
 
 }
 
 
-// zima
 
 if(
 month===12 ||
@@ -421,20 +464,22 @@ month===1 ||
 month===2
 ){
 
-chance -= 20;
+chance -= 25;
 
 }
 
 
 
 
-// temperatura
+
+// 🌡️ temperatura
 
 if(temp < 5){
 
 chance -= 10;
 
 }
+
 
 
 if(temp > 28){
@@ -447,13 +492,14 @@ chance -= 15;
 
 
 
-// ograniczenie
+// limity
 
 if(chance > 95){
 
 chance = 95;
 
 }
+
 
 
 if(chance < 5){
@@ -466,12 +512,15 @@ chance = 5;
 
 
 
+
 document.getElementById(
 "forestRain"
 ).innerText =
-"🌧️ Opady: " +
+
+"🌧️ 30 dni: " +
 rain.toFixed(1) +
 " mm";
+
 
 
 
@@ -479,8 +528,9 @@ rain.toFixed(1) +
 document.getElementById(
 "forestChance"
 ).innerText =
+
 "🍄 Szansa: " +
-chance +
+Math.round(chance) +
 "%";
 
 
@@ -490,6 +540,9 @@ chance +
 
 
 catch(e){
+
+
+console.log(e);
 
 
 document.getElementById(
@@ -510,7 +563,9 @@ document.getElementById(
 
 
 
-// 🔥 ZAMYKANIE INFORMACJI O LESIE
+
+
+// 🔥 ZAMYKANIE PANELU
 
 document.addEventListener(
 "click",
@@ -542,7 +597,6 @@ return;
 
 
 panel.style.display="none";
-
 
 
 });
