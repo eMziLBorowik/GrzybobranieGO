@@ -19,6 +19,7 @@ const q = `
 [out:json];
 
 (
+  // 🌲 LASY
   way["landuse"="forest"](around:15000,${lat},${lng});
   relation["landuse"="forest"](around:15000,${lat},${lng});
 
@@ -28,13 +29,17 @@ const q = `
   way["natural"="scrub"](around:15000,${lat},${lng});
   relation["natural"="scrub"](around:15000,${lat},${lng});
 
-  way["leisure"="park"](around:15000,${lat},${lng});
-  relation["leisure"="park"](around:15000,${lat},${lng});
 
+  // 🟢 PARKI NARODOWE
+  relation["boundary"="national_park"](around:15000,${lat},${lng});
+
+
+  // 🟢 REZERWATY + PARKI KRAJOBRAZOWE (PEWNE TAGI)
   relation["boundary"="protected_area"](around:15000,${lat},${lng});
-  relation["protect_class"](around:15000,${lat},${lng});
+  relation["protect_class"~"2|3"](around:15000,${lat},${lng});
 
-  relation["name"~"Park|Krajobrazowy|Rezerwat"](around:15000,${lat},${lng});
+  relation["protection_title"~"Rezerwat|Park Krajobrazowy|Park Narodowy"](around:15000,${lat},${lng});
+  relation["name"~"Rezerwat|Park Krajobrazowy|Park Narodowy"](around:15000,${lat},${lng});
 );
 
 out geom;
@@ -78,10 +83,13 @@ data.elements.forEach(el=>{
 
 if(!el || !el.geometry || !Array.isArray(el.geometry)) return;
 
-// 🚫 DROGI + MIASTA + ŚMIECI
+// 🚫 ŚMIECI
 if(el.tags?.highway) return;
 if(el.tags?.building) return;
 if(el.tags?.amenity) return;
+
+// 🚫 TYLKO MIEJSKIE PARKI WYŁĄCZAMY
+if(el.tags?.leisure === "park" && !el.tags?.boundary) return;
 
 if(el.tags?.landuse === "residential") return;
 if(el.tags?.landuse === "industrial") return;
@@ -99,14 +107,14 @@ const pts = el.geometry
 if(pts.length < 3) return;
 
 
-// 📏 minimalny filtr (dużo lżejszy niż wcześniej)
+// 📏 minimalny filtr (małe lasy zostają!)
 let area = 0;
 for(let i=0;i<pts.length-1;i++){
 area += pts[i][0] * pts[i+1][1] - pts[i+1][0] * pts[i][1];
 }
 area = Math.abs(area);
 
-// tylko bardzo mikro śmieci
+// tylko mikro-śmieci
 if(area < 0.00001) return;
 
 
@@ -134,7 +142,7 @@ showForestInfo(el,pts);
 
 
 document.getElementById("forestStatus").innerText =
-"🌲 Lasy i parki gotowe";
+"🌲 Lasy, parki i rezerwaty gotowe";
 
 }
 
@@ -145,165 +153,3 @@ document.getElementById("forestStatus").innerText =
 }
 
 }
-
-
-
-
-async function showForestInfo(el,pts){
-
-
-let panel = document.getElementById("forestInfoPanel");
-
-panel.style.display="block";
-
-
-
-// 🌲 NAZWA
-let name = "🌲 Teren zielony";
-
-if(el.tags){
-
-if(el.tags.name){
-name = "🌲 " + el.tags.name;
-}
-else if(el.tags.official_name){
-name = "🌲 " + el.tags.official_name;
-}
-else if(el.tags.protected_name){
-name = "🌲 " + el.tags.protected_name;
-}
-else if(el.tags.short_name){
-name = "🌲 " + el.tags.short_name;
-}
-
-}
-
-
-document.getElementById("forestName").innerText = name;
-
-document.getElementById("forestRain").innerText = "🌧️ Sprawdzanie...";
-document.getElementById("forestChance").innerText = "🍄 Liczenie...";
-
-
-let lat = pts[0][0];
-let lng = pts[0][1];
-
-
-try{
-
-let r = await fetch(
-`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=precipitation_sum,temperature_2m_max&past_days=30&timezone=auto`
-);
-
-let d = await r.json();
-
-let rains = d.daily.precipitation_sum || [];
-let temps = d.daily.temperature_2m_max || [];
-
-
-// 🌧️ SUSZA + WILGOĆ
-let rain30 = rains.reduce((a,b)=>a+(b||0),0);
-let avgRain = rain30 / 30;
-
-let rain7 = rains.slice(-7).reduce((a,b)=>a+(b||0),0) / 7;
-
-
-// 🌡️ TEMP
-let temp = temps.reduce((a,b)=>a+b,0)/(temps.length||1);
-
-
-// 🍄 START
-let chance = 30;
-
-
-// 🌧️ wilgoć
-if(avgRain > 4 && rain7 > 5){
-chance += 35;
-}
-else if(avgRain > 2){
-chance += 15;
-}
-else{
-chance -= 25;
-}
-
-
-// 🔥 SUSZA REALNA
-if(avgRain < 2 && rain7 < 2){
-chance -= 35;
-}
-else if(avgRain < 3){
-chance -= 15;
-}
-
-
-// 🌡️ temperatura
-if(temp >= 10 && temp <= 22){
-chance += 15;
-}
-if(temp < 5){
-chance -= 15;
-}
-if(temp > 28){
-chance -= 20;
-}
-
-
-// 🌱 SEZON
-let month = new Date().getMonth()+1;
-
-if(month===9 || month===10){
-chance += 30;
-}
-if(month===7 || month===8){
-chance -= 15;
-}
-if(month===12 || month===1 || month===2){
-chance -= 25;
-}
-
-
-// clamp
-if(chance > 95) chance = 95;
-if(chance < 5) chance = 5;
-
-
-document.getElementById("forestRain").innerText =
-"🌧️ 30 dni: " + rain30.toFixed(1) + " mm";
-
-document.getElementById("forestChance").innerText =
-"🍄 Szansa: " + Math.round(chance) + "%";
-
-}
-
-catch(e){
-console.log(e);
-document.getElementById("forestRain").innerText =
-"🌧️ Brak danych";
-}
-
-}
-
-
-
-
-// 🔥 ZAMYKANIE PANELU
-document.addEventListener("click",(e)=>{
-
-const panel = document.getElementById("forestInfoPanel");
-
-if(!panel) return;
-
-if(panel.contains(e.target)) return;
-
-if(e.target.closest(".leaflet-interactive")) return;
-
-panel.style.display="none";
-
-});
-
-map.on("click",()=>{
-
-document.getElementById("forestInfoPanel").style.display="none";
-
-});
