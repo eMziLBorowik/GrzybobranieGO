@@ -186,7 +186,35 @@ updateStats();
 
 };
 
+const tabTrails = document.getElementById("tabTrails");
+const trailsPanel = document.getElementById("trailsPanel");
 
+tabTrails.onclick = () => {
+
+    document.getElementById("map").style.display = "none";
+
+    document.getElementById("grzybdex").style.display = "none";
+
+    trailsPanel.style.display = "block";
+};
+
+document.getElementById("tabMap").onclick = () => {
+
+    document.getElementById("map").style.display = "block";
+
+    document.getElementById("grzybdex").style.display = "none";
+
+    trailsPanel.style.display = "none";
+};
+
+document.getElementById("tabDex").onclick = () => {
+
+    document.getElementById("map").style.display = "none";
+
+    document.getElementById("grzybdex").style.display = "block";
+
+    trailsPanel.style.display = "none";
+};
 
 
 };
