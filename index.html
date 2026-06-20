@@ -18,7 +18,7 @@ href="css/style.css">
 
 <body>
 
-<!-- 🔐 LOGIN PANEL (DODANE) -->
+<!-- 🔐 LOGIN PANEL -->
 <div id="authPanel" class="authPanel">
 
   <div class="authBox">
@@ -37,6 +37,7 @@ href="css/style.css">
   </div>
 
 </div>
+
 
 <!-- GÓRNY PANEL -->
 <div class="panel">
@@ -59,17 +60,24 @@ AI + lasy + GPS
 
 </div>
 
+
 <!-- MAPA -->
 <div id="map"></div>
 
-<!-- DODAJ GRZYBA -->
+
+<!-- PRZYCISKI EKSPLORACJI -->
 <div id="actionBar">
 
-<button id="addMushroomBtn">
-🍄 Dodaj Znalezisko
+<button id="startTrackingBtn" style="display:none;">
+▶ Rozpocznij eksplorację
+</button>
+
+<button id="stopTrackingBtn" style="display:none;">
+⏹ Zakończ eksplorację
 </button>
 
 </div>
+
 
 <!-- INFORMACJE O LESIE -->
 <div id="forestInfoPanel">
@@ -79,6 +87,8 @@ AI + lasy + GPS
 <div id="forestChance">🍄 Szansa</div>
 
 </div>
+
+
 
 <!-- 🍄 GRZYBDEX -->
 <div id="grzybdex">
@@ -109,39 +119,50 @@ Brak skanu
 
 </div>
 
+
 <h2>🍄 Atlas odkryć</h2>
 
 <div id="atlas"></div>
 
+
 <div class="card">
 
 📊 Statystyki
+
 <div id="stats"></div>
 
 </div>
 
+
 <div class="card">
 
 ⚠️ Ostrzeżenia
+
 <div id="warnings"></div>
 
 </div>
-<!-- 🌲 EKSPLORACJA -->
+
+
+</div>
+
+
+
+<!-- 🌲 EKSPLORACJA LASÓW -->
 <div id="trailsPanel" style="display:none;">
 
 <h2>🌲 Eksploracja lasów</h2>
 
+
 <div class="card">
 
-<button id="startTrackingBtn">
-▶ Rozpocznij eksplorację
-</button>
+<h3>GPS Tracker</h3>
 
-<button id="stopTrackingBtn">
-⏹ Zakończ eksplorację
-</button>
+<p>
+Rozpocznij zapis swojej trasy w lesie.
+</p>
 
 </div>
+
 
 <div class="card">
 
@@ -153,42 +174,73 @@ Brak zapisanych tras
 
 </div>
 
+
 </div>
-</div>
+
+
 
 <!-- DOLNE MENU -->
 <div class="bottomMenu">
 
-<div id="tabMap">🗺 Mapa</div>
+<div id="tabMap">
+🗺 Mapa
+</div>
 
-<div id="tabTrails">🌲 Lasy</div>
 
-<div id="tabDex">🍄 GrzybDex</div>
+<div id="tabTrails">
+🌲 Lasy
+</div>
 
-<div>⚙</div>
+
+<div id="tabDex">
+🍄 GrzybDex
+</div>
+
+
+<div>
+⚙
+</div>
 
 </div>
 
+
+
 <!-- BIBLIOTEKI -->
+
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
 <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
 
+
 <!-- SUPABASE -->
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+
 <!-- TWOJE PLIKI -->
+
 <script src="js/supabase.js"></script>
+
 <script src="js/auth.js"></script>
 
 <script src="js/login.js"></script>
 
+
 <script src="js/map.js?v=2"></script>
+
 <script src="js/weather.js?v=2"></script>
+
 <script src="js/forests.js?v=2"></script>
+
 <script src="js/mushrooms.js?v=2"></script>
+
 <script src="js/grzybdex.js?v=2"></script>
+
 <script src="js/stats.js?v=2"></script>
+
 <script src="js/app.js?v=2"></script>
 
+
 </body>
+
 </html>
