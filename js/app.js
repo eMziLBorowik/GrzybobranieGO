@@ -189,111 +189,32 @@ updateStats();
 const tabTrails = document.getElementById("tabTrails");
 const trailsPanel = document.getElementById("trailsPanel");
 
-const startBtn = document.getElementById("startTrackingBtn");
-const stopBtn = document.getElementById("stopTrackingBtn");
-
-
-// ZAKŁADKA LASY
-
-if(tabTrails){
-
 tabTrails.onclick = () => {
-
-
-    document.getElementById("forestInfoPanel").style.display="none";
-
 
     document.getElementById("map").style.display = "none";
 
     document.getElementById("grzybdex").style.display = "none";
 
-
     trailsPanel.style.display = "block";
-
-
-    // pokazujemy przyciski
-
-    startBtn.style.display="block";
-
-    stopBtn.style.display="block";
-
-
 };
-
-}
-
-
-
-// MAPA
 
 document.getElementById("tabMap").onclick = () => {
 
-
     document.getElementById("map").style.display = "block";
-
 
     document.getElementById("grzybdex").style.display = "none";
 
-
     trailsPanel.style.display = "none";
-
-
-    startBtn.style.display="none";
-
-    stopBtn.style.display="none";
-
-
-    setTimeout(()=>{
-
-        map.invalidateSize();
-
-    },300);
-
-
 };
-
-
-
-// GRZYBDEX
 
 document.getElementById("tabDex").onclick = () => {
 
-
-    document.getElementById("forestInfoPanel").style.display="none";
-
-
     document.getElementById("map").style.display = "none";
-
 
     document.getElementById("grzybdex").style.display = "block";
 
-
     trailsPanel.style.display = "none";
-
-
-    startBtn.style.display="none";
-
-    stopBtn.style.display="none";
-
-
-    updateStats();
-
-
 };
 
-
-
-// TESTOWE PRZYCISKI
-
-startBtn.onclick = ()=>{
-
-alert("🌲 Start eksploracji");
-
-};
-
-
-stopBtn.onclick = ()=>{
-
-alert("⏹ Koniec eksploracji");
 
 };
