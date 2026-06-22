@@ -416,7 +416,6 @@ showSavedRoutes();
 function updateRouteTime(){
 
 
-
 if(!routeStartTime)
 return;
 
@@ -424,8 +423,18 @@ return;
 
 let sec =
 Math.floor(
-(new Date()-routeStartTime)/1000
+(Date.now()-routeStartTime)/1000
 );
+
+
+
+let min =
+Math.floor(sec / 60);
+
+
+
+let seconds =
+sec % 60;
 
 
 
@@ -433,15 +442,11 @@ document.getElementById(
 "routeTime"
 )
 .innerText =
-Math.floor(sec/60)+" min";
 
+min + " min " + seconds + " s";
 
 
 }
-
-
-
-
 
 
 
