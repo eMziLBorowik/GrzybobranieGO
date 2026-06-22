@@ -14,6 +14,9 @@ let routeTimer = null;
 
 let routeDistance = 0;
 
+let routeMarker = null;
+
+
 
 
 
@@ -44,7 +47,7 @@ if(userLat && userLng){
 
 routeMap.setView(
 [userLat,userLng],
-16
+17
 );
 
 
@@ -70,7 +73,32 @@ routeMap.invalidateSize();
 
 
 
+
+
+// 📍 pinezka aktualnej pozycji
+
+routeMarker = L.marker(
+[userLat,userLng],
+{
+icon:L.divIcon({
+
+className:"gpsMarker",
+
+html:"📍",
+
+iconSize:[35,35]
+
+})
+
 }
+)
+.addTo(routeMap);
+
+
+
+}
+
+
 
 
 
@@ -126,6 +154,7 @@ initRouteMap();
 
 
 
+
 const start =
 document.getElementById("startRouteBtn");
 
@@ -136,6 +165,10 @@ document.getElementById("pauseRouteBtn");
 
 const end =
 document.getElementById("endRouteBtn");
+
+
+const center =
+document.getElementById("centerRouteBtn");
 
 
 
@@ -150,7 +183,6 @@ start.onclick=()=>{
 startRoute();
 
 
-
 start.style.display="none";
 
 pause.style.display="block";
@@ -158,11 +190,11 @@ pause.style.display="block";
 end.style.display="block";
 
 
-
 };
 
 
 }
+
 
 
 
@@ -186,7 +218,6 @@ routePaused ?
 "⏸ Pauza";
 
 
-
 };
 
 
@@ -205,7 +236,6 @@ end.onclick=()=>{
 endRoute();
 
 
-
 start.style.display="block";
 
 pause.style.display="none";
@@ -219,6 +249,33 @@ end.style.display="none";
 }
 
 
+
+
+
+// 🎯 CENTROWANIE
+
+if(center){
+
+
+center.onclick=()=>{
+
+
+if(userLat && userLng){
+
+
+routeMap.setView(
+[userLat,userLng],
+17
+);
+
+
+}
+
+
+};
+
+
+}
 
 
 
@@ -242,7 +299,9 @@ initRouteMap();
 
 routePoints=[];
 
+
 routeDistance=0;
+
 
 
 routeStartTime =
@@ -252,6 +311,7 @@ new Date();
 
 routeRunning=true;
 
+
 routePaused=false;
 
 
@@ -260,9 +320,13 @@ routeLine =
 L.polyline(
 [],
 {
-color:"#00ff66",
-weight:5
+
+color:"red",
+
+weight:6
+
 }
+
 )
 .addTo(routeMap);
 
@@ -277,25 +341,6 @@ updateRouteTime,
 
 
 }
-
-
-
-
-
-
-
-
-
-function pauseRoute(){
-
-
-routePaused =
-!routePaused;
-
-
-}
-
-
 
 
 
@@ -427,10 +472,14 @@ routePoints.length;
 
 
 
-routeMap.setView(
-point,
-16
-);
+
+// przesuwanie pinezki
+
+if(routeMarker){
+
+routeMarker.setLatLng(point);
+
+}
 
 
 
@@ -442,9 +491,7 @@ point,
 
 
 
-
 // GPS co 15 sekund
-
 
 setInterval(()=>{
 
@@ -459,6 +506,7 @@ addRoutePoint(
 userLat,
 userLng
 );
+
 
 
 }
