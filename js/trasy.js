@@ -18,6 +18,14 @@ let routeMarker = null;
 
 
 
+let savedRoutes =
+JSON.parse(
+localStorage.getItem("savedRoutes")
+) || [];
+
+
+
+
 
 
 function initRouteMap(){
@@ -44,24 +52,22 @@ maxZoom:19
 
 if(userLat && userLng){
 
-
 routeMap.setView(
 [userLat,userLng],
 17
 );
 
-
 }
 else{
 
-
 routeMap.setView(
-[52.0,19.0],
+[52,19],
 6
 );
 
-
 }
+
+
 
 
 
@@ -75,22 +81,23 @@ routeMap.invalidateSize();
 
 
 
-// 📍 pinezka aktualnej pozycji
-
-routeMarker = L.marker(
+routeMarker =
+L.marker(
 [userLat,userLng],
 {
+
 icon:L.divIcon({
 
 className:"gpsMarker",
 
 html:"📍",
 
-iconSize:[35,35]
+iconSize:[45,45]
 
 })
 
 }
+
 )
 .addTo(routeMap);
 
@@ -111,7 +118,6 @@ document.addEventListener(
 ()=>{
 
 
-
 const tab =
 document.getElementById("tabTrails");
 
@@ -125,9 +131,7 @@ tab.onclick=()=>{
 
 document.getElementById("map").style.display="none";
 
-
 document.getElementById("grzybdex").style.display="none";
-
 
 document.getElementById("trailsPanel").style.display="block";
 
@@ -135,10 +139,9 @@ document.getElementById("trailsPanel").style.display="block";
 
 setTimeout(()=>{
 
-
 initRouteMap();
 
-
+showSavedRoutes();
 
 },300);
 
@@ -146,10 +149,7 @@ initRouteMap();
 
 };
 
-
 }
-
-
 
 
 
@@ -194,7 +194,6 @@ end.style.display="block";
 
 
 }
-
 
 
 
@@ -252,8 +251,6 @@ end.style.display="none";
 
 
 
-// 🎯 CENTROWANIE
-
 if(center){
 
 
@@ -262,12 +259,10 @@ center.onclick=()=>{
 
 if(userLat && userLng){
 
-
 routeMap.setView(
 [userLat,userLng],
 17
 );
-
 
 }
 
@@ -289,6 +284,7 @@ routeMap.setView(
 
 
 
+
 function startRoute(){
 
 
@@ -299,18 +295,14 @@ initRouteMap();
 
 routePoints=[];
 
-
 routeDistance=0;
-
 
 
 routeStartTime =
 new Date();
 
 
-
 routeRunning=true;
-
 
 routePaused=false;
 
@@ -339,8 +331,8 @@ updateRouteTime,
 );
 
 
-
 }
+
 
 
 
@@ -358,8 +350,60 @@ routeRunning=false;
 clearInterval(routeTimer);
 
 
+
+let time =
+Math.floor(
+(new Date()-routeStartTime)/1000
+);
+
+
+
+if(routePoints.length > 1){
+
+
+let save = {
+
+
+date:
+new Date()
+.toLocaleString(),
+
+
+points:
+routePoints,
+
+
+distance:
+Math.round(routeDistance),
+
+
+time:time
+
+
+};
+
+
+
+savedRoutes.unshift(save);
+
+
+
+localStorage.setItem(
+"savedRoutes",
+JSON.stringify(savedRoutes)
+);
+
+
+
+showSavedRoutes();
+
+
 }
 
+
+
+
+}
 
 
 
@@ -411,7 +455,6 @@ if(!routeRunning)
 return;
 
 
-
 if(routePaused)
 return;
 
@@ -430,6 +473,7 @@ routePoints.push(point);
 
 
 routeLine.addLatLng(point);
+
 
 
 
@@ -464,17 +508,6 @@ Math.round(routeDistance)+" m";
 
 
 
-document.getElementById(
-"routePoints"
-)
-.innerText =
-routePoints.length;
-
-
-
-
-// przesuwanie pinezki
-
 if(routeMarker){
 
 routeMarker.setLatLng(point);
@@ -482,7 +515,6 @@ routeMarker.setLatLng(point);
 }
 
 
-
 }
 
 
@@ -491,15 +523,13 @@ routeMarker.setLatLng(point);
 
 
 
-// GPS co 15 sekund
+
+
 
 setInterval(()=>{
 
 
-if(
-userLat &&
-userLng
-){
+if(userLat && userLng){
 
 
 addRoutePoint(
@@ -508,9 +538,204 @@ userLng
 );
 
 
+}
+
+
+},15000);
+
+
+
+
+
+
+
+
+
+function showSavedRoutes(){
+
+
+let box =
+document.getElementById(
+"routesList"
+);
+
+
+if(!box)
+return;
+
+
+
+if(savedRoutes.length===0){
+
+box.innerHTML =
+"Brak zapisanych tras";
+
+return;
 
 }
 
 
 
-},15000);
+box.innerHTML="";
+
+
+
+savedRoutes.forEach((r,i)=>{
+
+
+let div =
+document.createElement("div");
+
+
+div.className="card";
+
+
+div.innerHTML =
+
+`
+🥾 Trasa ${i+1}
+
+<br>
+
+📅 ${r.date}
+
+<br>
+
+📏 ${r.distance} m
+
+<br>
+
+⏱ ${Math.floor(r.time/60)} min
+
+<br><br>
+
+<button>
+Pokaż trasę
+</button>
+
+`;
+
+
+
+div.querySelector("button")
+.onclick=()=>showSavedRoute(r);
+
+
+
+box.appendChild(div);
+
+
+
+});
+
+
+}
+
+
+
+
+
+
+
+
+
+function showSavedRoute(r){
+
+
+
+let old =
+document.getElementById(
+"routePreview"
+);
+
+
+
+if(old)
+old.remove();
+
+
+
+
+let box =
+document.createElement("div");
+
+box.id="routePreview";
+
+
+box.innerHTML=
+
+`
+
+<h3>🥾 Zapisana trasa</h3>
+
+📅 ${r.date}
+
+<br>
+
+📏 ${r.distance} m
+
+<br>
+
+⏱ ${Math.floor(r.time/60)} min
+
+
+<div id="previewMap"></div>
+
+
+<button id="closePreview">
+❌ Zamknij
+</button>
+
+
+`;
+
+
+
+document.body.appendChild(box);
+
+
+
+let m =
+L.map("previewMap");
+
+
+
+L.tileLayer(
+"https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+)
+.addTo(m);
+
+
+
+let line =
+L.polyline(
+r.points,
+{
+
+color:"red",
+
+weight:6
+
+}
+)
+.addTo(m);
+
+
+
+m.fitBounds(
+line.getBounds()
+);
+
+
+
+document.getElementById(
+"closePreview"
+)
+.onclick=()=>{
+
+box.remove();
+
+};
+
+
+}
