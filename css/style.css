@@ -749,12 +749,12 @@ transform:translate(-5px,-5px);
 position: absolute;
 
 right: 20px;
-bottom: 160px;
+bottom: 180px;
 
 z-index: 5000;
 
 width: 52px;
-height: 52px;
+height: 60px;
 
 border-radius: 50%;
 
