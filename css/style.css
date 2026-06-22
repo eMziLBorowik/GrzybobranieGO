@@ -631,30 +631,83 @@ margin-top: 8px;
 }
 
 
-/* 🌲 EKSPLORACJA LASÓW */
+/* 🥾 TRASY */
 
 #trailsPanel{
 
-display:none;
-
-position:absolute;
-
-top:90px;
-
-bottom:70px;
-
-left:10px;
-
-right:10px;
-
 background:#1b2417;
 
-color:white;
+}
+
+
+.routeBox{
+
+background:#162013;
+
+border-radius:18px;
 
 padding:15px;
 
-overflow-y:auto;
+box-shadow:0 5px 20px #000;
 
-z-index:2500;
+}
+
+
+
+.routeMap{
+
+height:250px;
+
+border-radius:15px;
+
+overflow:hidden;
+
+margin-bottom:15px;
+
+}
+
+
+
+.routeStats{
+
+display:grid;
+
+grid-template-columns:1fr 1fr;
+
+gap:10px;
+
+}
+
+
+
+.routeStat{
+
+background:#203719;
+
+padding:12px;
+
+border-radius:12px;
+
+text-align:center;
+
+}
+
+
+
+.routeButtons{
+
+display:flex;
+
+gap:10px;
+
+margin-top:15px;
+
+}
+
+
+
+.routeButtons button{
+
+flex:1;
 
 }
