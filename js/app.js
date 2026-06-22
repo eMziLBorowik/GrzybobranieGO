@@ -138,6 +138,12 @@ document.getElementById(
 
 
 
+document.getElementById(
+"trailsPanel"
+).style.display="none";
+
+
+
 setTimeout(()=>{
 
 map.invalidateSize();
@@ -161,7 +167,6 @@ document.getElementById(
 
 
 
-// chowamy informacje o lesie
 document.getElementById(
 "forestInfoPanel"
 ).style.display="none";
@@ -180,41 +185,114 @@ document.getElementById(
 
 
 
+document.getElementById(
+"trailsPanel"
+).style.display="none";
+
+
+
 updateStats();
 
 
 
 };
 
-const tabTrails = document.getElementById("tabTrails");
-const trailsPanel = document.getElementById("trailsPanel");
+
+
+
+
+// zakładka trasy
+
+
+const tabTrails =
+document.getElementById("tabTrails");
+
+
+const trailsPanel =
+document.getElementById("trailsPanel");
+
+
+
+if(tabTrails){
+
 
 tabTrails.onclick = () => {
 
-    document.getElementById("map").style.display = "none";
 
-    document.getElementById("grzybdex").style.display = "none";
+document.getElementById(
+"map"
+).style.display="none";
 
-    trailsPanel.style.display = "block";
+
+document.getElementById(
+"grzybdex"
+).style.display="none";
+
+
+trailsPanel.style.display="block";
+
+
 };
 
-document.getElementById("tabMap").onclick = () => {
 
-    document.getElementById("map").style.display = "block";
+}
 
-    document.getElementById("grzybdex").style.display = "none";
 
-    trailsPanel.style.display = "none";
+
+
+
+
+
+// 🎯 WYŚRODKOWANIE MAPY
+
+
+const centerMapBtn =
+document.getElementById(
+"centerMapBtn"
+);
+
+
+
+if(centerMapBtn){
+
+
+
+centerMapBtn.onclick=function(){
+
+
+
+if(userLat && userLng){
+
+
+
+map.setView(
+
+[userLat,userLng],
+
+16,
+
+{
+
+animate:true
+
+}
+
+);
+
+
+
+}
+
+
+
 };
 
-document.getElementById("tabDex").onclick = () => {
 
-    document.getElementById("map").style.display = "none";
 
-    document.getElementById("grzybdex").style.display = "block";
+}
 
-    trailsPanel.style.display = "none";
-};
+
+
 
 
 };
