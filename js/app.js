@@ -127,6 +127,12 @@ document.getElementById(
 
 
 document.getElementById(
+"centerMapBtn"
+).style.display="flex";
+
+
+
+document.getElementById(
 "map"
 ).style.display="block";
 
@@ -164,6 +170,12 @@ map.invalidateSize();
 document.getElementById(
 "tabDex"
 ).onclick=function(){
+
+
+
+document.getElementById(
+"centerMapBtn"
+).style.display="none";
 
 
 
@@ -217,6 +229,13 @@ if(tabTrails){
 
 
 tabTrails.onclick = () => {
+
+
+
+document.getElementById(
+"centerMapBtn"
+).style.display="none";
+
 
 
 document.getElementById(
