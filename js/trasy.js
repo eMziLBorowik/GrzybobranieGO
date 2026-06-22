@@ -1,198 +1,83 @@
-let tracking = false;
+let routeMap;
 
-let paused = false;
+let routeLine;
 
-let routePoints = [];
+let routePoints=[];
 
-let routeLine = null;
+let routeRunning=false;
 
-let routeStartTime = null;
+let routePaused=false;
 
-let routeTimer = null;
+let routeStartTime=null;
 
-let totalDistance = 0;
+let routeTimer=null;
 
-let watchRoute = null;
+let routeDistance=0;
 
 
 
 document.addEventListener("DOMContentLoaded",()=>{
 
 
-const startBtn =
-document.getElementById("startRoute");
+const tab =
+document.getElementById("tabTrails");
 
 
-const pauseBtn =
-document.getElementById("pauseRoute");
+if(tab){
 
 
-const stopBtn =
-document.getElementById("stopRoute");
+tab.onclick=()=>{
 
 
+document.getElementById("map").style.display="none";
 
-if(!startBtn)
-return;
-
-
-
-startBtn.onclick = ()=>{
+document.getElementById("grzybdex").style.display="none";
 
 
-if(tracking)
-return;
+document.getElementById("trailsPanel").style.display="block";
 
 
-
-tracking=true;
-
-paused=false;
+setTimeout(()=>{
 
 
-routePoints=[];
-
-totalDistance=0;
+if(!routeMap){
 
 
-routeStartTime =
-Date.now();
+routeMap =
+L.map("routeMiniMap");
 
 
-
-document.getElementById(
-"routeStatus"
-).innerText =
-"🟢 Trasa aktywna";
-
+L.tileLayer(
+"https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+)
+.addTo(routeMap);
 
 
-routeLine =
-L.polyline([],{
+if(userLat && userLng){
 
-color:"#ffcc00",
-
-weight:5
-
-}).addTo(map);
-
-
-
-startRouteGPS();
-
-
-
-routeTimer=setInterval(()=>{
-
-
-let sec =
-Math.floor(
-(Date.now()-routeStartTime)/1000
+routeMap.setView(
+[userLat,userLng],
+16
 );
-
-
-document.getElementById(
-"routeTime"
-).innerText =
-"⏱️ Czas: "+formatTime(sec);
-
-
-
-document.getElementById(
-"routeDistance"
-).innerText =
-"📍 Dystans: "+
-(totalDistance/1000).toFixed(2)
-+" km";
-
-
-
-},1000);
-
-
-
-};
-
-
-
-
-
-
-pauseBtn.onclick=()=>{
-
-
-if(!tracking)
-return;
-
-
-paused=!paused;
-
-
-
-if(paused){
-
-
-pauseBtn.innerText="▶️ Wznów";
-
-
-document.getElementById(
-"routeStatus"
-).innerText =
-"⏸️ Pauza";
-
-
-}else{
-
-
-pauseBtn.innerText="⏸️ Pauza";
-
-
-document.getElementById(
-"routeStatus"
-).innerText =
-"🟢 Trasa aktywna";
 
 
 }
 
 
-
-};
-
-
-
-
-
-
-
-
-stopBtn.onclick=()=>{
-
-
-tracking=false;
-
-paused=false;
-
-
-
-if(watchRoute){
-
-navigator.geolocation.clearWatch(
-watchRoute
-);
-
 }
 
 
+routeMap.invalidateSize();
 
-document.getElementById(
-"routeStatus"
-).innerText =
-"🏁 Trasa zakończona";
+
+},300);
 
 
 
 };
+
+
+}
 
 
 
@@ -205,53 +90,124 @@ document.getElementById(
 
 
 
-
-function startRouteGPS(){
-
-
-watchRoute =
-navigator.geolocation.watchPosition(
+function startRoute(){
 
 
-(pos)=>{
+routePoints=[];
+
+routeDistance=0;
+
+routeStartTime=new Date();
 
 
-if(!tracking || paused)
+routeRunning=true;
+
+routePaused=false;
+
+
+
+routeLine =
+L.polyline([],{
+
+color:"#00ff66",
+
+weight:5
+
+})
+.addTo(routeMap);
+
+
+
+routeTimer=setInterval(updateRouteTime,1000);
+
+
+
+}
+
+
+
+function pauseRoute(){
+
+routePaused=!routePaused;
+
+
+}
+
+
+
+
+
+function endRoute(){
+
+
+routeRunning=false;
+
+
+clearInterval(routeTimer);
+
+
+}
+
+
+
+
+
+function updateRouteTime(){
+
+
+if(!routeStartTime)
+return;
+
+
+let sec =
+Math.floor(
+(new Date()-routeStartTime)/1000
+);
+
+
+document.getElementById("routeTime").innerText =
+
+Math.floor(sec/60)+" min";
+
+
+}
+
+
+
+
+
+function addRoutePoint(lat,lng){
+
+
+if(!routeRunning || routePaused)
 return;
 
 
 
-let lat =
-pos.coords.latitude;
+let p=[lat,lng];
 
 
-let lng =
-pos.coords.longitude;
-
-
-
-let point =
-[lat,lng];
+routePoints.push(p);
 
 
 
-
-if(routePoints.length){
-
-
-let last =
-routePoints[
-routePoints.length-1
-];
+routeLine.addLatLng(p);
 
 
-totalDistance +=
-distance(
-last[0],
-last[1],
-lat,
-lng
-);
+
+if(routePoints.length>1){
+
+
+let a =
+routePoints[routePoints.length-2];
+
+
+let b=p;
+
+
+
+routeDistance +=
+map.distance(a,b);
 
 
 
@@ -259,97 +215,21 @@ lng
 
 
 
-
-routePoints.push(point);
-
-
-
-routeLine.setLatLngs(
-routePoints
-);
+document.getElementById("routeDistance")
+.innerText =
+Math.round(routeDistance)+" m";
 
 
 
-map.panTo(point);
+document.getElementById("routePoints")
+.innerText =
+routePoints.length;
 
 
 
-},
-
-
-
-(err)=>{
-
-
-console.log(
-"GPS trasa error",
-err
-);
-
-
-},
-
-
-{
-
-
-enableHighAccuracy:true,
-
-maximumAge:0,
-
-timeout:15000
-
-
-}
-
-
-
-);
-
-
-
-}
-
-
-
-
-
-
-
-
-function distance(lat1,lon1,lat2,lon2){
-
-
-const R=6371000;
-
-
-const dLat =
-(lat2-lat1)
-*Math.PI/180;
-
-
-const dLon =
-(lon2-lon1)
-*Math.PI/180;
-
-
-const a =
-Math.sin(dLat/2)*
-Math.sin(dLat/2)+
-
-Math.cos(lat1*Math.PI/180)*
-Math.cos(lat2*Math.PI/180)*
-
-Math.sin(dLon/2)*
-Math.sin(dLon/2);
-
-
-
-return R *
-2 *
-Math.atan2(
-Math.sqrt(a),
-Math.sqrt(1-a)
+routeMap.setView(
+p,
+16
 );
 
 
@@ -358,36 +238,84 @@ Math.sqrt(1-a)
 
 
 
+document.getElementById("startRouteBtn")
+.onclick=()=>{
+
+startRoute();
+
+document.getElementById("startRouteBtn")
+.style.display="none";
 
 
-function formatTime(sec){
+document.getElementById("pauseRouteBtn")
+.style.display="block";
 
 
-let h =
-Math.floor(sec/3600);
+document.getElementById("endRouteBtn")
+.style.display="block";
 
 
-let m =
-Math.floor(
-(sec%3600)/60
+};
+
+
+
+
+document.getElementById("pauseRouteBtn")
+.onclick=()=>{
+
+
+pauseRoute();
+
+
+document.getElementById("pauseRouteBtn")
+.innerText =
+routePaused ?
+"▶ Wznów"
+:
+"⏸ Pauza";
+
+
+};
+
+
+
+
+document.getElementById("endRouteBtn")
+.onclick=()=>{
+
+
+endRoute();
+
+
+document.getElementById("startRouteBtn")
+.style.display="block";
+
+
+document.getElementById("pauseRouteBtn")
+.style.display="none";
+
+
+document.getElementById("endRouteBtn")
+.style.display="none";
+
+
+};
+
+
+
+
+
+setInterval(()=>{
+
+
+if(userLat && userLng){
+
+addRoutePoint(
+userLat,
+userLng
 );
 
-
-let s =
-sec%60;
-
-
-
-return (
-
-h<10?"0":""
-)+h+":"+
-
-(m<10?"0":""
-)+m+":"+
-
-(s<10?"0":""
-)+s;
-
-
 }
+
+
+},15000);
