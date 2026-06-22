@@ -151,15 +151,52 @@ Brak skanu
 <div id="trailsPanel">
 
 
-<h2>🥾 Moja trasa</h2>
+<h2>🌲 Eksploracja lasów</h2>
 
 
-<div id="routeMapBox">
+
+<div class="routeBox">
+
 
 <div id="routeMiniMap"></div>
 
 
-<div id="routeButtons">
+
+<div class="routeStats">
+
+
+<div>
+⏱ Czas:
+<span id="routeTime">
+0 min
+</span>
+</div>
+
+
+<div>
+📏 Dystans:
+<span id="routeDistance">
+0 m
+</span>
+</div>
+
+
+
+<div>
+📍 Punkty:
+<span id="routePoints">
+0
+</span>
+</div>
+
+
+</div>
+
+
+
+
+
+<div class="routeButtons">
 
 
 <button id="startRouteBtn">
@@ -167,16 +204,46 @@ Brak skanu
 </button>
 
 
-<button id="pauseRouteBtn" style="display:none;">
+
+<button id="pauseRouteBtn"
+style="display:none;">
 ⏸ Pauza
 </button>
 
 
-<button id="endRouteBtn" style="display:none;">
+
+<button id="endRouteBtn"
+style="display:none;">
 ⏹ Zakończ
 </button>
 
 
+
+<button id="centerRouteBtn">
+🎯 Wyśrodkuj
+</button>
+
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+<div class="card">
+
+
+<h3>
+📋 Ostatnie trasy
+</h3>
+
+
+<div id="routesList">
+Brak zapisanych tras
 </div>
 
 
@@ -184,42 +251,7 @@ Brak skanu
 
 
 
-<div class="card routeStats">
-
-
-<h3>📊 Statystyki</h3>
-
-
-<p>
-⏱ Czas:
-<span id="routeTime">
-0 min
-</span>
-</p>
-
-
-<p>
-📍 Dystans:
-<span id="routeDistance">
-0 m
-</span>
-</p>
-
-
-<p>
-🥾 Punkty GPS:
-<span id="routePoints">
-0
-</span>
-</p>
-
-
 </div>
-
-
-
-</div>
-
 
 
 <!-- DOLNE MENU -->
