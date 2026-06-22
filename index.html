@@ -147,32 +147,75 @@ Brak skanu
 
 
 
-<!-- 🌲 EKSPLORACJA LASÓW -->
-<div id="trailsPanel" style="display:none;">
-
-<h2>🌲 Eksploracja lasów</h2>
+<!-- 🌲 TRASY -->
+<div id="trailsPanel">
 
 
-<div class="card">
+<h2>🥾 Moja trasa</h2>
 
-<h3>GPS Tracker</h3>
+
+<div id="routeMapBox">
+
+<div id="routeMiniMap"></div>
+
+
+<div id="routeButtons">
+
+
+<button id="startRouteBtn">
+▶ Start
+</button>
+
+
+<button id="pauseRouteBtn" style="display:none;">
+⏸ Pauza
+</button>
+
+
+<button id="endRouteBtn" style="display:none;">
+⏹ Zakończ
+</button>
+
+
+</div>
+
+
+</div>
+
+
+
+<div class="card routeStats">
+
+
+<h3>📊 Statystyki</h3>
+
 
 <p>
-Rozpocznij zapis swojej trasy w lesie.
+⏱ Czas:
+<span id="routeTime">
+0 min
+</span>
 </p>
 
+
+<p>
+📍 Dystans:
+<span id="routeDistance">
+0 m
+</span>
+</p>
+
+
+<p>
+🥾 Punkty GPS:
+<span id="routePoints">
+0
+</span>
+</p>
+
+
 </div>
 
-
-<div class="card">
-
-<h3>📋 Ostatnie trasy</h3>
-
-<div id="routesList">
-Brak zapisanych tras
-</div>
-
-</div>
 
 
 </div>
