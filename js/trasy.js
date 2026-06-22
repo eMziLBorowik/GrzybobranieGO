@@ -1,3 +1,4 @@
+
 let routeMap = null;
 
 let routeLine = null;
@@ -34,6 +35,45 @@ let forestGridLayer = null;
 let forestExplorationState = {};
 
 
+// ============================
+// 🧠 FIX: NORMALIZACJA ID LASU
+// ============================
+
+function normalizeForestId(forest){
+
+if(forest.id) return forest.id;
+
+if(forest.geometry && forest.geometry[0]){
+let p = forest.geometry[0][0];
+return p[0].toFixed(5) + "_" + p[1].toFixed(5);
+}
+
+return "unknown";
+
+}
+
+
+// ============================
+// 🌲 SUPABASE LOAD
+// ============================
+
+async function loadForestExploration(forestId){
+
+const { data } = await supabase
+.from("forest_exploration")
+.select("*")
+.eq("forest_id", forestId)
+.single();
+
+return data || null;
+
+}
+
+
+// ============================
+// POINT IN POLYGON
+// ============================
+
 function pointInPolygon(point, vs){
 
 let x = point[0], y = point[1];
@@ -41,7 +81,7 @@ let x = point[0], y = point[1];
 let inside = false;
 
 for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
-let xi = vs[i][0], yi = vs[i][1];
+let xi = vs[i][0], yi = vs[i][0];
 let xj = vs[j][0], yj = vs[j][1];
 
 let intersect = ((yi > y) != (yj > y)) &&
@@ -54,6 +94,10 @@ return inside;
 
 }
 
+
+// ============================
+// FIND FOREST
+// ============================
 
 function findForest(lat,lng){
 
@@ -76,7 +120,11 @@ return null;
 }
 
 
-function createForestGrid(forest){
+// ============================
+// CREATE GRID + AUTO LOAD
+// ============================
+
+async function createForestGrid(forest){
 
 if(forestGridLayer){
 forestGridLayer.remove();
@@ -84,7 +132,7 @@ forestGridLayer.remove();
 
 forestGridLayer = L.layerGroup().addTo(routeMap);
 
-let id = forest.id || "unknown";
+let id = normalizeForestId(forest);
 
 if(!forestExplorationState[id]){
 forestExplorationState[id] = {
@@ -132,15 +180,34 @@ weight:0
 }
 }
 
+
+// ============================
+// 🔄 AUTO LOAD Z SUPABASE
+// ============================
+
+let saved = await loadForestExploration(id);
+
+if(saved && saved.revealed_cells){
+
+saved.revealed_cells.forEach(k=>{
+state.revealed.add(k);
+});
+
 }
 
+}
+
+
+// ============================
+// REVEAL CELL
+// ============================
 
 function revealForestCell(lat,lng){
 
 if(!routeRunning) return;
 if(!activeForest) return;
 
-let id = activeForest.id || "unknown";
+let id = normalizeForestId(activeForest);
 
 let state = forestExplorationState[id];
 
@@ -170,11 +237,15 @@ weight:1
 }
 
 
-function saveForestExploration(){
+// ============================
+// SAVE (UPSERT - NO DUPES)
+// ============================
+
+async function saveForestExploration(){
 
 if(!activeForest) return;
 
-let id = activeForest.id || "unknown";
+let id = normalizeForestId(activeForest);
 
 let state = forestExplorationState[id];
 
@@ -184,23 +255,24 @@ let coverage =
 state.total === 0 ? 0 :
 Math.round((state.revealed.size / state.total) * 100);
 
-
-supabase
+await supabase
 .from("forest_exploration")
-.insert([{
+.upsert([{
 forest_id: id,
 coverage_percent: coverage,
 revealed_cells: Array.from(state.revealed),
 total_cells: state.total,
 date: new Date().toISOString()
-}]);
+}], {
+onConflict: "forest_id"
+});
 
 }
 
 
 
 // ============================
-// INIT MAP
+// INIT MAP (BEZ ZMIAN)
 // ============================
 
 function initRouteMap(){
@@ -570,7 +642,7 @@ let forest = findForest(lat,lng);
 
 if(forest){
 
-if(!activeForest || activeForest.id !== forest.id){
+if(!activeForest || normalizeForestId(activeForest) !== normalizeForestId(forest)){
 
 activeForest = forest;
 
