@@ -720,3 +720,42 @@ margin-top:15px;
 font-size:16px;
 
 }
+
+#routeMiniMap{
+
+height:280px;
+width:100%;
+
+border-radius:15px;
+
+overflow:hidden;
+
+}
+
+
+.gpsMarker{
+
+font-size:35px;
+
+transform:translate(-5px,-5px);
+
+}
+
+
+
+
+#centerRouteBtn{
+
+display:block;
+
+margin:10px auto 0;
+
+background:#8b2e2e;
+
+padding:10px 25px;
+
+border-radius:15px;
+
+font-size:14px;
+
+}
