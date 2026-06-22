@@ -1,26 +1,92 @@
-let routeMap;
+let routeMap = null;
 
-let routeLine;
+let routeLine = null;
 
-let routePoints=[];
+let routePoints = [];
 
-let routeRunning=false;
+let routeRunning = false;
 
-let routePaused=false;
+let routePaused = false;
 
-let routeStartTime=null;
+let routeStartTime = null;
 
-let routeTimer=null;
+let routeTimer = null;
 
-let routeDistance=0;
+let routeDistance = 0;
 
 
 
-document.addEventListener("DOMContentLoaded",()=>{
+
+function initRouteMap(){
+
+
+if(routeMap)
+return;
+
+
+
+routeMap = L.map("routeMiniMap");
+
+
+
+L.tileLayer(
+"https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+{
+maxZoom:19
+}
+)
+.addTo(routeMap);
+
+
+
+if(userLat && userLng){
+
+
+routeMap.setView(
+[userLat,userLng],
+16
+);
+
+
+}
+else{
+
+
+routeMap.setView(
+[52.0,19.0],
+6
+);
+
+
+}
+
+
+
+setTimeout(()=>{
+
+routeMap.invalidateSize();
+
+},500);
+
+
+
+}
+
+
+
+
+
+
+
+document.addEventListener(
+"DOMContentLoaded",
+()=>{
+
 
 
 const tab =
 document.getElementById("tabTrails");
+
 
 
 if(tab){
@@ -31,47 +97,120 @@ tab.onclick=()=>{
 
 document.getElementById("map").style.display="none";
 
+
 document.getElementById("grzybdex").style.display="none";
 
 
 document.getElementById("trailsPanel").style.display="block";
 
 
+
 setTimeout(()=>{
 
 
-if(!routeMap){
+initRouteMap();
 
-
-routeMap =
-L.map("routeMiniMap");
-
-
-L.tileLayer(
-"https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-)
-.addTo(routeMap);
-
-
-if(userLat && userLng){
-
-routeMap.setView(
-[userLat,userLng],
-16
-);
-
-
-}
-
-
-}
-
-
-routeMap.invalidateSize();
 
 
 },300);
 
+
+
+};
+
+
+}
+
+
+
+
+
+
+const start =
+document.getElementById("startRouteBtn");
+
+
+const pause =
+document.getElementById("pauseRouteBtn");
+
+
+const end =
+document.getElementById("endRouteBtn");
+
+
+
+
+
+if(start){
+
+
+start.onclick=()=>{
+
+
+startRoute();
+
+
+
+start.style.display="none";
+
+pause.style.display="block";
+
+end.style.display="block";
+
+
+
+};
+
+
+}
+
+
+
+
+
+if(pause){
+
+
+pause.onclick=()=>{
+
+
+routePaused =
+!routePaused;
+
+
+
+pause.innerText =
+routePaused ?
+"▶ Wznów"
+:
+"⏸ Pauza";
+
+
+
+};
+
+
+}
+
+
+
+
+
+if(end){
+
+
+end.onclick=()=>{
+
+
+endRoute();
+
+
+
+start.style.display="block";
+
+pause.style.display="none";
+
+end.style.display="none";
 
 
 };
@@ -90,14 +229,25 @@ routeMap.invalidateSize();
 
 
 
+
+
+
 function startRoute(){
+
+
+if(!routeMap)
+initRouteMap();
+
 
 
 routePoints=[];
 
 routeDistance=0;
 
-routeStartTime=new Date();
+
+routeStartTime =
+new Date();
+
 
 
 routeRunning=true;
@@ -107,31 +257,48 @@ routePaused=false;
 
 
 routeLine =
-L.polyline([],{
-
+L.polyline(
+[],
+{
 color:"#00ff66",
-
 weight:5
-
-})
+}
+)
 .addTo(routeMap);
 
 
 
-routeTimer=setInterval(updateRouteTime,1000);
+routeTimer =
+setInterval(
+updateRouteTime,
+1000
+);
 
 
 
 }
+
+
+
+
+
+
 
 
 
 function pauseRoute(){
 
-routePaused=!routePaused;
+
+routePaused =
+!routePaused;
 
 
 }
+
+
+
+
+
 
 
 
@@ -152,11 +319,18 @@ clearInterval(routeTimer);
 
 
 
+
+
+
+
+
 function updateRouteTime(){
+
 
 
 if(!routeStartTime)
 return;
+
 
 
 let sec =
@@ -165,12 +339,20 @@ Math.floor(
 );
 
 
-document.getElementById("routeTime").innerText =
 
+document.getElementById(
+"routeTime"
+)
+.innerText =
 Math.floor(sec/60)+" min";
 
 
+
 }
+
+
+
+
 
 
 
@@ -179,35 +361,49 @@ Math.floor(sec/60)+" min";
 function addRoutePoint(lat,lng){
 
 
-if(!routeRunning || routePaused)
+
+if(!routeRunning)
 return;
 
 
 
-let p=[lat,lng];
-
-
-routePoints.push(p);
+if(routePaused)
+return;
 
 
 
-routeLine.addLatLng(p);
+let point =
+[
+lat,
+lng
+];
+
+
+
+routePoints.push(point);
+
+
+
+routeLine.addLatLng(point);
+
 
 
 
 if(routePoints.length>1){
 
 
-let a =
-routePoints[routePoints.length-2];
-
-
-let b=p;
+let last =
+routePoints[
+routePoints.length-2
+];
 
 
 
 routeDistance +=
-map.distance(a,b);
+L.latLng(last)
+.distanceTo(
+L.latLng(point)
+);
 
 
 
@@ -215,22 +411,27 @@ map.distance(a,b);
 
 
 
-document.getElementById("routeDistance")
+document.getElementById(
+"routeDistance"
+)
 .innerText =
 Math.round(routeDistance)+" m";
 
 
 
-document.getElementById("routePoints")
+document.getElementById(
+"routePoints"
+)
 .innerText =
 routePoints.length;
 
 
 
 routeMap.setView(
-p,
+point,
 16
 );
+
 
 
 }
@@ -238,84 +439,30 @@ p,
 
 
 
-document.getElementById("startRouteBtn")
-.onclick=()=>{
-
-startRoute();
-
-document.getElementById("startRouteBtn")
-.style.display="none";
-
-
-document.getElementById("pauseRouteBtn")
-.style.display="block";
-
-
-document.getElementById("endRouteBtn")
-.style.display="block";
-
-
-};
 
 
 
 
-document.getElementById("pauseRouteBtn")
-.onclick=()=>{
-
-
-pauseRoute();
-
-
-document.getElementById("pauseRouteBtn")
-.innerText =
-routePaused ?
-"▶ Wznów"
-:
-"⏸ Pauza";
-
-
-};
-
-
-
-
-document.getElementById("endRouteBtn")
-.onclick=()=>{
-
-
-endRoute();
-
-
-document.getElementById("startRouteBtn")
-.style.display="block";
-
-
-document.getElementById("pauseRouteBtn")
-.style.display="none";
-
-
-document.getElementById("endRouteBtn")
-.style.display="none";
-
-
-};
-
-
-
+// GPS co 15 sekund
 
 
 setInterval(()=>{
 
 
-if(userLat && userLng){
+if(
+userLat &&
+userLng
+){
+
 
 addRoutePoint(
 userLat,
 userLng
 );
 
+
 }
+
 
 
 },15000);
