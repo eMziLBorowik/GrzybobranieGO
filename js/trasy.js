@@ -16,7 +16,7 @@ let routeDistance = 0;
 
 let routeMarker = null;
 
-let window.routeGpsMarker = null;
+window.routeGpsMarker = null;
 
 let savedRoutes = [];
 
