@@ -1,4 +1,3 @@
-
 let routeMap = null;
 
 let routeLine = null;
@@ -17,10 +16,7 @@ let routeDistance = 0;
 
 let routeMarker = null;
 
-let savedRoutes =
-JSON.parse(
-localStorage.getItem("savedRoutes")
-) || [];
+let savedRoutes = [];
 
 
 // ============================
@@ -31,7 +27,6 @@ let activeForest = null;
 
 let forestGridLayer = null;
 
-// persistent eksploracja lasów
 let forestExplorationState = {};
 
 
@@ -81,7 +76,7 @@ let x = point[0], y = point[1];
 let inside = false;
 
 for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
-let xi = vs[i][0], yi = vs[i][0];
+let xi = vs[i][0], yi = vs[i][1];
 let xj = vs[j][0], yj = vs[j][1];
 
 let intersect = ((yi > y) != (yj > y)) &&
@@ -180,19 +175,12 @@ weight:0
 }
 }
 
-
-// ============================
-// 🔄 AUTO LOAD Z SUPABASE
-// ============================
-
 let saved = await loadForestExploration(id);
 
 if(saved && saved.revealed_cells){
-
 saved.revealed_cells.forEach(k=>{
 state.revealed.add(k);
 });
-
 }
 
 }
@@ -238,7 +226,7 @@ weight:1
 
 
 // ============================
-// SAVE (UPSERT - NO DUPES)
+// SAVE FOREST EXP
 // ============================
 
 async function saveForestExploration(){
@@ -270,222 +258,47 @@ onConflict: "forest_id"
 }
 
 
-
 // ============================
-// INIT MAP (BEZ ZMIAN)
+// INIT MAP
 // ============================
 
 function initRouteMap(){
 
-
-if(routeMap)
-return;
-
-
+if(routeMap) return;
 
 routeMap = L.map("routeMiniMap");
 
-
-
-L.tileLayer(
-"https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-{
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
 maxZoom:19
-}
-)
-.addTo(routeMap);
-
-
+}).addTo(routeMap);
 
 if(userLat && userLng){
-
-routeMap.setView(
-[userLat,userLng],
-17
-);
-
-}
-else{
-
-routeMap.setView(
-[52,19],
-6
-);
-
+routeMap.setView([userLat,userLng],17);
+} else {
+routeMap.setView([52,19],6);
 }
 
-
-
-setTimeout(()=>{
-
-routeMap.invalidateSize();
-
-},500);
-
-
+setTimeout(()=>routeMap.invalidateSize(),500);
 
 routeMarker =
-L.marker(
-[userLat,userLng],
-{
-
+L.marker([userLat,userLng],{
 icon:L.divIcon({
-
 className:"gpsMarker",
-
 html:"📍",
-
 iconSize:[45,45]
-
 })
-
-}
-
-)
-.addTo(routeMap);
+}).addTo(routeMap);
 
 }
 
 
-
-
-
-
-document.addEventListener(
-"DOMContentLoaded",
-()=>{
-
-
-const tab =
-document.getElementById("tabTrails");
-
-
-
-if(tab){
-
-
-tab.onclick=()=>{
-
-
-document.getElementById("map").style.display="none";
-
-document.getElementById("grzybdex").style.display="none";
-
-document.getElementById("trailsPanel").style.display="block";
-
-
-
-setTimeout(()=>{
-
-initRouteMap();
-
-showSavedRoutes();
-
-},300);
-
-
-
-};
-
-}
-
-
-
-
-
-const start =
-document.getElementById("startRouteBtn");
-
-
-const pause =
-document.getElementById("pauseRouteBtn");
-
-
-const end =
-document.getElementById("endRouteBtn");
-
-
-const center =
-document.getElementById("centerRouteBtn");
-
-
-
-if(start){
-
-start.onclick=()=>{
-
-startRoute();
-
-start.style.display="none";
-
-pause.style.display="block";
-
-end.style.display="block";
-
-};
-
-}
-
-
-
-if(pause){
-
-pause.onclick=()=>{
-
-routePaused = !routePaused;
-
-pause.innerText =
-routePaused ? "▶ Wznów" : "⏸ Pauza";
-
-};
-
-}
-
-
-
-if(end){
-
-end.onclick=()=>{
-
-endRoute();
-
-start.style.display="block";
-
-pause.style.display="none";
-
-end.style.display="none";
-
-};
-
-}
-
-
-
-if(center){
-
-center.onclick=()=>{
-
-if(userLat && userLng){
-
-routeMap.setView([userLat,userLng],17);
-
-}
-
-};
-
-}
-
-});
-
-
-
-
-
+// ============================
+// TRASY START/STOP
+// ============================
 
 function startRoute(){
 
-if(!routeMap)
-initRouteMap();
+if(!routeMap) initRouteMap();
 
 routePoints=[];
 routeDistance=0;
@@ -495,8 +308,6 @@ routeStartTime = new Date();
 routeRunning=true;
 routePaused=false;
 
-
-
 activeForest = null;
 
 if(forestGridLayer){
@@ -504,82 +315,87 @@ forestGridLayer.remove();
 forestGridLayer = null;
 }
 
-
-
-routeLine =
-L.polyline([],{
+routeLine = L.polyline([],{
 color:"red",
 weight:6
 }).addTo(routeMap);
 
-
-
-routeTimer =
-setInterval(updateRouteTime,1000);
-
+routeTimer = setInterval(updateRouteTime,1000);
 }
 
 
+// ============================
+// END ROUTE (SUPABASE)
+// ============================
 
-
-
-
-function endRoute(){
+async function endRoute(){
 
 routeRunning=false;
 
 clearInterval(routeTimer);
 
-
-
 let time =
 Math.floor((new Date()-routeStartTime)/1000);
 
-
-
 if(routePoints.length > 1){
 
-let save = {
+const user = await supabase.auth.getUser();
 
-date: new Date().toLocaleString(),
-
+await supabase
+.from("routes")
+.insert([{
+user_id: user.data.user.id,
+name: "Trasa",
 points: routePoints,
-
 distance: Math.round(routeDistance),
+duration: time
+}]);
 
-time: time
-
-};
-
-savedRoutes.unshift(save);
-
-localStorage.setItem(
-"savedRoutes",
-JSON.stringify(savedRoutes)
-);
+await enforceRouteLimit();
 
 showSavedRoutes();
-
 }
 
-
-
-// 🔥 zapis eksploracji lasu
 saveForestExploration();
 
 }
 
 
+// ============================
+// LIMIT 15 TRAS
+// ============================
+
+async function enforceRouteLimit(){
+
+const user = await supabase.auth.getUser();
+
+const { data } = await supabase
+.from("routes")
+.select("id, created_at")
+.eq("user_id", user.data.user.id)
+.order("created_at", { ascending: true });
+
+if(!data || data.length <= 15) return;
+
+const toDelete = data.slice(0, data.length - 15);
+
+await supabase
+.from("routes")
+.delete()
+.in("id", toDelete.map(r => r.id));
+
+}
 
 
-
+// ============================
+// TIME + DISTANCE
+// ============================
 
 function updateRouteTime(){
 
 if(!routeStartTime) return;
 
-let sec =
-Math.floor((Date.now()-routeStartTime)/1000);
+let sec = Math.floor((Date.now()-routeStartTime)/1000);
 
 let min = Math.floor(sec / 60);
 let seconds = sec % 60;
@@ -590,17 +406,14 @@ min + " min " + seconds + " s";
 }
 
 
-
-
-
+// ============================
+// ADD POINTS (BEZ ZMIAN LOGIKI)
+// ============================
 
 function addRoutePoint(lat,lng){
 
-
 if(!routeRunning) return;
 if(routePaused) return;
-
-
 
 let point = [lat,lng];
 
@@ -608,37 +421,19 @@ routePoints.push(point);
 
 routeLine.addLatLng(point);
 
-
-
 if(routePoints.length>1){
-
 let last = routePoints[routePoints.length-2];
-
-routeDistance +=
-L.latLng(last).distanceTo(L.latLng(point));
-
+routeDistance += L.latLng(last).distanceTo(L.latLng(point));
 }
-
-
 
 document.getElementById("routeDistance").innerText =
 Math.round(routeDistance)+" m";
-
-
 
 if(routeMarker){
 routeMarker.setLatLng(point);
 }
 
-
-
-// ============================
-// 🌲 FOREST DETECTION (ONLY ROUTE)
-// ============================
-
 let forest = findForest(lat,lng);
-
-
 
 if(forest){
 
@@ -657,71 +452,60 @@ revealForestCell(lat,lng);
 }
 
 
-
-
-
+// ============================
+// AUTO TRACKING
+// ============================
 
 setInterval(()=>{
 
-
 if(userLat && userLng){
-
 addRoutePoint(userLat,userLng);
-
 }
-
 
 },15000);
 
 
+// ============================
+// SHOW ROUTES (SUPABASE)
+// ============================
 
+async function showSavedRoutes(){
 
-
-
-function showSavedRoutes(){
-
-let box =
-document.getElementById("routesList");
-
+let box = document.getElementById("routesList");
 if(!box) return;
 
+const user = await supabase.auth.getUser();
 
+const { data } = await supabase
+.from("routes")
+.select("*")
+.eq("user_id", user.data.user.id)
+.order("created_at", { ascending: false });
 
-if(savedRoutes.length===0){
+if(!data || data.length === 0){
 box.innerHTML = "Brak zapisanych tras";
 return;
 }
 
+savedRoutes = data;
 
-
-box.innerHTML="";
+box.innerHTML = "";
 
 savedRoutes.forEach((r,i)=>{
 
 let div = document.createElement("div");
-
 div.className="card";
 
 div.innerHTML = `
-
 🥾 Trasa ${i+1}
-
 <br>
-
-📅 ${r.date}
-
+📅 ${new Date(r.created_at).toLocaleString()}
 <br>
-
 📏 ${r.distance} m
-
 <br>
-
-⏱ ${Math.floor(r.time/60)} min
-
+⏱ ${Math.floor(r.duration/60)} min
 <br><br>
-
 <button>Pokaż trasę</button>
-
 `;
 
 div.querySelector("button").onclick=()=>showSavedRoute(r);
@@ -733,48 +517,30 @@ box.appendChild(div);
 }
 
 
-
-
-
+// ============================
+// PREVIEW ROUTE
+// ============================
 
 function showSavedRoute(r){
 
-
-
-let old =
-document.getElementById("routePreview");
-
+let old = document.getElementById("routePreview");
 if(old) old.remove();
 
-
-
 let box = document.createElement("div");
-
 box.id="routePreview";
 
 box.innerHTML=`
-
 <h3>🥾 Zapisana trasa</h3>
-
-📅 ${r.date}
-
+📅 ${new Date(r.created_at).toLocaleString()}
 <br>
-
 📏 ${r.distance} m
-
 <br>
-
-⏱ ${Math.floor(r.time/60)} min
-
+⏱ ${Math.floor(r.duration/60)} min
 <div id="previewMap"></div>
-
 <button id="closePreview">❌ Zamknij</button>
-
 `;
 
 document.body.appendChild(box);
-
-
 
 let m = L.map("previewMap");
 
@@ -788,9 +554,54 @@ weight:6
 m.fitBounds(line.getBounds());
 
 document.getElementById("closePreview").onclick=()=>{
-
 box.remove();
-
 };
 
 }
+
+
+// ============================
+// INIT BUTTONS
+// ============================
+
+document.addEventListener("DOMContentLoaded",()=>{
+
+const start = document.getElementById("startRouteBtn");
+const pause = document.getElementById("pauseRouteBtn");
+const end = document.getElementById("endRouteBtn");
+const center = document.getElementById("centerRouteBtn");
+
+if(start){
+start.onclick=()=>{
+startRoute();
+start.style.display="none";
+pause.style.display="block";
+end.style.display="block";
+};
+}
+
+if(pause){
+pause.onclick=()=>{
+routePaused=!routePaused;
+pause.innerText = routePaused ? "▶ Wznów" : "⏸ Pauza";
+};
+}
+
+if(end){
+end.onclick=()=>{
+endRoute();
+start.style.display="block";
+pause.style.display="none";
+end.style.display="none";
+};
+}
+
+if(center){
+center.onclick=()=>{
+if(userLat && userLng){
+routeMap.setView([userLat,userLng],17);
+}
+};
+}
+
+});
