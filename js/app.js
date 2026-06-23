@@ -154,33 +154,26 @@ document.getElementById("trailsPanel");
 if(tabTrails){
 
 
-tabTrails.onclick = () => {
+tabTrails.onclick = function(){
 
-
-
-document.getElementById(
-"centerMapBtn"
-).style.display="none";
-
-
-
-document.getElementById(
-"map"
-).style.display="none";
-
-
-document.getElementById(
-"grzybdex"
-).style.display="none";
-
+document.getElementById("centerMapBtn").style.display="none";
+document.getElementById("map").style.display="none";
+document.getElementById("grzybdex").style.display="none";
 
 trailsPanel.style.display="block";
 
+// 🔥 FIX MAPY TRAS
+setTimeout(() => {
+  if(!routeMap){
+    initRouteMap();
+  }
+
+  routeMap.invalidateSize();
+  routeMap.setView([userLat || 52, userLng || 19], 16);
+
+}, 150);
 
 };
-
-
-}
 
 
 
