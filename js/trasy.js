@@ -290,12 +290,20 @@ routeMap.invalidateSize();
 },300);
 
 
-// ❌ nie tworzymy routeMarker
-// GPS zostaje na głównej mapie
+// 📍 TEN SAM MARKER CO NA GŁÓWNEJ MAPIE
 
+if(userMarker && userLat && userLng){
+
+userMarker.addTo(routeMap);
+
+userMarker.setLatLng([
+userLat,
+userLng
+]);
 
 }
 
+}
 
 
 // ============================
