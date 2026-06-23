@@ -277,20 +277,30 @@ routeMarker.setLatLng([userLat,userLng]);
 }
 }
 
-// używamy głównej mapy
-routeMap = L.map("routeMiniMap");
-
-// NIE DODAJEMY TILE LAYERA (już istnieje)
-
-// ustaw widok
-if(userLat && userLng){
-routeMap.setView([userLat,userLng],17);
-}else{
-routeMap.setView([52,19],6);
+if(routeMap){
+  routeMap.remove();
 }
 
-// fix renderu Leaflet (WAŻNE)
-setTimeout(()=>routeMap.invalidateSize(),300);
+routeMap = L.map("routeMiniMap", {
+  zoomControl: false,
+  attributionControl: false
+});
+
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  attribution: "© OpenStreetMap"
+}).addTo(routeMap);
+
+if(userLat && userLng){
+  routeMap.setView([userLat,userLng],17);
+}else{
+  routeMap.setView([52,19],6);
+}
+
+setTimeout(() => {
+  if(routeMap){
+    routeMap.invalidateSize();
+  }
+}, 300);
 
 // marker GPS
 if (!routeMarker && userLat && userLng) {
