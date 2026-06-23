@@ -1,4 +1,4 @@
-const client = () => window.supabase;
+const client = window.supabase;
 
 const emailInput = document.getElementById("email");
 const passwordInput = document.getElementById("password");
@@ -28,7 +28,7 @@ console.log("🔓 brak sesji");
 });
 
 
-// 🔁 REAKCJA NA ZMIANY AUTH (POPRAWIONE)
+// 🔁 REAKCJA NA ZMIANY AUTH
 client.auth.onAuthStateChange((event, session) => {
 
 if (session) {
@@ -60,7 +60,6 @@ return;
 }
 
 msg.innerText = "✅ Zalogowano";
-
 panel.style.display = "none";
 
 });
