@@ -20,18 +20,16 @@ let savedRoutes = [];
 
 
 // ============================
-// 🌲 FOREST GRID SYSTEM (DODANE)
+// 🌲 FOREST GRID SYSTEM
 // ============================
 
 let activeForest = null;
-
 let forestGridLayer = null;
-
 let forestExplorationState = {};
 
 
 // ============================
-// 🧠 FIX: NORMALIZACJA ID LASU
+// 🧠 FIX ID LASU
 // ============================
 
 function normalizeForestId(forest){
@@ -44,12 +42,11 @@ return p[0].toFixed(5) + "_" + p[1].toFixed(5);
 }
 
 return "unknown";
-
 }
 
 
 // ============================
-// 🌲 SUPABASE LOAD
+// SUPABASE FOREST LOAD
 // ============================
 
 async function loadForestExploration(forestId){
@@ -61,7 +58,6 @@ const { data } = await supabase
 .single();
 
 return data || null;
-
 }
 
 
@@ -72,7 +68,6 @@ return data || null;
 function pointInPolygon(point, vs){
 
 let x = point[0], y = point[1];
-
 let inside = false;
 
 for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
@@ -86,7 +81,6 @@ if (intersect) inside = !inside;
 }
 
 return inside;
-
 }
 
 
@@ -96,27 +90,22 @@ return inside;
 
 function findForest(lat,lng){
 
-if(!forests || forests.length === 0)
-return null;
+if(!forests || forests.length === 0) return null;
 
 for(let f of forests){
-
-if(!f.geometry || !f.geometry[0])
-continue;
+if(!f.geometry || !f.geometry[0]) continue;
 
 if(pointInPolygon([lat,lng], f.geometry[0])){
 return f;
 }
-
 }
 
 return null;
-
 }
 
 
 // ============================
-// CREATE GRID + AUTO LOAD
+// FOREST GRID
 // ============================
 
 async function createForestGrid(forest){
@@ -154,23 +143,19 @@ let step = 0.00009;
 for(let lat = minLat; lat < maxLat; lat += step){
 for(let lng = minLng; lng < maxLng; lng += step){
 
-if(!pointInPolygon([lat,lng], coords))
-continue;
+if(!pointInPolygon([lat,lng], coords)) continue;
 
 state.total++;
 
-L.rectangle(
-[
+L.rectangle([
 [lat,lng],
 [lat+step,lng+step]
-],
-{
+],{
 color:"transparent",
 fillColor:"#00ff88",
 fillOpacity:0.05,
 weight:0
-}
-).addTo(forestGridLayer);
+}).addTo(forestGridLayer);
 
 }
 }
@@ -182,7 +167,6 @@ saved.revealed_cells.forEach(k=>{
 state.revealed.add(k);
 });
 }
-
 }
 
 
@@ -196,9 +180,7 @@ if(!routeRunning) return;
 if(!activeForest) return;
 
 let id = normalizeForestId(activeForest);
-
 let state = forestExplorationState[id];
-
 if(!state) return;
 
 let key = lat.toFixed(5)+"_"+lng.toFixed(5);
@@ -209,19 +191,15 @@ state.revealed.add(key);
 
 let step = 0.00009;
 
-L.rectangle(
-[
+L.rectangle([
 [lat,lng],
 [lat+step,lng+step]
-],
-{
+],{
 color:"#00ff88",
 fillColor:"#00ff88",
 fillOpacity:0.25,
 weight:1
-}
-).addTo(forestGridLayer);
-
+}).addTo(forestGridLayer);
 }
 
 
@@ -234,27 +212,22 @@ async function saveForestExploration(){
 if(!activeForest) return;
 
 let id = normalizeForestId(activeForest);
-
 let state = forestExplorationState[id];
-
 if(!state) return;
 
 let coverage =
 state.total === 0 ? 0 :
 Math.round((state.revealed.size / state.total) * 100);
 
-await supabase
-.from("forest_exploration")
-.upsert([{
+await supabase.from("forest_exploration").upsert([{
 forest_id: id,
 coverage_percent: coverage,
 revealed_cells: Array.from(state.revealed),
 total_cells: state.total,
 date: new Date().toISOString()
-}], {
-onConflict: "forest_id"
+}],{
+onConflict:"forest_id"
 });
-
 }
 
 
@@ -268,32 +241,30 @@ if(routeMap) return;
 
 routeMap = L.map("routeMiniMap");
 
-L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{
 maxZoom:19
 }).addTo(routeMap);
 
 if(userLat && userLng){
 routeMap.setView([userLat,userLng],17);
-} else {
+}else{
 routeMap.setView([52,19],6);
 }
 
 setTimeout(()=>routeMap.invalidateSize(),500);
 
-routeMarker =
-L.marker([userLat,userLng],{
+routeMarker = L.marker([userLat,userLng],{
 icon:L.divIcon({
 className:"gpsMarker",
 html:"📍",
 iconSize:[45,45]
 })
 }).addTo(routeMap);
-
 }
 
 
 // ============================
-// TRASY START/STOP
+// START ROUTE
 // ============================
 
 function startRoute(){
@@ -303,16 +274,16 @@ if(!routeMap) initRouteMap();
 routePoints=[];
 routeDistance=0;
 
-routeStartTime = new Date();
+routeStartTime = Date.now();
 
 routeRunning=true;
 routePaused=false;
 
-activeForest = null;
+activeForest=null;
 
 if(forestGridLayer){
 forestGridLayer.remove();
-forestGridLayer = null;
+forestGridLayer=null;
 }
 
 routeLine = L.polyline([],{
@@ -325,7 +296,7 @@ routeTimer = setInterval(updateRouteTime,1000);
 
 
 // ============================
-// END ROUTE (SUPABASE)
+// END ROUTE
 // ============================
 
 async function endRoute(){
@@ -334,21 +305,23 @@ routeRunning=false;
 
 clearInterval(routeTimer);
 
-let time =
-Math.floor((new Date()-routeStartTime)/1000);
+let time = Math.floor((Date.now()-routeStartTime)/1000);
 
 if(routePoints.length > 1){
 
-const user = await supabase.auth.getUser();
+const { data:{user} } = await supabase.auth.getUser();
 
-await supabase
-.from("routes")
-.insert([{
-user_id: user.data.user.id,
-name: "Trasa",
-points: routePoints,
-distance: Math.round(routeDistance),
-duration: time
+if(!user){
+console.log("no user");
+return;
+}
+
+await supabase.from("routes").insert([{
+user_id:user.id,
+name:"Trasa",
+points:routePoints,
+distance:Math.round(routeDistance),
+duration:time
 }]);
 
 await enforceRouteLimit();
@@ -357,65 +330,73 @@ showSavedRoutes();
 }
 
 saveForestExploration();
-
 }
 
 
 // ============================
-// LIMIT 15 TRAS
+// LIMIT 15
 // ============================
 
 async function enforceRouteLimit(){
 
-const user = await supabase.auth.getUser();
+const { data:{user} } = await supabase.auth.getUser();
+if(!user) return;
 
 const { data } = await supabase
 .from("routes")
-.select("id, created_at")
-.eq("user_id", user.data.user.id)
-.order("created_at", { ascending: true });
+.select("id,created_at")
+.eq("user_id",user.id)
+.order("created_at",{ascending:true});
 
 if(!data || data.length <= 15) return;
 
-const toDelete = data.slice(0, data.length - 15);
+const toDelete = data.slice(0,data.length-15);
 
-await supabase
-.from("routes")
+await supabase.from("routes")
 .delete()
-.in("id", toDelete.map(r => r.id));
-
+.in("id",toDelete.map(r=>r.id));
 }
 
 
 // ============================
-// TIME + DISTANCE
+// TIMER + PAUSE FIX
 // ============================
 
 function updateRouteTime(){
 
 if(!routeStartTime) return;
 
+if(routePaused) return; // 🔥 FIX PAUSE
+
 let sec = Math.floor((Date.now()-routeStartTime)/1000);
 
-let min = Math.floor(sec / 60);
-let seconds = sec % 60;
+let min = Math.floor(sec/60);
+let seconds = sec%60;
 
 document.getElementById("routeTime").innerText =
-min + " min " + seconds + " s";
-
+min+" min "+seconds+" s";
 }
 
 
 // ============================
-// ADD POINTS (BEZ ZMIAN LOGIKI)
+// ADD POINT (PAUSE FIX + FILTER)
 // ============================
+
+let lastPoint = null;
 
 function addRoutePoint(lat,lng){
 
 if(!routeRunning) return;
 if(routePaused) return;
 
-let point = [lat,lng];
+if(lastPoint){
+let d = L.latLng(lastPoint).distanceTo(L.latLng(lat,lng));
+if(d < 3) return;
+}
+
+lastPoint = [lat,lng];
+
+let point=[lat,lng];
 
 routePoints.push(point);
 
@@ -433,30 +414,28 @@ if(routeMarker){
 routeMarker.setLatLng(point);
 }
 
-let forest = findForest(lat,lng);
+let forest=findForest(lat,lng);
 
 if(forest){
 
-if(!activeForest || normalizeForestId(activeForest) !== normalizeForestId(forest)){
+if(!activeForest || normalizeForestId(activeForest)!==normalizeForestId(forest)){
 
-activeForest = forest;
-
+activeForest=forest;
 createForestGrid(forest);
-
 }
 
 revealForestCell(lat,lng);
-
 }
-
 }
 
 
 // ============================
-// AUTO TRACKING
+// AUTO TRACKING (PAUSE FIX)
 // ============================
 
 setInterval(()=>{
+
+if(!routeRunning || routePaused) return;
 
 if(userLat && userLng){
 addRoutePoint(userLat,userLng);
@@ -466,75 +445,68 @@ addRoutePoint(userLat,userLng);
 
 
 // ============================
-// SHOW ROUTES (SUPABASE)
+// SHOW ROUTES
 // ============================
 
 async function showSavedRoutes(){
 
-let box = document.getElementById("routesList");
+let box=document.getElementById("routesList");
 if(!box) return;
 
-const user = await supabase.auth.getUser();
+const { data:{user} } = await supabase.auth.getUser();
+if(!user) return;
 
 const { data } = await supabase
 .from("routes")
 .select("*")
-.eq("user_id", user.data.user.id)
-.order("created_at", { ascending: false });
+.eq("user_id",user.id)
+.order("created_at",{ascending:false});
 
-if(!data || data.length === 0){
-box.innerHTML = "Brak zapisanych tras";
+if(!data || data.length===0){
+box.innerHTML="Brak zapisanych tras";
 return;
 }
 
-savedRoutes = data;
+savedRoutes=data;
 
-box.innerHTML = "";
+box.innerHTML="";
 
 savedRoutes.forEach((r,i)=>{
 
-let div = document.createElement("div");
+let div=document.createElement("div");
 div.className="card";
 
-div.innerHTML = `
-🥾 Trasa ${i+1}
-<br>
-📅 ${new Date(r.created_at).toLocaleString()}
-<br>
-📏 ${r.distance} m
-<br>
-⏱ ${Math.floor(r.duration/60)} min
-<br><br>
+div.innerHTML=`
+🥾 Trasa ${i+1}<br>
+📅 ${new Date(r.created_at).toLocaleString()}<br>
+📏 ${r.distance} m<br>
+⏱ ${Math.floor(r.duration/60)} min<br><br>
 <button>Pokaż trasę</button>
 `;
 
 div.querySelector("button").onclick=()=>showSavedRoute(r);
 
 box.appendChild(div);
-
 });
-
 }
 
 
 // ============================
-// PREVIEW ROUTE
+// PREVIEW
 // ============================
 
 function showSavedRoute(r){
 
-let old = document.getElementById("routePreview");
+let old=document.getElementById("routePreview");
 if(old) old.remove();
 
-let box = document.createElement("div");
+let box=document.createElement("div");
 box.id="routePreview";
 
 box.innerHTML=`
 <h3>🥾 Zapisana trasa</h3>
-📅 ${new Date(r.created_at).toLocaleString()}
-<br>
-📏 ${r.distance} m
-<br>
+📅 ${new Date(r.created_at).toLocaleString()}<br>
+📏 ${r.distance} m<br>
 ⏱ ${Math.floor(r.duration/60)} min
 <div id="previewMap"></div>
 <button id="closePreview">❌ Zamknij</button>
@@ -542,34 +514,31 @@ box.innerHTML=`
 
 document.body.appendChild(box);
 
-let m = L.map("previewMap");
+let m=L.map("previewMap");
 
 L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(m);
 
-let line = L.polyline(r.points,{
+let line=L.polyline(r.points,{
 color:"red",
 weight:6
 }).addTo(m);
 
 m.fitBounds(line.getBounds());
 
-document.getElementById("closePreview").onclick=()=>{
-box.remove();
-};
-
+document.getElementById("closePreview").onclick=()=>box.remove();
 }
 
 
 // ============================
-// INIT BUTTONS
+// BUTTONS
 // ============================
 
 document.addEventListener("DOMContentLoaded",()=>{
 
-const start = document.getElementById("startRouteBtn");
-const pause = document.getElementById("pauseRouteBtn");
-const end = document.getElementById("endRouteBtn");
-const center = document.getElementById("centerRouteBtn");
+const start=document.getElementById("startRouteBtn");
+const pause=document.getElementById("pauseRouteBtn");
+const end=document.getElementById("endRouteBtn");
+const center=document.getElementById("centerRouteBtn");
 
 if(start){
 start.onclick=()=>{
@@ -583,7 +552,7 @@ end.style.display="block";
 if(pause){
 pause.onclick=()=>{
 routePaused=!routePaused;
-pause.innerText = routePaused ? "▶ Wznów" : "⏸ Pauza";
+pause.innerText=routePaused?"▶ Wznów":"⏸ Pauza";
 };
 }
 
@@ -598,7 +567,7 @@ end.style.display="none";
 
 if(center){
 center.onclick=()=>{
-if(userLat && userLng){
+if(userLat&&userLng){
 routeMap.setView([userLat,userLng],17);
 }
 };
