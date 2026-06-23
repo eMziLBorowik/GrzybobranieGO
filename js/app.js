@@ -143,36 +143,48 @@ updateStats();
 const tabTrails = document.getElementById("tabTrails");
 const trailsPanel = document.getElementById("trailsPanel");
 
-if(tabTrails){
+if (tabTrails) {
 
-tabTrails.onclick = function(){
+  tabTrails.onclick = function () {
 
-document.getElementById("centerMapBtn").style.display="none";
-document.getElementById("map").style.display="none";
-document.getElementById("grzybdex").style.display="none";
+    document.getElementById("centerMapBtn").style.display = "none";
+    document.getElementById("map").style.display = "none";
+    document.getElementById("grzybdex").style.display = "none";
 
-trailsPanel.style.display="block";
+    trailsPanel.style.display = "block";
 
-// 🔥 FIX: Leaflet musi dostać czas na render DOM
-setTimeout(() => {
+    // 🔥 FIX: czekamy aż DOM i CSS faktycznie się przerysują
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
 
-  if(!routeMap){
-    initRouteMap();
-  }
+        if (!routeMap) {
+          initRouteMap();
+        }
 
-  // 🔥 naprawia biały / pusty leaflet
-  routeMap.invalidateSize();
+        // 🔥 ważne: po init też trzeba dać czas Leafletowi
+        setTimeout(() => {
 
-  // 🔥 ustaw widok tylko jeśli GPS istnieje
-  if(userLat && userLng){
-    routeMap.setView([userLat, userLng], 16);
-  } else {
-    routeMap.setView([52, 19], 6);
-  }
+          if (routeMap) {
+            routeMap.invalidateSize(true);
+          }
 
-}, 300);
+          // 🔥 ustaw widok bez crashy
+          if (userLat != null && userLng != null) {
+            routeMap.setView([userLat, userLng], 16, {
+              animate: false
+            });
+          } else {
+            routeMap.setView([52, 19], 6, {
+              animate: false
+            });
+          }
 
-};
+        }, 100);
+
+      });
+    });
+
+  };
 
 }
 
