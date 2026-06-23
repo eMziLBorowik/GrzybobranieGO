@@ -13,3 +13,8 @@ attribution:"© OpenStreetMap"
 ).addTo(map);
 
 window.mainMap = map;
+
+// ✅ DODAJ TO
+window.userLayer = L.layerGroup().addTo(map);
+window.forestLayer = L.layerGroup().addTo(map);
+window.routeLayer = L.layerGroup().addTo(map);
