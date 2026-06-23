@@ -244,7 +244,7 @@ function initRouteMap(){
 
 if(routeMap) return;
 
-routeMap = L.map("routeMiniMap");
+routeMap = window.mainMap;
 
 L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{
 maxZoom:19
