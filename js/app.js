@@ -16,7 +16,7 @@ userLng = pos.coords.longitude;
 document.getElementById("forestStatus").innerText = "📍 GPS OK";
 
 if(!userMarker){
-userMarker = L.marker([userLat, userLng]).addTo(map);
+userMarker = L.marker([userLat, userLng]).addTo(routeMap);
 }else{
 userMarker.setLatLng([userLat, userLng]);
 }
