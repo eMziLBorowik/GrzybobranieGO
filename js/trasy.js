@@ -244,20 +244,22 @@ function initRouteMap(){
 
 if(routeMap) return;
 
+// używamy głównej mapy
 routeMap = window.mainMap;
 
-L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{
-maxZoom:19
-}).addTo(routeMap);
+// NIE DODAJEMY TILE LAYERA (już istnieje)
 
+// ustaw widok
 if(userLat && userLng){
 routeMap.setView([userLat,userLng],17);
 }else{
 routeMap.setView([52,19],6);
 }
 
-setTimeout(()=>routeMap.invalidateSize(),500);
+// fix renderu Leaflet (WAŻNE)
+setTimeout(()=>routeMap.invalidateSize(),300);
 
+// marker GPS
 routeMarker = L.marker([userLat,userLng],{
 icon:L.divIcon({
 className:"gpsMarker",
@@ -265,9 +267,8 @@ html:"📍",
 iconSize:[45,45]
 })
 }).addTo(routeMap);
+
 }
-
-
 // ============================
 // START ROUTE
 // ============================
