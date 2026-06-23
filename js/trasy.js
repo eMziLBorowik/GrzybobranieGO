@@ -16,7 +16,7 @@ let routeDistance = 0;
 
 let routeMarker = null;
 
-let routeGpsMarker = null;
+window.routeGpsMarker = null;
 
 let savedRoutes = [];
 
@@ -296,9 +296,9 @@ routeMap.invalidateSize();
 
 if(userLat && userLng){
 
-if(!routeGpsMarker){
+if(!window.routeGpsMarker){
 
-routeGpsMarker = L.marker(
+window.routeGpsMarker = L.marker(
 [userLat,userLng],
 {
 icon:L.divIcon({
@@ -313,7 +313,7 @@ iconSize:[45,45]
 }else{
 
 
-routeGpsMarker.setLatLng(
+window.routeGpsMarker.setLatLng(
 [userLat,userLng]
 );
 
@@ -323,11 +323,9 @@ routeGpsMarker.setLatLng(
 }
 
 
-
-
 // ============================
 // START ROUTE
-
+  
 function startRoute(){
 
 if(!routeMap) initRouteMap();
