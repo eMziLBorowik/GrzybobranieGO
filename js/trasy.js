@@ -292,9 +292,11 @@ routeMap.invalidateSize();
 },300);
 
 
-// 📍 osobny marker dla mapy tras
+// 📍 marker GPS dla mapy tras
 
 if(userLat && userLng){
+
+if(!routeGpsMarker){
 
 routeGpsMarker = L.marker(
 [userLat,userLng],
@@ -307,14 +309,25 @@ iconSize:[45,45]
 }
 ).addTo(routeMap);
 
+
+}else{
+
+
+routeGpsMarker.setLatLng(
+[userLat,userLng]
+);
+
+
 }
+
+}
+
 
 }
 
 
 // ============================
 // START ROUTE
-// ============================
 
 function startRoute(){
 
