@@ -16,6 +16,8 @@ let routeDistance = 0;
 
 let routeMarker = null;
 
+let routeGpsMarker = null;
+
 let savedRoutes = [];
 
 let pausedAt = null;
@@ -290,16 +292,20 @@ routeMap.invalidateSize();
 },300);
 
 
-// 📍 TEN SAM MARKER CO NA GŁÓWNEJ MAPIE
+// 📍 osobny marker dla mapy tras
 
-if(userMarker && userLat && userLng){
+if(userLat && userLng){
 
-userMarker.addTo(routeMap);
-
-userMarker.setLatLng([
-userLat,
-userLng
-]);
+routeGpsMarker = L.marker(
+[userLat,userLng],
+{
+icon:L.divIcon({
+className:"gpsMarker",
+html:"📍",
+iconSize:[45,45]
+})
+}
+).addTo(routeMap);
 
 }
 
