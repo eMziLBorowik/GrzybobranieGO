@@ -245,7 +245,7 @@ function initRouteMap(){
 if(routeMap) return;
 
 // używamy głównej mapy
-routeMap = window.mainMap;
+routeMap = L.map("routeMiniMap");
 
 // NIE DODAJEMY TILE LAYERA (już istnieje)
 
@@ -260,13 +260,19 @@ routeMap.setView([52,19],6);
 setTimeout(()=>routeMap.invalidateSize(),300);
 
 // marker GPS
-routeMarker = L.marker([userLat,userLng],{
-icon:L.divIcon({
-className:"gpsMarker",
-html:"📍",
-iconSize:[45,45]
-})
-}).addTo(routeMap);
+if (!routeMarker && userLat && userLng) {
+
+  routeMarker = L.marker([userLat, userLng], {
+    icon: L.divIcon({
+      className: "gpsMarker",
+      html: "📍",
+      iconSize: [45, 45]
+    })
+  }).addTo(routeMap);
+
+} else if (routeMarker && userLat && userLng) {
+
+  routeMarker.setLatLng([userLat, userLng]);
 
 }
 // ============================
