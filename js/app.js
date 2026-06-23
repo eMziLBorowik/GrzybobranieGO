@@ -141,18 +141,10 @@ updateStats();
 
 // zakładka trasy
 
-
-const tabTrails =
-document.getElementById("tabTrails");
-
-
-const trailsPanel =
-document.getElementById("trailsPanel");
-
-
+const tabTrails = document.getElementById("tabTrails");
+const trailsPanel = document.getElementById("trailsPanel");
 
 if(tabTrails){
-
 
 tabTrails.onclick = function(){
 
@@ -162,24 +154,28 @@ document.getElementById("grzybdex").style.display="none";
 
 trailsPanel.style.display="block";
 
-// 🔥 FIX MAPY TRAS
+// 🔥 FIX: Leaflet musi dostać czas na render DOM
 setTimeout(() => {
+
   if(!routeMap){
     initRouteMap();
   }
 
+  // 🔥 naprawia biały / pusty leaflet
   routeMap.invalidateSize();
-  routeMap.setView([userLat || 52, userLng || 19], 16);
 
-}, 150);
+  // 🔥 ustaw widok tylko jeśli GPS istnieje
+  if(userLat && userLng){
+    routeMap.setView([userLat, userLng], 16);
+  } else {
+    routeMap.setView([52, 19], 6);
+  }
+
+}, 300);
 
 };
 
-
-
-
-
-
+}
 
 // 🎯 WYŚRODKOWANIE MAPY
 
