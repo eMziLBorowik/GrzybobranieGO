@@ -28,7 +28,7 @@ setupScanner();
 // 👤 USER
 async function getUser(){
 
-const client = window.supabaseClient;
+const client = window.supabase;
 
 if(!client){
 console.error("❌ brak supabaseClient");
@@ -133,7 +133,7 @@ return;
 // pobranie z bazy
 
 const {data:mushroom,error} =
-await window.supabaseClient
+await window.supabase
 .from("mushrooms")
 .select("*")
 .eq("id",ai.id)
@@ -211,7 +211,7 @@ async function analyzeMushroomWithAI(file){
 
 
 const client =
-window.supabaseClient;
+window.supabase;
 
 
 
@@ -513,7 +513,7 @@ return;
 
 const {error}=
 
-await window.supabaseClient
+await window.window.supabase
 
 .from("user_mushrooms")
 
@@ -564,7 +564,7 @@ return;
 
 const {data,error}=
 
-await window.supabaseClient
+await window.window.supabase
 
 .from("user_mushrooms")
 
