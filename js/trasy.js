@@ -259,68 +259,71 @@ setTimeout(()=>{
 routeMap.invalidateSize();
 },300);
 
-// 📍 marker GPS (TYLKO jeśli nie istnieje)
-if(!routeMarker && userLat && userLng){
-
-routeMarker = L.marker([userLat,userLng],{
-icon:L.divIcon({
-className:"gpsMarker",
-html:"📍",
-iconSize:[45,45]
-})
-}).addTo(routeMap);
-
-} else if(routeMarker && userLat && userLng){
-
-routeMarker.setLatLng([userLat,userLng]);
-
-}
-}
+// ============================
+// MAPA TRAS
+// ============================
 
 if(routeMap){
   routeMap.remove();
 }
 
 routeMap = L.map("routeMiniMap", {
-  zoomControl: false,
-  attributionControl: false
+  zoomControl:false,
+  attributionControl:false
 });
 
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-  attribution: "© OpenStreetMap"
-}).addTo(routeMap);
+
+L.tileLayer(
+"https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+{
+attribution:"© OpenStreetMap"
+}
+).addTo(routeMap);
+
+
 
 if(userLat && userLng){
-  routeMap.setView([userLat,userLng],17);
+
+routeMap.setView(
+[userLat,userLng],
+17
+);
+
 }else{
-  routeMap.setView([52,19],6);
-}
 
-setTimeout(() => {
-  if(routeMap){
-    routeMap.invalidateSize();
-  }
-}, 300);
-
-// marker GPS
-if (!routeMarker && userLat && userLng) {
-
-  routeMarker = L.marker([userLat, userLng], {
-    icon: L.divIcon({
-      className: "gpsMarker",
-      html: "📍",
-      iconSize: [45, 45]
-    })
-  }).addTo(routeMap);
-
-} else if (routeMarker && userLat && userLng) {
-
-  routeMarker.setLatLng([userLat, userLng]);
+routeMap.setView(
+[52,19],
+6
+);
 
 }
-// ============================
-// START ROUTE
-// ============================
+
+
+
+setTimeout(()=>{
+
+if(routeMap){
+
+routeMap.invalidateSize();
+
+}
+
+},300);
+
+
+// 📍 NIE TWORZYMY DRUGIEGO GPS
+// używamy userMarker z mapy głównej
+
+
+if(userMarker && userLat && userLng){
+
+userMarker.addTo(routeMap);
+
+userMarker.setLatLng(
+[userLat,userLng]
+);
+
+}
 
 function startRoute(){
 
