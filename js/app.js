@@ -242,3 +242,19 @@ animate:true
 
 
 };
+
+function initRouteMap() {
+
+  if (routeMap) return;
+
+  const el = document.getElementById("map");
+
+  if (!el) return;
+
+  routeMap = L.map("map").setView([52, 19], 6);
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "© OpenStreetMap"
+  }).addTo(routeMap);
+
+}
