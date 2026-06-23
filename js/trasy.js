@@ -593,3 +593,11 @@ routeMap.setView([userLat,userLng],17);
 document.addEventListener("DOMContentLoaded", async () => {
   await showSavedRoutes();
 });
+
+document.addEventListener("DOMContentLoaded", () => {
+  initRouteMap();
+
+  setTimeout(() => {
+    if (routeMap) routeMap.invalidateSize();
+  }, 300);
+});
