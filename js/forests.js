@@ -117,7 +117,7 @@ color:"#2e8b57",
 fillColor:"#3cb371",
 fillOpacity:0.25,
 weight:2
-}).addTo(map);
+}).addTo(window.forestLayer);
 
 forests.push(poly);
 
