@@ -1,3 +1,4 @@
+const supabase = window.supabase;
 const client = window.supabaseClient;
 
 const emailInput = document.getElementById("email");
