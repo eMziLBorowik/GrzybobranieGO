@@ -296,36 +296,41 @@ routeMap.invalidateSize();
 
 if(userLat && userLng){
 
-if(!window.routeGpsMarker){
+    if(!window.routeGpsMarker){
 
-window.routeGpsMarker = L.marker(
-[userLat,userLng],
-{
-icon:L.divIcon({
-className:"gpsMarker",
-html:"📍",
-iconSize:[45,45]
-})
-}
-).addTo(routeMap);
+        window.routeGpsMarker = L.marker(
+            [userLat,userLng],
+            {
+                icon:L.divIcon({
+                    className:"gpsMarker",
+                    html:"📍",
+                    iconSize:[45,45]
+                })
+            }
+        ).addTo(routeMap);
 
+    }else{
 
-}else{
+        window.routeGpsMarker.setLatLng(
+            [userLat,userLng]
+        );
 
-
-window.routeGpsMarker.setLatLng(
-[userLat,userLng]
-);
-
-
-}
+    }
 
 }
 
 
 // ============================
+// KONIEC INIT MAPY
+// ============================
+
+} 
+
+
+// ============================
 // START ROUTE
-  
+// ============================
+
 function startRoute(){
 
 if(!routeMap) initRouteMap();
