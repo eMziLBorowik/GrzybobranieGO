@@ -18,6 +18,11 @@ let routeMarker = null;
 
 let savedRoutes = [];
 
+let pausedAt = null;
+let totalPausedTime = 0;
+
+let gpsInterval = null;
+
 
 // ============================
 // 🌲 FOREST GRID SYSTEM
@@ -279,6 +284,9 @@ routeStartTime = Date.now();
 routeRunning=true;
 routePaused=false;
 
+pausedAt=null;
+totalPausedTime=0;
+
 activeForest=null;
 
 if(forestGridLayer){
@@ -290,6 +298,16 @@ routeLine = L.polyline([],{
 color:"red",
 weight:6
 }).addTo(routeMap);
+
+gpsInterval = setInterval(()=>{
+
+if(!routeRunning || routePaused) return;
+
+if(userLat && userLng){
+addRoutePoint(userLat,userLng);
+}
+
+},15000);
 
 routeTimer = setInterval(updateRouteTime,1000);
 }
@@ -304,8 +322,10 @@ async function endRoute(){
 routeRunning=false;
 
 clearInterval(routeTimer);
+clearInterval(gpsInterval);
 
-let time = Math.floor((Date.now()-routeStartTime)/1000);
+let time =
+Math.floor((Date.now()-routeStartTime-totalPausedTime)/1000);
 
 if(routePoints.length > 1){
 
@@ -359,16 +379,17 @@ await supabase.from("routes")
 
 
 // ============================
-// TIMER + PAUSE FIX
+// TIMER
 // ============================
 
 function updateRouteTime(){
 
 if(!routeStartTime) return;
 
-if(routePaused) return; // 🔥 FIX PAUSE
+if(routePaused) return;
 
-let sec = Math.floor((Date.now()-routeStartTime)/1000);
+let sec =
+Math.floor((Date.now()-routeStartTime-totalPausedTime)/1000);
 
 let min = Math.floor(sec/60);
 let seconds = sec%60;
@@ -379,7 +400,7 @@ min+" min "+seconds+" s";
 
 
 // ============================
-// ADD POINT (PAUSE FIX + FILTER)
+// ADD POINT
 // ============================
 
 let lastPoint = null;
@@ -427,21 +448,6 @@ createForestGrid(forest);
 revealForestCell(lat,lng);
 }
 }
-
-
-// ============================
-// AUTO TRACKING (PAUSE FIX)
-// ============================
-
-setInterval(()=>{
-
-if(!routeRunning || routePaused) return;
-
-if(userLat && userLng){
-addRoutePoint(userLat,userLng);
-}
-
-},15000);
 
 
 // ============================
@@ -551,7 +557,16 @@ end.style.display="block";
 
 if(pause){
 pause.onclick=()=>{
+
 routePaused=!routePaused;
+
+if(routePaused){
+pausedAt=Date.now();
+} else {
+totalPausedTime+=Date.now()-pausedAt;
+pausedAt=null;
+}
+
 pause.innerText=routePaused?"▶ Wznów":"⏸ Pauza";
 };
 }
