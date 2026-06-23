@@ -108,33 +108,15 @@ font-size:12px;
 /* MAPA */
 
 
-#map{
-
-
-position:absolute;
-
-
-top:90px;
-
-
-bottom:120px;
-
-
-left:10px;
-
-
-right:10px;
-
-
-border-radius:18px;
-
-
-overflow:hidden;
-
-
-z-index:1;
-
-
+#map {
+  position: absolute;
+  top: 90px;
+  bottom: 70px; /* <- ważne */
+  left: 10px;
+  right: 10px;
+  border-radius: 18px;
+  overflow: hidden;
+  z-index: 1;
 }
 
 
