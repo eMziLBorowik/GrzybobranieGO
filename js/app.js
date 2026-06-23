@@ -1,6 +1,4 @@
 
-let routeMap = null;
-
 window.onload=function(){
 
 
