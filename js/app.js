@@ -3,8 +3,6 @@ window.onload=function(){
 
 
 // GPS
-
-
 navigator.geolocation.watchPosition(
 
 (pos)=>{
@@ -15,16 +13,16 @@ userLng = pos.coords.longitude;
 document.getElementById("forestStatus").innerText = "📍 GPS OK";
 
 if(!userMarker){
-
 userMarker = L.marker([userLat, userLng]).addTo(map);
-
 }else{
-
 userMarker.setLatLng([userLat, userLng]);
-
 }
 
 // 🔥 WAŻNE: NIE RUSZAJ MAPY
+
+if(routeMarker){
+  routeMarker.setLatLng([userLat, userLng]);
+}
 
 if(forests.length === 0){
 loadForests(userLat, userLng);
@@ -42,8 +40,6 @@ timeout:15000,
 maximumAge:0
 }
 );
-
-
 
 
 
