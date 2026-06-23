@@ -5,112 +5,42 @@ window.onload=function(){
 // GPS
 
 
-if(!navigator.geolocation){
-
-
-document.getElementById(
-"forestStatus"
-).innerText=
-"❌ Brak GPS";
-
-
-return;
-
-}
-
-
-
 navigator.geolocation.watchPosition(
-
-
 
 (pos)=>{
 
+userLat = pos.coords.latitude;
+userLng = pos.coords.longitude;
 
-
-userLat=pos.coords.latitude;
-
-userLng=pos.coords.longitude;
-
-
-
-document.getElementById(
-"forestStatus"
-).innerText=
-"📍 GPS OK";
-
-
-
+document.getElementById("forestStatus").innerText = "📍 GPS OK";
 
 if(!userMarker){
 
-
-userMarker=L.marker(
-[userLat,userLng]
-)
-.addTo(map);
-
-
-
-map.setView(
-[userLat,userLng],
-16
-);
-
-
+userMarker = L.marker([userLat, userLng]).addTo(map);
 
 }else{
 
-
-userMarker.setLatLng(
-[userLat,userLng]
-);
-
-
+userMarker.setLatLng([userLat, userLng]);
 
 }
 
+// 🔥 WAŻNE: NIE RUSZAJ MAPY
 
-
-if(forests.length===0){
-
-
-loadForests(
-userLat,
-userLng
-);
-
-
-
+if(forests.length === 0){
+loadForests(userLat, userLng);
 }
-
-
 
 },
-
-
 
 (err)=>{
-
-
-document.getElementById(
-"forestStatus"
-).innerText=
-"❌ GPS błąd";
-
-
+document.getElementById("forestStatus").innerText = "❌ GPS błąd";
 },
-
-
 
 {
 enableHighAccuracy:true,
 timeout:15000,
 maximumAge:0
 }
-
-
-
 );
 
 
