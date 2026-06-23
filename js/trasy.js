@@ -244,6 +244,39 @@ function initRouteMap(){
 
 if(routeMap) return;
 
+// 🔥 KLUCZ: używamy tej samej mapy co główna
+routeMap = window.mainMap;
+
+// 🧠 NIE dodajemy tileLayer (już istnieje)
+if(userLat && userLng){
+routeMap.setView([userLat,userLng],17);
+}else{
+routeMap.setView([52,19],6);
+}
+
+// fix Leaflet po ukryciu/pokazaniu zakładek
+setTimeout(()=>{
+routeMap.invalidateSize();
+},300);
+
+// 📍 marker GPS (TYLKO jeśli nie istnieje)
+if(!routeMarker && userLat && userLng){
+
+routeMarker = L.marker([userLat,userLng],{
+icon:L.divIcon({
+className:"gpsMarker",
+html:"📍",
+iconSize:[45,45]
+})
+}).addTo(routeMap);
+
+} else if(routeMarker && userLat && userLng){
+
+routeMarker.setLatLng([userLat,userLng]);
+
+}
+}
+
 // używamy głównej mapy
 routeMap = L.map("routeMiniMap");
 
