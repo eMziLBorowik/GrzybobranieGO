@@ -244,32 +244,11 @@ function initRouteMap(){
 
 if(routeMap) return;
 
-// 🔥 KLUCZ: używamy tej samej mapy co główna
-routeMap = window.mainMap;
 
-// 🧠 NIE dodajemy tileLayer (już istnieje)
-if(userLat && userLng){
-routeMap.setView([userLat,userLng],17);
-}else{
-routeMap.setView([52,19],6);
-}
-
-// fix Leaflet po ukryciu/pokazaniu zakładek
-setTimeout(()=>{
-routeMap.invalidateSize();
-},300);
-
-// ============================
-// MAPA TRAS
-// ============================
-
-if(routeMap){
-  routeMap.remove();
-}
-
+// 🥾 osobna mapa dla zakładki trasy
 routeMap = L.map("routeMiniMap", {
-  zoomControl:false,
-  attributionControl:false
+zoomControl:false,
+attributionControl:false
 });
 
 
@@ -311,19 +290,17 @@ routeMap.invalidateSize();
 },300);
 
 
-// 📍 NIE TWORZYMY DRUGIEGO GPS
-// używamy userMarker z mapy głównej
+// ❌ nie tworzymy routeMarker
+// GPS zostaje na głównej mapie
 
-
-if(userMarker && userLat && userLng){
-
-userMarker.addTo(routeMap);
-
-userMarker.setLatLng(
-[userLat,userLng]
-);
 
 }
+
+
+
+// ============================
+// START ROUTE
+// ============================
 
 function startRoute(){
 
@@ -342,27 +319,47 @@ totalPausedTime=0;
 
 activeForest=null;
 
+
 if(forestGridLayer){
+
 forestGridLayer.remove();
 forestGridLayer=null;
+
 }
 
+
 routeLine = L.polyline([],{
+
 color:"red",
 weight:6
+
 }).addTo(routeMap);
+
+
 
 gpsInterval = setInterval(()=>{
 
 if(!routeRunning || routePaused) return;
 
+
 if(userLat && userLng){
-addRoutePoint(userLat,userLng);
+
+addRoutePoint(
+userLat,
+userLng
+);
+
 }
+
 
 },15000);
 
-routeTimer = setInterval(updateRouteTime,1000);
+
+
+routeTimer = setInterval(
+updateRouteTime,
+1000
+);
 }
 
 
