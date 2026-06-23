@@ -1,20 +1,25 @@
 let map;
-let userLat=null;
-let userLng=null;
-let userMarker=null;
+let userLat = null;
+let userLng = null;
+let userMarker = null;
 
-map = L.map("map").setView([52.2,21],15);
+map = L.map("map").setView([52.2, 21], 15);
 
 L.tileLayer(
 "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
 {
-attribution:"© OpenStreetMap"
+    attribution:"© OpenStreetMap"
 }
 ).addTo(map);
 
 window.mainMap = map;
 
-// ✅ DODAJ TO
-window.userLayer = L.layerGroup().addTo(map);
-window.forestLayer = L.layerGroup().addTo(map);
-window.routeLayer = L.layerGroup().addTo(map);
+// WARSTWY APLIKACJI
+window.userLayer = L.layerGroup();
+window.forestLayer = L.layerGroup();
+window.routeLayer = L.layerGroup();
+
+// DODANIE WARSTW DO MAPY
+window.userLayer.addTo(map);
+window.forestLayer.addTo(map);
+window.routeLayer.addTo(map);
