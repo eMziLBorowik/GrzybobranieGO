@@ -13,16 +13,63 @@ userLng = pos.coords.longitude;
 
 document.getElementById("forestStatus").innerText = "📍 GPS OK";
 
+
+// MARKER GŁÓWNEJ MAPY
+
 if(!userMarker){
-userMarker = L.marker([userLat, userLng]).addTo(map);
+
+userMarker = L.marker(
+[userLat, userLng]
+).addTo(map);
+
 }else{
-userMarker.setLatLng([userLat, userLng]);
+
+userMarker.setLatLng(
+[userLat, userLng]
+);
+
 }
+
+
+// MARKER MAPY TRASY
+
+if(routeMap){
+
+if(!window.routeGpsMarker){
+
+window.routeGpsMarker = L.marker(
+[userLat, userLng],
+{
+icon:L.divIcon({
+className:"gpsMarker",
+html:"📍",
+iconSize:[45,45],
+iconAnchor:[22,45]
+})
+}
+).addTo(routeMap);
+
+
+}else{
+
+window.routeGpsMarker.setLatLng(
+[userLat, userLng]
+);
+
+}
+
+}
+
 
 // 🔥 WAŻNE: NIE RUSZAJ MAPY
 
 if(forests.length === 0){
-loadForests(userLat, userLng);
+
+loadForests(
+userLat,
+userLng
+);
+
 }
 
 },
