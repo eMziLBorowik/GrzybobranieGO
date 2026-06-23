@@ -20,10 +20,6 @@ userMarker.setLatLng([userLat, userLng]);
 
 // 🔥 WAŻNE: NIE RUSZAJ MAPY
 
-if(routeMarker){
-  routeMarker.setLatLng([userLat, userLng]);
-}
-
 if(forests.length === 0){
 loadForests(userLat, userLng);
 }
@@ -31,7 +27,10 @@ loadForests(userLat, userLng);
 },
 
 (err)=>{
-document.getElementById("forestStatus").innerText = "❌ GPS błąd";
+
+document.getElementById("forestStatus").innerText =
+"❌ GPS błąd";
+
 },
 
 {
@@ -39,8 +38,8 @@ enableHighAccuracy:true,
 timeout:15000,
 maximumAge:0
 }
-);
 
+);
 
 
 // zakładka mapa
