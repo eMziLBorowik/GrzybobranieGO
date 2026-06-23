@@ -589,3 +589,7 @@ routeMap.setView([userLat,userLng],17);
 }
 
 });
+
+document.addEventListener("DOMContentLoaded", async () => {
+  await showSavedRoutes();
+});
