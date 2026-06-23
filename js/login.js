@@ -1,5 +1,4 @@
-const supabase = window.supabase;
-const client = window.supabaseClient;
+const client = window.supabase;
 
 const emailInput = document.getElementById("email");
 const passwordInput = document.getElementById("password");
