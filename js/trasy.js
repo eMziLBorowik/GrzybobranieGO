@@ -323,7 +323,6 @@ routeGpsMarker.setLatLng(
 }
 
 
-}
 
 
 // ============================
