@@ -44,7 +44,10 @@ userMarker.setLatLng(
 
 // 🧭 PODĄŻANIE ZA GPS
 
-if(document.getElementById("map").style.display !== "none"){
+if(
+followGPS &&
+document.getElementById("map").style.display !== "none"
+){
 
 map.setView(
 [userLat,userLng],
