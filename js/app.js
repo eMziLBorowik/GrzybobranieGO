@@ -1,6 +1,6 @@
-
 let lastForestLat = null;
 let lastForestLng = null;
+let followGPS = true;
 
 
 window.onload=function(){
