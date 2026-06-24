@@ -98,6 +98,12 @@ return;
 const data = JSON.parse(text);
 
 
+// 🧹 usuń stare lasy z głównej mapy
+forests = [];
+
+window.forestLayer.clearLayers();
+
+
 
 data.elements.forEach(el=>{
 
