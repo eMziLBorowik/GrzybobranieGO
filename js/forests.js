@@ -22,8 +22,13 @@ const urbanGreen = [
 
 if(urbanGreen.includes(el.tags.leisure)) return true;
 
-// 🚫 za małe obiekty = skwery / patche miasta
-if(pts.length < 25) return true;
+// 🚫 za małe obiekty = skwery / patche miastaif(
+pts.length < 25 &&
+el.tags.boundary !== "protected_area" &&
+!el.tags.protect_class
+){
+return true;
+}
 
 // 🚫 pseudo-lasy w mieście
 if(el.tags.landuse === "forest" && pts.length < 40){
@@ -59,10 +64,12 @@ const q = `
 (
 way["landuse"="forest"](around:15000,${lat},${lng});
 way["natural"="wood"](around:15000,${lat},${lng});
-way["leisure"="park"](around:15000,${lat},${lng});
+
 relation["boundary"="protected_area"](around:15000,${lat},${lng});
 relation["protect_class"](around:15000,${lat},${lng});
-relation["name"~"Park|Krajobrazowy|Rezerwat"](around:15000,${lat},${lng});
+relation["boundary"="national_park"](around:15000,${lat},${lng});
+
+relation["name"~"Park|Krajobrazowy|Narodowy|Rezerwat"](around:15000,${lat},${lng});
 );
 
 out geom;
