@@ -357,6 +357,13 @@ animate:true
 
 };
 
+map.on("dragstart",()=>{
+
+followGPS = false;
+
+});
+
+
 function initRouteMap() {
 
   if (routeMap) return;
