@@ -1,4 +1,8 @@
 
+let lastForestLat = null;
+let lastForestLng = null;
+
+
 window.onload=function(){
 
 
@@ -63,12 +67,48 @@ window.routeGpsMarker.setLatLng(
 
 // 🔥 WAŻNE: NIE RUSZAJ MAPY
 
-if(forests.length === 0){
+// 🔥 AKTUALIZACJA LASÓW WG GPS
+
+if(
+lastForestLat === null ||
+lastForestLng === null
+){
+
+lastForestLat = userLat;
+lastForestLng = userLng;
 
 loadForests(
 userLat,
 userLng
 );
+
+}
+else{
+
+let distance =
+L.latLng(
+lastForestLat,
+lastForestLng
+)
+.distanceTo(
+L.latLng(
+userLat,
+userLng
+)
+);
+
+
+if(distance > 1000){
+
+lastForestLat = userLat;
+lastForestLng = userLng;
+
+loadForests(
+userLat,
+userLng
+);
+
+}
 
 }
 
