@@ -26,11 +26,35 @@ userMarker = L.marker(
 [userLat, userLng]
 ).addTo(map);
 
+
+// 🧭 CENTRUJ PRZY PIERWSZYM GPS
+
+map.setView(
+[userLat,userLng],
+16
+);
+
+
 }else{
 
 userMarker.setLatLng(
 [userLat, userLng]
 );
+
+
+// 🧭 PODĄŻANIE ZA GPS
+
+if(document.getElementById("map").style.display !== "none"){
+
+map.setView(
+[userLat,userLng],
+16,
+{
+animate:true
+}
+);
+
+}
 
 }
 
