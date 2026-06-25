@@ -135,14 +135,27 @@ survivalData.forEach(item=>{
 
 let card=document.createElement("div");
 
+card.style.height="160px";
+card.style.position="relative";
+card.style.overflow="hidden";
 
-card.style.background="rgba(255,255,255,0.92)";
-card.style.color="#111";
+card.style.background =
+`
+linear-gradient(
+rgba(0,0,0,0.35),
+rgba(0,0,0,0.75)
+),
+url(${item.image})
+`;
+
+card.style.backgroundSize="cover";
+card.style.backgroundPosition="center";
+
+card.style.color="white";
 card.style.borderRadius="18px";
 card.style.padding="18px";
 card.style.marginBottom="15px";
 card.style.boxShadow="0 4px 12px rgba(0,0,0,0.3)";
-
 
 card.innerHTML=`
 
