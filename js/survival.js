@@ -8,6 +8,7 @@ const survivalData = [
 
 {
 title:"🔥 Ogień",
+image:"images/survival/ogien.webp",
 tips:[
 "Kora brzozy jest bardzo dobrą rozpałką.",
 "Zbieraj suche gałązki spod świerków i sosen.",
