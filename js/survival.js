@@ -1,13 +1,12 @@
 // ============================
 // 🏕️ SURVIVAL - Grzybiarz PRO
-// Działa całkowicie offline
+// Offline
 // ============================
 
 
 const survivalData = [
 
 {
-id:"fire",
 title:"🔥 Ogień",
 tips:[
 "Kora brzozy jest bardzo dobrą rozpałką.",
@@ -19,125 +18,128 @@ tips:[
 },
 
 {
-id:"shelter",
 title:"⛺ Schronienie",
 tips:[
 "Znajdź miejsce osłonięte od wiatru.",
 "Unikaj zagłębień terenu podczas deszczu.",
-"Wykorzystaj gałęzie i plandekę do budowy schronienia.",
+"Wykorzystaj gałęzie i plandekę.",
 "Izoluj się od zimnego podłoża.",
-"Sprawdź czy nad schronieniem nie ma suchych konarów."
+"Sprawdź suche konary nad miejscem noclegu."
 ]
 },
 
 {
-id:"water",
 title:"💧 Woda",
 tips:[
-"Najbezpieczniej przegotować wodę przed spożyciem.",
-"Unikaj stojącej wody jeśli to możliwe.",
+"Najbezpieczniej przegotować wodę.",
+"Unikaj stojącej wody.",
 "Używaj filtrów turystycznych.",
-"Regularnie pij małe ilości wody.",
-"Nie czekaj z piciem aż poczujesz silne pragnienie."
+"Pij regularnie."
 ]
 },
 
 {
-id:"food",
 title:"🍓 Pożywienie",
 tips:[
-"Jedz tylko gatunki które potrafisz pewnie rozpoznać.",
-"Nie spożywaj nieznanych roślin i grzybów.",
-"Zabieraj awaryjne przekąski energetyczne.",
-"Przechowuj żywność w szczelnych opakowaniach.",
-"Planuj zapas jedzenia przed dłuższą wyprawą."
+"Jedz tylko pewnie rozpoznane gatunki.",
+"Nie jedz nieznanych roślin.",
+"Zabierz zapas energii.",
+"Przechowuj jedzenie szczelnie."
 ]
 },
 
 {
-id:"navigation",
 title:"🧭 Orientacja",
 tips:[
-"Przed wejściem do lasu zapisz punkt startowy.",
-"Zwracaj uwagę na charakterystyczne punkty terenu.",
-"Noś naładowany telefon.",
-"Mapa papierowa może uratować sytuację.",
-"Regularnie sprawdzaj kierunek marszu."
+"Zapisz punkt wejścia do lasu.",
+"Obserwuj charakterystyczne miejsca.",
+"Noś telefon z GPS.",
+"Kompas może uratować sytuację.",
+"Kontroluj kierunek marszu."
 ]
 },
 
 {
-id:"firstaid",
 title:"🚑 Pierwsza pomoc",
 tips:[
-"Zawsze noś podstawową apteczkę.",
-"Skaleczenia oczyść i zabezpiecz opatrunkiem.",
-"Kleszcza usuń możliwie szybko.",
-"Przy objawach wychłodzenia szukaj ciepłego schronienia.",
-"W sytuacji zagrożenia dzwoń po pomoc."
+"Noś podstawową apteczkę.",
+"Zabezpieczaj rany.",
+"Kleszcza usuń szybko.",
+"Przy wychłodzeniu szukaj ciepła."
 ]
 },
 
 {
-id:"equipment",
 title:"🎒 Ekwipunek",
 tips:[
-"Naładuj telefon przed wyjściem.",
+"Naładuj telefon.",
 "Zabierz powerbank.",
-"Noś latarkę lub czołówkę.",
-"Spakuj wodę i apteczkę.",
-"Dostosuj wyposażenie do długości wyprawy."
+"Latarka jest bardzo ważna.",
+"Zawsze miej wodę."
 ]
 },
 
 {
-id:"emergency",
 title:"🚨 Sytuacje awaryjne",
 tips:[
 "Zachowaj spokój.",
-"Nie oddalaj się bez planu.",
-"Spróbuj wrócić do ostatniego znanego punktu.",
-"Skorzystaj z GPS lub kompasu.",
-"W razie potrzeby wezwij pomoc."
+"Nie biegnij bez celu.",
+"Wróć do ostatniego znanego miejsca.",
+"W razie potrzeby dzwoń po pomoc."
 ]
 }
 
 ];
 
 
+
 // ============================
-// START SURVIVAL
+// START
 // ============================
 
 function loadSurvival(){
 
-renderSurvival("survivalContent");
+const box=document.getElementById("survivalContent");
+
+if(!box) return;
+
+
+// przewijanie
+
+box.style.height="calc(100vh - 170px)";
+box.style.overflowY="auto";
+box.style.padding="15px";
+
+renderSurvival();
 
 }
 
 
 
 // ============================
-// WYŚWIETLANIE KAFELKÓW
+// KAFELKI
 // ============================
 
-function renderSurvival(containerId){
+function renderSurvival(){
 
 
-const container = document.getElementById(containerId);
+const box=document.getElementById("survivalContent");
 
-if(!container) return;
-
-
-container.innerHTML="";
+box.innerHTML="";
 
 
 survivalData.forEach(item=>{
 
 
-const card=document.createElement("div");
+let card=document.createElement("div");
 
-card.className="card";
+
+card.style.background="rgba(255,255,255,0.92)";
+card.style.color="#111";
+card.style.borderRadius="18px";
+card.style.padding="18px";
+card.style.marginBottom="15px";
+card.style.boxShadow="0 4px 12px rgba(0,0,0,0.3)";
 
 
 card.innerHTML=`
@@ -155,9 +157,19 @@ Otwórz
 card.querySelector("button").onclick=function(){
 
 
+let content=document.createElement("div");
+
+
+content.style.background="rgba(255,255,255,0.95)";
+content.style.color="#111";
+content.style.borderRadius="18px";
+content.style.padding="20px";
+
+
 let html=`
 
 <h2>${item.title}</h2>
+
 `;
 
 
@@ -175,34 +187,27 @@ html+=`
 });
 
 
-
 html+=`
 
-<button id="survivalBackBtn">
+<button id="backSurvival">
 ⬅ Powrót
 </button>
 
 `;
 
 
+content.innerHTML=html;
 
-container.innerHTML=`
 
-<div class="card">
+box.innerHTML="";
 
-${html}
-
-</div>
-
-`;
+box.appendChild(content);
 
 
 
-document.getElementById(
-"survivalBackBtn"
-).onclick=function(){
+document.getElementById("backSurvival").onclick=function(){
 
-renderSurvival(containerId);
+renderSurvival();
 
 };
 
@@ -210,11 +215,10 @@ renderSurvival(containerId);
 };
 
 
-
-container.appendChild(card);
+box.appendChild(card);
 
 
 });
 
 
-  }
+}
