@@ -3,7 +3,9 @@
 // Działa całkowicie offline
 // ============================
 
+
 const survivalData = [
+
 {
 id:"fire",
 title:"🔥 Ogień",
@@ -15,6 +17,7 @@ tips:[
 "Przestrzegaj lokalnych przepisów dotyczących ognisk."
 ]
 },
+
 {
 id:"shelter",
 title:"⛺ Schronienie",
@@ -26,6 +29,7 @@ tips:[
 "Sprawdź czy nad schronieniem nie ma suchych konarów."
 ]
 },
+
 {
 id:"water",
 title:"💧 Woda",
@@ -37,6 +41,7 @@ tips:[
 "Nie czekaj z piciem aż poczujesz silne pragnienie."
 ]
 },
+
 {
 id:"food",
 title:"🍓 Pożywienie",
@@ -48,6 +53,7 @@ tips:[
 "Planuj zapas jedzenia przed dłuższą wyprawą."
 ]
 },
+
 {
 id:"navigation",
 title:"🧭 Orientacja",
@@ -59,6 +65,7 @@ tips:[
 "Regularnie sprawdzaj kierunek marszu."
 ]
 },
+
 {
 id:"firstaid",
 title:"🚑 Pierwsza pomoc",
@@ -70,6 +77,7 @@ tips:[
 "W sytuacji zagrożenia dzwoń po pomoc."
 ]
 },
+
 {
 id:"equipment",
 title:"🎒 Ekwipunek",
@@ -81,6 +89,7 @@ tips:[
 "Dostosuj wyposażenie do długości wyprawy."
 ]
 },
+
 {
 id:"emergency",
 title:"🚨 Sytuacje awaryjne",
@@ -92,49 +101,120 @@ tips:[
 "W razie potrzeby wezwij pomoc."
 ]
 }
+
 ];
+
+
+// ============================
+// START SURVIVAL
+// ============================
+
+function loadSurvival(){
+
+renderSurvival("survivalContent");
+
+}
+
+
+
+// ============================
+// WYŚWIETLANIE KAFELKÓW
+// ============================
 
 function renderSurvival(containerId){
 
+
 const container = document.getElementById(containerId);
+
 if(!container) return;
 
-container.innerHTML = "";
+
+container.innerHTML="";
+
 
 survivalData.forEach(item=>{
 
-const card = document.createElement("div");
-card.className = "card";
 
-card.innerHTML = `
+const card=document.createElement("div");
+
+card.className="card";
+
+
+card.innerHTML=`
+
 <h3>${item.title}</h3>
-<button>Otwórz</button>
+
+<button>
+Otwórz
+</button>
+
 `;
 
-card.querySelector("button").onclick = ()=>{
 
-let text = `<h2>${item.title}</h2>`;
+
+card.querySelector("button").onclick=function(){
+
+
+let html=`
+
+<h2>${item.title}</h2>
+`;
+
+
 
 item.tips.forEach(t=>{
-text += `<p>• ${t}</p>`;
-});
 
-container.innerHTML = `
-<div class="card">
-${text}
-<br>
-<button id="survivalBackBtn">⬅ Powrót</button>
-</div>
+html+=`
+
+<p>
+• ${t}
+</p>
+
 `;
 
-document.getElementById("survivalBackBtn").onclick = ()=>{
+});
+
+
+
+html+=`
+
+<button id="survivalBackBtn">
+⬅ Powrót
+</button>
+
+`;
+
+
+
+container.innerHTML=`
+
+<div class="card">
+
+${html}
+
+</div>
+
+`;
+
+
+
+document.getElementById(
+"survivalBackBtn"
+).onclick=function(){
+
 renderSurvival(containerId);
-};
 
 };
+
+
+};
+
+
 
 container.appendChild(card);
 
+
 });
+
 
   }
