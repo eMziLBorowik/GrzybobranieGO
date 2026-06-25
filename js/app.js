@@ -300,7 +300,46 @@ if (tabTrails) {
     });
 
   };
+  
+// 🔥 ZAKŁADKA SURVIVAL
 
+const tabSurvival = document.getElementById("tabSurvival");
+const survivalPanel = document.getElementById("survivalPanel");
+
+
+if(tabSurvival && survivalPanel){
+
+tabSurvival.onclick = function(){
+
+
+document.getElementById("centerMapBtn").style.display="none";
+
+document.getElementById("map").style.display="none";
+
+document.getElementById("grzybdex").style.display="none";
+
+document.getElementById("trailsPanel").style.display="none";
+
+document.getElementById("forestInfoPanel").style.display="none";
+
+
+// pokaż Survival
+
+survivalPanel.style.display="block";
+
+
+// uruchom survival.js
+
+if(typeof loadSurvival === "function"){
+
+loadSurvival();
+
+}
+
+
+};
+
+}
 }
 
 // 🎯 WYŚRODKOWANIE MAPY
