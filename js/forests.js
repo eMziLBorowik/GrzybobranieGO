@@ -10,9 +10,10 @@ function isBadForest(el, pts){
 
 if(!el.tags) return true;
 
-// ✅ Nigdy nie filtruj parków narodowych i rezerwatów
+// ✅ Parki narodowe i rezerwaty przepuszczamy
 if (
     el.tags.boundary === "protected_area" ||
+    el.tags.boundary === "national_park" ||
     el.tags.protect_class ||
     (el.tags.name && (
         el.tags.name.includes("Park Narodowy") ||
@@ -23,15 +24,6 @@ if (
     return false;
 }
 
-// 🌆 miejskie tereny zielone
-const urbanGreen = [
-"park",
-"garden",
-"grass",
-"village_green",
-"recreation_ground",
-"meadow"
-];
 
 // 🌆 miejskie tereny zielone
 const urbanGreen = [
@@ -45,12 +37,22 @@ const urbanGreen = [
 
 if(urbanGreen.includes(el.tags.leisure)) return true;
 
-// 🚫 za małe obiekty = skwery / patche miasta
+
+// 🚫 za małe obiekty
 if(pts.length < 25) return true;
 
-// 🚫 pseudo-lasy w mieście
+
+// 🚫 pseudo-lasy miejskie
 if(el.tags.landuse === "forest" && pts.length < 40){
 return true;
+}
+
+
+if(el.tags.place){
+return true;
+}
+
+return false;
 }
 
 // 🚫 place = centrum miasta/wsi
