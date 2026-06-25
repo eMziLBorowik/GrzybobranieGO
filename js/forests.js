@@ -10,6 +10,29 @@ function isBadForest(el, pts){
 
 if(!el.tags) return true;
 
+// ✅ Nigdy nie filtruj parków narodowych i rezerwatów
+if (
+    el.tags.boundary === "protected_area" ||
+    el.tags.protect_class ||
+    (el.tags.name && (
+        el.tags.name.includes("Park Narodowy") ||
+        el.tags.name.includes("Park Krajobrazowy") ||
+        el.tags.name.includes("Rezerwat")
+    ))
+){
+    return false;
+}
+
+// 🌆 miejskie tereny zielone
+const urbanGreen = [
+"park",
+"garden",
+"grass",
+"village_green",
+"recreation_ground",
+"meadow"
+];
+
 // 🌆 miejskie tereny zielone
 const urbanGreen = [
 "park",
