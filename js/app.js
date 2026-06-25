@@ -188,8 +188,13 @@ document.getElementById(
 "trailsPanel"
 ).style.display="none";
 
+  
 
+document.getElementById(
+"survivalPanel"
+).style.display="none";
 
+  
 setTimeout(()=>{
 
 map.invalidateSize();
