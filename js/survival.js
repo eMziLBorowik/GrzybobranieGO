@@ -20,6 +20,7 @@ tips:[
 
 {
 title:"⛺ Schronienie",
+image:"images/survival/namiot.webp",
 tips:[
 "Znajdź miejsce osłonięte od wiatru.",
 "Unikaj zagłębień terenu podczas deszczu.",
