@@ -106,8 +106,9 @@ relation["boundary"="national_park"](around:15000,${lat},${lng});
 way["boundary"="protected_area"](around:15000,${lat},${lng});
 relation["boundary"="protected_area"](around:15000,${lat},${lng});
 
-relation["name"~"Park|Krajobrazowy|Rezerwat"](around:15000,${lat},${lng});
+relation["protect_class"](around:15000,${lat},${lng});
 
+relation["name"~"Park|Krajobrazowy|Rezerwat",i](around:15000,${lat},${lng});
 );
 
 out geom;
