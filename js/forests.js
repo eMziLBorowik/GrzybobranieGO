@@ -15,6 +15,8 @@ if(
 el.tags.boundary === "protected_area" ||
 el.tags.boundary === "national_park" ||
 el.tags.protect_class ||
+el.tags.protection_title ||
+el.tags.protect_class ||
 (el.tags.name && (
 el.tags.name.includes("Park Narodowy") ||
 el.tags.name.includes("Park Krajobrazowy") ||
