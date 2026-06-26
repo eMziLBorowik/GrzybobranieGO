@@ -44,10 +44,13 @@ return true;
 
 
 // 🚫 małe obiekty
-if(pts.length < 25){
+if(
+pts.length < 25 &&
+!el.tags.boundary &&
+!el.tags.protect_class
+){
 return true;
 }
-
 
 
 // 🚫 małe pseudo lasy
