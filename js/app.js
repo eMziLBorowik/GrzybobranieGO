@@ -1,6 +1,7 @@
 let lastForestLat = null;
 let lastForestLng = null;
 let followGPS = true;
+let firstGPS = true;
 
 
 window.onload=function(){
@@ -29,10 +30,16 @@ userMarker = L.marker(
 
 // 🧭 CENTRUJ PRZY PIERWSZYM GPS
 
+if(firstGPS){
+
 map.setView(
 [userLat,userLng],
 16
 );
+
+firstGPS = false;
+
+}
 
 
 }else{
@@ -402,9 +409,7 @@ animate:true
 };
 
 map.on("dragstart",()=>{
-
-followGPS = false;
-
+    followGPS = false;
 });
 
 
