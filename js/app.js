@@ -16,7 +16,6 @@ window.onload = function () {
     const trails = document.getElementById("trailsPanel");
     const surv = document.getElementById("survivalPanel");
 
-    // ukryj wszystko
     if (mapEl) mapEl.style.display = "none";
     if (grzyd) grzyd.style.display = "none";
     if (trails) trails.style.display = "none";
@@ -24,30 +23,21 @@ window.onload = function () {
 
     document.body.classList.remove("screen-map");
 
-    // MAPA
     if (screen === "map") {
       if (mapEl) mapEl.style.display = "block";
       document.body.classList.add("screen-map");
     }
 
-    // GRZYBDEX
     if (screen === "grzybdex") {
       if (grzyd) grzyd.style.display = "block";
     }
 
-    // TRASY
     if (screen === "trailsPanel") {
       if (trails) trails.style.display = "block";
     }
 
-    // SURVIVAL
     if (screen === "survivalPanel") {
       if (surv) surv.style.display = "block";
-
-      // WAŻNE: init survival
-      if (typeof loadSurvival === "function") {
-        loadSurvival();
-      }
     }
   }
 
@@ -68,9 +58,7 @@ window.onload = function () {
 
   document.getElementById("sideMap").onclick = function () {
     sideMenu.classList.remove("active");
-
     document.getElementById("centerMapBtn").style.display = "flex";
-
     showScreen("map");
 
     setTimeout(() => {
@@ -84,9 +72,7 @@ window.onload = function () {
 
   document.getElementById("sideDex").onclick = function () {
     sideMenu.classList.remove("active");
-
     document.getElementById("centerMapBtn").style.display = "none";
-
     showScreen("grzybdex");
 
     if (typeof updateStats === "function") {
@@ -103,7 +89,6 @@ window.onload = function () {
   if (tabTrails) {
     tabTrails.onclick = function () {
       sideMenu.classList.remove("active");
-
       document.getElementById("centerMapBtn").style.display = "none";
 
       showScreen("trailsPanel");
@@ -129,7 +114,7 @@ window.onload = function () {
   }
 
   // =========================
-  // 🔥 SURVIVAL
+  // 🔥 SURVIVAL (FIX)
   // =========================
 
   const tabSurvival = document.getElementById("sideSurvival");
@@ -137,10 +122,14 @@ window.onload = function () {
   if (tabSurvival) {
     tabSurvival.onclick = function () {
       sideMenu.classList.remove("active");
-
       document.getElementById("centerMapBtn").style.display = "none";
 
       showScreen("survivalPanel");
+
+      // 🔥 KLUCZ: render kafelków
+      if (typeof openSurvival === "function") {
+        openSurvival();
+      }
     };
   }
 
@@ -160,7 +149,6 @@ window.onload = function () {
 
       document.getElementById("forestStatus").innerText = "📍 GPS OK";
 
-      // marker główny
       if (!userMarker) {
 
         userMarker = L.marker([userLat, userLng]).addTo(map);
@@ -178,7 +166,6 @@ window.onload = function () {
         }
       }
 
-      // route marker
       if (routeMap) {
 
         if (!window.routeGpsMarker) {
@@ -198,7 +185,6 @@ window.onload = function () {
         }
       }
 
-      // forests reload
       if (lastForestLat === null || lastForestLng === null) {
 
         lastForestLat = userLat;
