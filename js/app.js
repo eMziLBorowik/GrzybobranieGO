@@ -45,14 +45,12 @@ window.onload = function () {
     }
   }
 
-
   const menuBtn = document.getElementById("menuBtn");
   const sideMenu = document.getElementById("sideMenu");
   const closeMenu = document.getElementById("closeMenu");
 
   if (menuBtn) menuBtn.onclick = () => sideMenu.classList.add("active");
   if (closeMenu) closeMenu.onclick = () => sideMenu.classList.remove("active");
-
 
   document.getElementById("sideMap").onclick = function () {
     sideMenu.classList.remove("active");
@@ -61,14 +59,12 @@ window.onload = function () {
     setTimeout(() => map && map.invalidateSize(), 300);
   };
 
-
   document.getElementById("sideDex").onclick = function () {
     sideMenu.classList.remove("active");
     document.getElementById("centerMapBtn").style.display = "none";
     showScreen("grzybdex");
     updateStats?.();
   };
-
 
   document.getElementById("sideTrails").onclick = function () {
     sideMenu.classList.remove("active");
@@ -86,20 +82,17 @@ window.onload = function () {
     });
   };
 
-
   document.getElementById("sideSurvival").onclick = function () {
     sideMenu.classList.remove("active");
     document.getElementById("centerMapBtn").style.display = "none";
     showScreen("survivalPanel");
   };
 
-
   document.getElementById("sideGuide").onclick = function () {
     sideMenu.classList.remove("active");
     document.getElementById("centerMapBtn").style.display = "none";
     showScreen("guidePanel");
   };
-
 
   navigator.geolocation.watchPosition((pos) => {
 
@@ -112,12 +105,15 @@ window.onload = function () {
 
     if (!userMarker) {
       userMarker = L.marker([userLat, userLng]).addTo(map);
+
       if (firstGPS) {
         map.setView([userLat, userLng], 16);
         firstGPS = false;
       }
+
     } else {
       userMarker.setLatLng([userLat, userLng]);
+
       if (followGPS && document.body.classList.contains("screen-map")) {
         map.setView([userLat, userLng], 16);
       }
@@ -155,22 +151,30 @@ window.onload = function () {
 
   }, () => {
     document.getElementById("forestStatus").innerText = "❌ GPS błąd";
+  }, {
+    enableHighAccuracy: true,
+    timeout: 15000,
+    maximumAge: 0
   });
 
+  const centerMapBtn = document.getElementById("centerMapBtn");
 
-  document.getElementById("centerMapBtn").onclick = () => {
-    if (userLat && userLng) {
-      map.setView([userLat, userLng], 16);
-    }
-  };
+  if (centerMapBtn) {
+    centerMapBtn.onclick = () => {
+      if (userLat && userLng) {
+        map.setView([userLat, userLng], 16);
+      }
+    };
+  }
 
   map.on("dragstart", () => followGPS = false);
 };
 
-
 function initRouteMap() {
   if (routeMap) return;
+
   routeMap = L.map("map").setView([52, 19], 6);
+
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "© OpenStreetMap"
   }).addTo(routeMap);
