@@ -405,22 +405,29 @@ if(centerMapBtn){
 centerMapBtn.onclick=function(){
 
 
+
 if(userLat && userLng){
 
-followGPS = true;
 
 
 map.setView(
+
 [userLat,userLng],
+
 16,
+
 {
+
 animate:true
+
 }
+
 );
 
+
+
 }
 
-};
 
 
 };
