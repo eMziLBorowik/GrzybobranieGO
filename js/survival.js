@@ -94,28 +94,26 @@ tips:[
 ];
 
 
-
 // ============================
 // START
 // ============================
 
 function loadSurvival(){
 
-const box=document.getElementById("survivalContent");
+const box = document.getElementById("survivalContent");
 
 if(!box) return;
 
-
-// przewijanie
-
-box.style.height="calc(100vh - 170px)";
-box.style.overflowY="auto";
-box.style.padding="15px";
+// stabilny layout pod mapę / panel
+box.style.boxSizing = "border-box";
+box.style.height = "auto";
+box.style.maxHeight = "calc(100vh - 170px)";
+box.style.overflowY = "auto";
+box.style.padding = "15px";
+box.style.scrollBehavior = "smooth";
 
 renderSurvival();
-
 }
-
 
 
 // ============================
@@ -124,116 +122,80 @@ renderSurvival();
 
 function renderSurvival(){
 
+const box = document.getElementById("survivalContent");
+if(!box) return;
 
-const box=document.getElementById("survivalContent");
+box.innerHTML = "";
 
-box.innerHTML="";
+survivalData.forEach(item => {
 
+let card = document.createElement("div");
 
-survivalData.forEach(item=>{
+card.style.height = "160px";
+card.style.position = "relative";
+card.style.overflow = "hidden";
 
-
-let card=document.createElement("div");
-
-card.style.height="160px";
-card.style.position="relative";
-card.style.overflow="hidden";
-
-card.style.background =
-`
-linear-gradient(
-rgba(0,0,0,0.35),
-rgba(0,0,0,0.75)
-),
+card.style.background = `
+linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.75)),
 url(${item.image})
 `;
 
-card.style.backgroundSize="cover";
-card.style.backgroundPosition="center";
+card.style.backgroundSize = "cover";
+card.style.backgroundPosition = "center";
 
-card.style.color="white";
-card.style.borderRadius="18px";
-card.style.padding="18px";
-card.style.marginBottom="15px";
-card.style.boxShadow="0 4px 12px rgba(0,0,0,0.3)";
+card.style.color = "white";
+card.style.borderRadius = "18px";
+card.style.padding = "18px";
+card.style.marginBottom = "15px";
+card.style.boxShadow = "0 4px 12px rgba(0,0,0,0.3)";
 
-card.innerHTML=`
-
+card.innerHTML = `
 <h3>${item.title}</h3>
-
-<button>
-Otwórz
-</button>
-
+<button>Otwórz</button>
 `;
 
-
-
-card.querySelector("button").onclick=function(){
-
-
-let content=document.createElement("div");
-
-
-content.style.background="rgba(255,255,255,0.95)";
-content.style.color="#111";
-content.style.borderRadius="18px";
-content.style.padding="20px";
-
-
-let html=`
-
-<h2>${item.title}</h2>
-
-`;
-
-
-
-item.tips.forEach(t=>{
-
-html+=`
-
-<p>
-• ${t}
-</p>
-
-`;
-
-});
-
-
-html+=`
-
-<button id="backSurvival">
-⬅ Powrót
-</button>
-
-`;
-
-
-content.innerHTML=html;
-
-
-box.innerHTML="";
-
-box.appendChild(content);
-
-
-
-document.getElementById("backSurvival").onclick=function(){
-
-renderSurvival();
-
+card.querySelector("button").onclick = function(){
+showSurvivalDetail(item);
 };
-
-
-};
-
 
 box.appendChild(card);
 
-
 });
 
+}
+
+
+// ============================
+// DETAIL VIEW (bez psucia DOM)
+// ============================
+
+function showSurvivalDetail(item){
+
+const box = document.getElementById("survivalContent");
+if(!box) return;
+
+let content = document.createElement("div");
+
+content.style.background = "rgba(255,255,255,0.95)";
+content.style.color = "#111";
+content.style.borderRadius = "18px";
+content.style.padding = "20px";
+
+let html = `<h2>${item.title}</h2>`;
+
+item.tips.forEach(t => {
+html += `<p>• ${t}</p>`;
+});
+
+html += `<button id="backSurvival">⬅ Powrót</button>`;
+
+content.innerHTML = html;
+
+box.innerHTML = "";
+box.appendChild(content);
+
+document.getElementById("backSurvival").onclick = function(){
+renderSurvival();
+};
 
 }
