@@ -9,6 +9,8 @@ function isBadForest(el, pts){
 
 if(!el.tags) return true;
 
+if(el.type === "node") return true;
+
 
 // ✅ NIE USUWAJ PARKÓW I REZERWATÓW
 if(
@@ -27,7 +29,6 @@ return false;
 }
 
 
-
 // 🌆 miejskie tereny zielone
 const urbanGreen = [
 "park",
@@ -43,7 +44,6 @@ return true;
 }
 
 
-
 // 🚫 małe obiekty
 if(
 pts.length < 25 &&
@@ -52,7 +52,6 @@ pts.length < 25 &&
 ){
 return true;
 }
-
 
 
 // 🚫 małe pseudo lasy
@@ -64,15 +63,12 @@ return true;
 }
 
 
-
 // 🚫 miejscowości
 if(el.tags.place){
 return true;
 }
 
-
 return false;
-
 }
 
 
@@ -80,9 +76,7 @@ return false;
 
 async function loadForests(lat,lng){
 
-
 const now = Date.now();
-
 
 if(now - lastForestRequest < 30000){
 console.log("⏳ cooldown forests API");
@@ -90,7 +84,6 @@ return;
 }
 
 lastForestRequest = now;
-
 
 
 const q = `
@@ -103,29 +96,29 @@ way["landuse"="forest"](around:30000,${lat},${lng});
 way["natural"="wood"](around:30000,${lat},${lng});
 
 /* PARKI I OBSZARY CHRONIONE */
-
 way["boundary"="protected_area"](around:30000,${lat},${lng});
 relation["boundary"="protected_area"](around:30000,${lat},${lng});
 
 way["boundary"="national_park"](around:30000,${lat},${lng});
 relation["boundary"="national_park"](around:30000,${lat},${lng});
 
-relation["protect_class"](around:30000,${lat},${lng});
+/* multipolygon (KLUCZ) */
+relation["type"="multipolygon"](around:30000,${lat},${lng});
 
+/* dodatkowe tagi ochrony */
+relation["protect_class"](around:30000,${lat},${lng});
 relation["protection_title"](around:30000,${lat},${lng});
 
 /* PO NAZWIE */
-relation["name"~"Park Krajobrazowy|Krajobrazowy|Rezerwat|Park",i]
-(around:30000,${lat},${lng});
+relation["name"~"Park Krajobrazowy|Krajobrazowy|Rezerwat|Park",i](around:30000,${lat},${lng});
 
 );
 
-out geom;
+out body;
 >;
-out geom;
+out skel qt;
 
 `;
-
 
 
 const url =
@@ -164,20 +157,19 @@ window.forestLayer.clearLayers();
 
 data.elements.forEach(el=>{
 
-if(!el.geometry) return;
+let pts = [];
 
-const pts =
-el.geometry.map(p=>[
-p.lat,
-p.lon
-]);
+if(el.geometry){
+pts = el.geometry.map(p=>[p.lat,p.lon]);
+}
+
+if(!pts.length) return;
 
 if(isBadForest(el,pts)) return;
 
 if(pts.length < 3) return;
 
-let poly =
-L.polygon(pts,{
+let poly = L.polygon(pts,{
 color:"#2e8b57",
 fillColor:"#3cb371",
 fillOpacity:0.25,
@@ -193,7 +185,6 @@ showForestInfo(el,pts);
 
 });
 
-
 document.getElementById("forestStatus").innerText =
 "🌲 Lasy i parki gotowe";
 
@@ -205,7 +196,6 @@ document.getElementById("forestStatus").innerText =
 }
 
 }
-
 
 
 
