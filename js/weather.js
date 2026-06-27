@@ -21,15 +21,18 @@ async function loadWeather(lat, lng) {
 
     console.log("🌤️ Pogoda załadowana", data.current);
 
-    const tempEl = document.getElementById("weatherTemp");
-    const humEl = document.getElementById("weatherHumidity");
-    const windEl = document.getElementById("weatherWind");
+    // 🎯 DOM (DOPASOWANE DO TWOJEGO INDEX.HTML)
+    const tempEl = document.getElementById("temp");
+    const humEl = document.getElementById("humidity");
+    const windEl = document.getElementById("wind");
 
+    // 🧠 zabezpieczenie
     if (!tempEl || !humEl || !windEl) {
-      console.warn("❌ Brak elementów pogody w HTML");
+      console.warn("❌ Brak elementów pogody w HTML (temp/humidity/wind)");
       return;
     }
 
+    // 🌤️ render
     tempEl.innerText = data.current.temperature_2m + " °C";
     humEl.innerText = data.current.relative_humidity_2m + " %";
     windEl.innerText = data.current.wind_speed_10m + " km/h";
