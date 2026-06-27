@@ -72,7 +72,7 @@ function loadGuide(){
 
 
 // ============================
-// LISTA KAFELKÓW (NOWY UI)
+// KAFELKI (FULL AUTO VIEW)
 // ============================
 
 function renderGuide(){
@@ -94,69 +94,18 @@ function renderGuide(){
     card.style.color = "white";
     card.style.boxShadow = "0 6px 18px rgba(0,0,0,0.25)";
 
-    card.innerHTML = `
+    let html = `
       <h3 style="margin:0 0 10px 0;">
         ${item.title}
       </h3>
-
-      <div style="opacity:0.85; font-size:14px;">
-        ${item.text.slice(0,1).map(t => `<p>• ${t}</p>`).join("")}
-      </div>
-
-      <button style="margin-top:10px; width:100%;">
-        Otwórz
-      </button>
     `;
 
-    card.querySelector("button").onclick = function () {
-      openGuideArticle(item);
-    };
+    item.text.forEach(line => {
+      html += `<p style="margin:6px 0; opacity:0.85;">• ${line}</p>`;
+    });
+
+    card.innerHTML = html;
 
     box.appendChild(card);
   });
-}
-
-
-// ============================
-// ARTYKUŁ (CLEAN VIEW)
-// ============================
-
-function openGuideArticle(item){
-
-  const box = document.getElementById("guideContent");
-  if(!box) return;
-
-  box.innerHTML = "";
-
-  const content = document.createElement("div");
-
-  content.style.background = "#162013";
-  content.style.border = "1px solid #314b25";
-  content.style.borderRadius = "18px";
-  content.style.padding = "18px";
-  content.style.color = "white";
-
-  let html = `
-    <h2 style="margin-top:0;">
-      ${item.title}
-    </h2>
-  `;
-
-  item.text.forEach(line => {
-    html += `<p style="opacity:0.9;">• ${line}</p>`;
-  });
-
-  html += `
-    <button id="backGuide" style="width:100%; margin-top:15px;">
-      ⬅ Powrót
-    </button>
-  `;
-
-  content.innerHTML = html;
-
-  box.appendChild(content);
-
-  document.getElementById("backGuide").onclick = function () {
-    renderGuide();
-  };
 }
