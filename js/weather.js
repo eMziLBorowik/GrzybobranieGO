@@ -1,43 +1,40 @@
-async function loadWeather(lat,lng){
+let lastWeatherUpdate = 0;
+const WEATHER_COOLDOWN = 10 * 60 * 1000; // 10 minut
 
+async function loadWeather(lat, lng) {
+  const now = Date.now();
 
-try{
+  // ⏳ cooldown
+  if (now - lastWeatherUpdate < WEATHER_COOLDOWN) {
+    console.log("⏳ Pogoda w cooldownie (10 min)");
+    return;
+  }
 
+  lastWeatherUpdate = now;
 
-const res = await fetch(
+  try {
+    const res = await fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,relative_humidity_2m,wind_speed_10m&timezone=auto`
+    );
 
-`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,relative_humidity_2m,wind_speed_10m&timezone=auto`
+    const data = await res.json();
 
-);
+    console.log("🌤️ Pogoda załadowana", data.current);
 
+    const tempEl = document.getElementById("weatherTemp");
+    const humEl = document.getElementById("weatherHumidity");
+    const windEl = document.getElementById("weatherWind");
 
-const data = await res.json();
+    if (!tempEl || !humEl || !windEl) {
+      console.warn("❌ Brak elementów pogody w HTML");
+      return;
+    }
 
+    tempEl.innerText = data.current.temperature_2m + " °C";
+    humEl.innerText = data.current.relative_humidity_2m + " %";
+    windEl.innerText = data.current.wind_speed_10m + " km/h";
 
-console.log("🌤️ Pogoda załadowana",data.current);
-
-
-
-document.getElementById("weatherTemp").innerText =
-data.current.temperature_2m + " °C";
-
-
-document.getElementById("weatherHumidity").innerText =
-data.current.relative_humidity_2m + " %";
-
-
-document.getElementById("weatherWind").innerText =
-data.current.wind_speed_10m + " km/h";
-
-
-
-}
-
-catch(e){
-
-console.log("❌ Pogoda błąd",e);
-
-}
-
-
+  } catch (e) {
+    console.log("❌ Pogoda błąd", e);
+  }
 }
