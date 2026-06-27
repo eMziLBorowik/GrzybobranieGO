@@ -9,14 +9,13 @@ html,body{
 
 margin:0;
 
-height:100%;
+min-height:100%;
 
 background:#1b2417;
 
-overflow:hidden;
+overflow:auto;
 
 }
-
 
 
 
@@ -1045,5 +1044,109 @@ cursor:pointer;
 #sideMenu div:not(#closeMenu):active{
 
 transform:scale(.95);
+
+}
+
+/* 🌤️ POGODA */
+
+
+#weatherCard{
+
+width:90%;
+
+margin:20px auto;
+
+background:linear-gradient(
+135deg,
+#24351d,
+#314d25
+);
+
+border-radius:20px;
+
+padding:18px;
+
+color:white;
+
+box-shadow:
+0 5px 15px rgba(0,0,0,.4);
+
+}
+
+
+
+.weatherTitle{
+
+font-size:20px;
+
+font-weight:bold;
+
+text-align:center;
+
+margin-bottom:15px;
+
+}
+
+
+
+.weatherGrid{
+
+display:grid;
+
+grid-template-columns:repeat(4,1fr);
+
+gap:12px;
+
+}
+
+
+
+.weatherItem{
+
+background:rgba(255,255,255,.08);
+
+border-radius:15px;
+
+padding:15px;
+
+text-align:center;
+
+font-size:22px;
+
+}
+
+
+
+.weatherItem span{
+
+display:block;
+
+font-size:20px;
+
+font-weight:bold;
+
+}
+
+
+
+.weatherItem small{
+
+display:block;
+
+font-size:12px;
+
+opacity:.8;
+
+}
+
+
+
+@media(max-width:700px){
+
+.weatherGrid{
+
+grid-template-columns:repeat(2,1fr);
+
+}
 
 }
