@@ -12,8 +12,20 @@ if(!el.tags) return true;
 
 // ✅ NIE USUWAJ PARKÓW I REZERWATÓW
 if(
+if(
 el.tags.boundary === "protected_area" ||
 el.tags.boundary === "national_park" ||
+el.tags.protect_class ||
+el.tags.protection_title ||
+el.tags.protected ||
+(el.tags.name && (
+el.tags.name.includes("Park Krajobrazowy") ||
+el.tags.name.includes("Park Narodowy") ||
+el.tags.name.includes("Rezerwat")
+))
+){
+return false;
+}
 el.tags.protect_class ||
 el.tags.protection_title ||
 el.tags.protect_class ||
@@ -103,18 +115,34 @@ const q = `
 way["landuse"="forest"](around:30000,${lat},${lng});
 way["natural"="wood"](around:30000,${lat},${lng});
 
-way["leisure"="park"](around:30000,${lat},${lng});
 
-way["boundary"="national_park"](around:30000,${lat},${lng});
-relation["boundary"="national_park"](around:30000,${lat},${lng});
+/* PARKI I OBSZARY CHRONIONE */
 
 way["boundary"="protected_area"](around:30000,${lat},${lng});
 relation["boundary"="protected_area"](around:30000,${lat},${lng});
 
+
+way["boundary"="national_park"](around:30000,${lat},${lng});
+relation["boundary"="national_park"](around:30000,${lat},${lng});
+
+
 relation["protect_class"](around:30000,${lat},${lng});
 
-relation["name"~"Park|Krajobrazowy|Rezerwat",i](around:30000,${lat},${lng});
+relation["protection_title"](around:30000,${lat},${lng});
+
+
+/* po nazwie */
+
+relation["name"~"Park Krajobrazowy|Krajobrazowy|Rezerwat|Park",i]
+(around:30000,${lat},${lng});
+
 );
+
+out geom;
+>;
+out geom;
+
+`;
 
 out geom;
 >;
