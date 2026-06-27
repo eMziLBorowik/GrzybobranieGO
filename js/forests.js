@@ -84,7 +84,7 @@ async function loadForests(lat,lng){
 const now = Date.now();
 
 
-if(now - lastForestRequest < 15000){
+if(now - lastForestRequest < 30000){
 console.log("⏳ cooldown forests API");
 return;
 }
@@ -100,20 +100,20 @@ const q = `
 
 (
 
-way["landuse"="forest"](around:15000,${lat},${lng});
-way["natural"="wood"](around:15000,${lat},${lng});
+way["landuse"="forest"](around:30000,${lat},${lng});
+way["natural"="wood"](around:30000,${lat},${lng});
 
-way["leisure"="park"](around:15000,${lat},${lng});
+way["leisure"="park"](around:30000,${lat},${lng});
 
-way["boundary"="national_park"](around:15000,${lat},${lng});
-relation["boundary"="national_park"](around:15000,${lat},${lng});
+way["boundary"="national_park"](around:30000,${lat},${lng});
+relation["boundary"="national_park"](around:30000,${lat},${lng});
 
-way["boundary"="protected_area"](around:15000,${lat},${lng});
-relation["boundary"="protected_area"](around:15000,${lat},${lng});
+way["boundary"="protected_area"](around:30000,${lat},${lng});
+relation["boundary"="protected_area"](around:30000,${lat},${lng});
 
-relation["protect_class"](around:15000,${lat},${lng});
+relation["protect_class"](around:30000,${lat},${lng});
 
-relation["name"~"Park|Krajobrazowy|Rezerwat",i](around:15000,${lat},${lng});
+relation["name"~"Park|Krajobrazowy|Rezerwat",i](around:30000,${lat},${lng});
 );
 
 out geom;
