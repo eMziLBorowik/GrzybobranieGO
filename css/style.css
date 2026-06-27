@@ -973,13 +973,15 @@ flex-shrink:0;
 /* ================= */
 
 
+/* MENU Z LEWEJ */
+
 #sideMenu{
 
 position:absolute;
 
 top:0;
 
-right:-280px;
+left:-280px;
 
 width:280px;
 
@@ -993,7 +995,7 @@ padding:20px;
 
 transition:.3s ease;
 
-box-shadow:-5px 0 20px rgba(0,0,0,.5);
+box-shadow:5px 0 20px rgba(0,0,0,.5);
 
 color:white;
 
@@ -1002,7 +1004,7 @@ color:white;
 
 #sideMenu.active{
 
-right:0;
+left:0;
 
 }
 
