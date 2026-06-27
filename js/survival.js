@@ -1,3 +1,4 @@
+
 // ============================
 // 🏕️ SURVIVAL - Grzybiarz PRO
 // Zakładka offline (moduł UI)
@@ -107,14 +108,13 @@ function openSurvival(){
 const box = document.getElementById("survivalContent");
 if(!box) return;
 
-// NIE rozwalamy layoutu mapy / paneli
-box.style.boxSizing = "border-box";
-box.style.height = "auto";
-box.style.maxHeight = "calc(100vh - 170px)";
-box.style.overflowY = "auto";
-box.style.padding = "15px";
+// tylko reset widoku (CSS robi resztę)
+box.innerHTML = "";
 
 renderSurvivalList();
+
+// scroll na górę (ważne UX)
+box.scrollTop = 0;
 }
 
 
@@ -168,7 +168,7 @@ box.appendChild(card);
 
 
 // ============================
-// DETAIL (bez reset bugów)
+// DETAIL VIEW
 // ============================
 
 function renderSurvivalDetail(item){
@@ -199,6 +199,7 @@ box.appendChild(content);
 
 document.getElementById("backSurvival").onclick = () => {
 renderSurvivalList();
+box.scrollTop = 0;
 };
 
 }
