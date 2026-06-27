@@ -43,6 +43,18 @@ navigator.geolocation.watchPosition(
 userLat = pos.coords.latitude;
 userLng = pos.coords.longitude;
 
+
+// 🌤️ POGODA
+if(typeof loadWeather === "function"){
+
+loadWeather(
+userLat,
+userLng
+);
+
+}
+
+
 document.getElementById("forestStatus").innerText = "📍 GPS OK";
 
 
