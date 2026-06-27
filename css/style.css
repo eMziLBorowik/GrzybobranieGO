@@ -6,15 +6,10 @@ font-family:Arial, sans-serif;
 
 
 html,body{
-
-margin:0;
-
-min-height:100%;
-
-background:#1b2417;
-
-overflow:auto;
-
+  margin:0;
+  min-height:100%;
+  background:#1b2417;
+  overflow-y:auto;
 }
 
 
@@ -105,36 +100,13 @@ font-size:12px;
 
 
 
-/* MAPA */
-
-
 #map{
-
-
-position:absolute;
-
-
-top:90px;
-
-
-bottom:120px;
-
-
-left:10px;
-
-
-right:10px;
-
-
-border-radius:18px;
-
-
-overflow:hidden;
-
-
-z-index:1;
-
-
+  width: calc(100% - 20px);
+  height: 60vh;
+  margin: 100px auto 10px auto;
+  border-radius: 18px;
+  overflow: hidden;
+  z-index: 1;
 }
 
 
