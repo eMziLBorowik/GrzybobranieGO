@@ -6,12 +6,12 @@ function isBadForest(el, pts) {
   if (!el || !el.tags) return true;
   if (el.type === "node") return true;
 
-  // 🔥 zawsze zostaw duże parki po nazwie
+  // 🔥 NIE USUWAJ DUŻYCH PARKÓW / REZERWATÓW
   if (el.tags.name) {
     const n = el.tags.name;
 
     if (
-      n.includes("Gostyńsko") ||
+      n.includes("Gostynińsko") ||   // ✔ POPRAWIONE
       n.includes("Włocławski") ||
       n.includes("Krajobrazowy") ||
       n.includes("Rezerwat") ||
@@ -22,7 +22,7 @@ function isBadForest(el, pts) {
     }
   }
 
-  // 🌆 miejskie zielone śmieci
+  // 🌆 miejskie tereny zielone
   const urbanGreen = [
     "park",
     "garden",
@@ -76,7 +76,7 @@ async function loadForests(lat, lng) {
 
   relation["type"="multipolygon"](around:30000,${lat},${lng});
 
-  relation["name"~"Gostyńsko|Włocławski|Krajobrazowy|Rezerwat|Park",i]
+  relation["name"~"Gostynińsko|Włocławski|Krajobrazowy|Rezerwat|Park",i]
   (around:30000,${lat},${lng});
 );
 
@@ -92,7 +92,7 @@ out skel qt;
   try {
     const res = await fetch(url);
 
-    // 🔥 Overpass często pada
+    // 🔥 Overpass protection
     if (res.status === 429 || res.status === 504) {
       console.warn("⚠️ Overpass busy → retry");
       setTimeout(() => loadForests(lat, lng), 12000);
