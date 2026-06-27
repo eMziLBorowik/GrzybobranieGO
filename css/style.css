@@ -1122,3 +1122,20 @@ grid-template-columns:repeat(2,1fr);
 }
 
 }
+.hudBottom{
+  position:absolute;
+  bottom:80px;
+  left:0;
+  width:100%;
+  display:flex;
+  justify-content:center;
+  z-index:5000;
+  pointer-events:none;
+}
+
+#weatherCard{
+  width:92%;
+  max-width:520px;
+  pointer-events:auto;
+  backdrop-filter: blur(10px);
+}
