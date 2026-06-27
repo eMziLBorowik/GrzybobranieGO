@@ -111,35 +111,27 @@ Odkrywanie lasów i przyrody 🔎🌲
 
 
 <!-- 🌤️ POGODA -->
-<div id="weatherBox">
+<div class="hudBottom">
+  <div id="weatherCard">
+    <div class="weatherTitle">🌦 Pogoda tutaj</div>
 
-<h3>🌤️ Pogoda tutaj</h3>
+    <div class="weatherGrid">
+      <div class="weatherItem">
+        🌡 <span id="temp">--</span>
+        <small>Temperatura</small>
+      </div>
 
-<div class="weatherGrid">
+      <div class="weatherItem">
+        💧 <span id="humidity">--</span>
+        <small>Wilgotność</small>
+      </div>
 
-<div>
-🌡️ Temperatura
-<br>
-<span id="weatherTemp">--</span>
-</div>
-
-
-<div>
-💧 Wilgotność
-<br>
-<span id="weatherHumidity">--</span>
-</div>
-
-
-<div>
-💨 Wiatr
-<br>
-<span id="weatherWind">--</span>
-</div>
-
-
-</div>
-
+      <div class="weatherItem">
+        🌬 <span id="wind">--</span>
+        <small>Wiatr</small>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- 🎯 WYŚRODKUJ MAPĘ -->
