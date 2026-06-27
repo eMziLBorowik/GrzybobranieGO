@@ -9,7 +9,7 @@ function isBadForest(el, pts){
 
 if(!el || !el.tags) return true;
 
-// 🚫 node’y (ale nie rozwalamy parków)
+// 🚫 node’y tylko jeśli śmieć
 if(el.type === "node" && pts.length < 3) return true;
 
 // 🔥 NIE USUWAJ KLUCZOWYCH PARKÓW PO NAZWIE
@@ -27,7 +27,7 @@ if(el.tags.name){
   }
 }
 
-// 🌆 miejskie tereny zielone (śmieci)
+// 🌆 miejskie śmieci
 const urbanGreen = [
   "park",
   "garden",
@@ -39,7 +39,7 @@ const urbanGreen = [
 
 if(urbanGreen.includes(el.tags.leisure)) return true;
 
-// 🚫 zbyt małe obiekty
+// 🚫 za małe obiekty
 if(pts.length < 20) return true;
 
 // 🚫 miejscowości
@@ -64,27 +64,19 @@ if(now - lastForestRequest < 30000){
 lastForestRequest = now;
 
 
-// 🔥 OVERPASS QUERY
+// 🔥 ZMNIEJSZONY PROMIEŃ = 15000
 const q = `
 [out:json];
 
 (
-  way["landuse"="forest"](around:30000,${lat},${lng});
-  way["natural"="wood"](around:30000,${lat},${lng});
+  way["landuse"="forest"](around:15000,${lat},${lng});
+  way["natural"="wood"](around:15000,${lat},${lng});
 
-  /* PARKI / OBSZARY CHRONIONE */
-  relation["boundary"="protected_area"](around:30000,${lat},${lng});
-  relation["boundary"="national_park"](around:30000,${lat},${lng});
+  relation["boundary"="protected_area"](around:15000,${lat},${lng});
+  relation["boundary"="national_park"](around:15000,${lat},${lng});
 
-  way["boundary"="protected_area"](around:30000,${lat},${lng});
-  way["boundary"="national_park"](around:30000,${lat},${lng});
-
-  /* relacje parków (KLUCZ) */
-  relation["type"="boundary"](around:30000,${lat},${lng});
-  relation["boundary"](around:30000,${lat},${lng});
-
-  /* po nazwie */
-  relation["name"~"Gostyńsko|Włocławski|Krajobrazowy|Rezerwat|Park",i](around:30000,${lat},${lng});
+  relation["name"~"Gostyńsko|Włocławski|Krajobrazowy|Rezerwat|Park",i]
+  (around:15000,${lat},${lng});
 );
 
 out body;
@@ -120,13 +112,13 @@ if(!text.startsWith("{")){
 const data = JSON.parse(text);
 
 
-// 🧹 RESET
+// reset
 forests = [];
 window.forestLayer.clearLayers();
 
 
 // =========================
-// 🌲 DRAW POLYGONS
+// 🌲 RENDER
 // =========================
 data.elements.forEach(el => {
 
@@ -173,7 +165,7 @@ document.getElementById("forestStatus").innerText =
 
 
 // =========================
-// 📍 INFO PANEL
+// 📍 INFO
 // =========================
 async function showForestInfo(el, pts){
 
@@ -185,18 +177,10 @@ let name = "🌲 Teren zielony";
 
 if(el.tags){
 
-if(el.tags.name){
-  name = "🌲 " + el.tags.name;
-}
-else if(el.tags.official_name){
-  name = "🌲 " + el.tags.official_name;
-}
-else if(el.tags.protected_name){
-  name = "🌲 " + el.tags.protected_name;
-}
-else if(el.tags.short_name){
-  name = "🌲 " + el.tags.short_name;
-}
+if(el.tags.name) name = "🌲 " + el.tags.name;
+else if(el.tags.official_name) name = "🌲 " + el.tags.official_name;
+else if(el.tags.protected_name) name = "🌲 " + el.tags.protected_name;
+else if(el.tags.short_name) name = "🌲 " + el.tags.short_name;
 
 }
 
@@ -260,7 +244,7 @@ document.getElementById("forestRain").innerText = "🌧️ Brak danych";
 
 
 // =========================
-// ❌ CLOSE PANEL
+// ❌ CLOSE
 // =========================
 document.addEventListener("click", (e) => {
 
@@ -272,7 +256,6 @@ if(e.target.closest(".leaflet-interactive")) return;
 
 panel.style.display = "none";
 });
-
 
 map.on("click", () => {
 document.getElementById("forestInfoPanel").style.display = "none";
