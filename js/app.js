@@ -15,11 +15,12 @@ window.onload = function () {
     const grzyd = document.getElementById("grzybdex");
     const trails = document.getElementById("trailsPanel");
     const surv = document.getElementById("survivalPanel");
-
+    const guide = document.getElementById("guidePanel");
     if (mapEl) mapEl.style.display = "none";
     if (grzyd) grzyd.style.display = "none";
     if (trails) trails.style.display = "none";
     if (surv) surv.style.display = "none";
+    if (guide) guide.style.display = "none";
 
     document.body.classList.remove("screen-map");
 
@@ -36,11 +37,26 @@ window.onload = function () {
       if (trails) trails.style.display = "block";
     }
 
-    if (screen === "survivalPanel") {
-      if (surv) surv.style.display = "block";
-    }
+ if (screen === "survivalPanel") {
+  if (surv) surv.style.display = "block";
+
+  if (typeof loadSurvival === "function") {
+    loadSurvival();
+  }
+}
+
+
+// 📖 PRZEWODNIK
+
+if (screen === "guidePanel") {
+
+  if (guide) guide.style.display = "block";
+
+  if (typeof loadGuide === "function") {
+    loadGuide();
   }
 
+}
   // =========================
   // ☰ MENU
   // =========================
