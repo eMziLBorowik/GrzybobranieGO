@@ -6,7 +6,34 @@ let firstGPS = true;
 
 window.onload=function(){
 
+// ☰ MENU
 
+const menuBtn = document.getElementById("menuBtn");
+const sideMenu = document.getElementById("sideMenu");
+const closeMenu = document.getElementById("closeMenu");
+
+
+if(menuBtn){
+
+menuBtn.onclick=function(){
+
+sideMenu.classList.add("active");
+
+}
+
+}
+
+
+
+if(closeMenu){
+
+closeMenu.onclick=function(){
+
+sideMenu.classList.remove("active");
+
+}
+
+}
 
 // GPS
 navigator.geolocation.watchPosition(
@@ -168,8 +195,10 @@ maximumAge:0
 
 
 document.getElementById(
-"tabMap"
+"sideMap"
 ).onclick=function(){
+
+sideMenu.classList.remove("active");
 
 
 
@@ -220,8 +249,10 @@ map.invalidateSize();
 
 
 document.getElementById(
-"tabDex"
+"sideDex"
 ).onclick=function(){
+
+sideMenu.classList.remove("active");
 
 
 
@@ -267,12 +298,15 @@ updateStats();
 
 // zakładka trasy
 
-const tabTrails = document.getElementById("tabTrails");
+const tabTrails = document.getElementById("sideTrails");
 const trailsPanel = document.getElementById("trailsPanel");
 
 if (tabTrails) {
 
-  tabTrails.onclick = function () {
+ tabTrails.onclick = function () {
+
+ sideMenu.classList.remove("active");
+
 
     document.getElementById("centerMapBtn").style.display = "none";
     document.getElementById("map").style.display = "none";
@@ -315,14 +349,14 @@ if (tabTrails) {
   
 // 🔥 ZAKŁADKA SURVIVAL
 
-const tabSurvival = document.getElementById("tabSurvival");
+const tabSurvival = document.getElementById("sideSurvival");
 const survivalPanel = document.getElementById("survivalPanel");
 
 
 if(tabSurvival && survivalPanel){
 
 tabSurvival.onclick = function(){
-
+sideMenu.classList.remove("active");
 
 document.getElementById("centerMapBtn").style.display="none";
 
@@ -371,29 +405,22 @@ if(centerMapBtn){
 centerMapBtn.onclick=function(){
 
 
-
 if(userLat && userLng){
 
+followGPS = true;
 
 
 map.setView(
-
 [userLat,userLng],
-
 16,
-
 {
-
 animate:true
-
 }
-
 );
 
-
-
 }
 
+};
 
 
 };
