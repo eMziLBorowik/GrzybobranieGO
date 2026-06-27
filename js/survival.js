@@ -1,8 +1,12 @@
 // ============================
 // 🏕️ SURVIVAL - Grzybiarz PRO
-// Offline
+// Zakładka offline (moduł UI)
 // ============================
 
+
+// ============================
+// DANE OFFLINE
+// ============================
 
 const survivalData = [
 
@@ -95,32 +99,30 @@ tips:[
 
 
 // ============================
-// START
+// START ZAKŁADKI
 // ============================
 
-function loadSurvival(){
+function openSurvival(){
 
 const box = document.getElementById("survivalContent");
-
 if(!box) return;
 
-// stabilny layout pod mapę / panel
+// NIE rozwalamy layoutu mapy / paneli
 box.style.boxSizing = "border-box";
 box.style.height = "auto";
 box.style.maxHeight = "calc(100vh - 170px)";
 box.style.overflowY = "auto";
 box.style.padding = "15px";
-box.style.scrollBehavior = "smooth";
 
-renderSurvival();
+renderSurvivalList();
 }
 
 
 // ============================
-// KAFELKI
+// LISTA KART
 // ============================
 
-function renderSurvival(){
+function renderSurvivalList(){
 
 const box = document.getElementById("survivalContent");
 if(!box) return;
@@ -137,7 +139,7 @@ card.style.overflow = "hidden";
 
 card.style.background = `
 linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.75)),
-url(${item.image})
+url(${item.image || ''})
 `;
 
 card.style.backgroundSize = "cover";
@@ -154,8 +156,8 @@ card.innerHTML = `
 <button>Otwórz</button>
 `;
 
-card.querySelector("button").onclick = function(){
-showSurvivalDetail(item);
+card.querySelector("button").onclick = () => {
+renderSurvivalDetail(item);
 };
 
 box.appendChild(card);
@@ -166,13 +168,15 @@ box.appendChild(card);
 
 
 // ============================
-// DETAIL VIEW (bez psucia DOM)
+// DETAIL (bez reset bugów)
 // ============================
 
-function showSurvivalDetail(item){
+function renderSurvivalDetail(item){
 
 const box = document.getElementById("survivalContent");
 if(!box) return;
+
+box.innerHTML = "";
 
 let content = document.createElement("div");
 
@@ -191,11 +195,10 @@ html += `<button id="backSurvival">⬅ Powrót</button>`;
 
 content.innerHTML = html;
 
-box.innerHTML = "";
 box.appendChild(content);
 
-document.getElementById("backSurvival").onclick = function(){
-renderSurvival();
+document.getElementById("backSurvival").onclick = () => {
+renderSurvivalList();
 };
 
 }
