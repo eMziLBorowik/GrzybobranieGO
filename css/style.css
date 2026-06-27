@@ -58,7 +58,8 @@ justify-content:space-between;
 align-items:center;
 
 
-padding:10px;
+padding:10px 15px;
+gap:15px;
 
 }
 
@@ -939,6 +940,107 @@ padding:0;
 
 
 #centerMapBtn:active{
+
+transform:scale(.95);
+
+}
+/* ☰ MENU */
+
+#menuBtn{
+
+width:45px;
+height:45px;
+
+font-size:26px;
+
+padding:0;
+
+border-radius:14px;
+
+background:#162013;
+
+display:flex;
+
+align-items:center;
+
+justify-content:center;
+
+flex-shrink:0;
+
+}
+/* ================= */
+/* MENU BOCZNE */
+/* ================= */
+
+
+#sideMenu{
+
+position:absolute;
+
+top:0;
+
+right:-280px;
+
+width:280px;
+
+height:100%;
+
+background:#162013;
+
+z-index:10000;
+
+padding:20px;
+
+transition:.3s ease;
+
+box-shadow:-5px 0 20px rgba(0,0,0,.5);
+
+color:white;
+
+}
+
+
+#sideMenu.active{
+
+right:0;
+
+}
+
+
+
+#closeMenu{
+
+font-size:25px;
+
+text-align:right;
+
+margin-bottom:20px;
+
+cursor:pointer;
+
+}
+
+
+
+#sideMenu div:not(#closeMenu){
+
+background:#203719;
+
+padding:15px;
+
+border-radius:15px;
+
+margin-bottom:12px;
+
+font-size:16px;
+
+cursor:pointer;
+
+}
+
+
+
+#sideMenu div:not(#closeMenu):active{
 
 transform:scale(.95);
 
