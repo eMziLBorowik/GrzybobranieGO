@@ -3,15 +3,15 @@ let forests = [];
 // ⏳ COOLDOWN
 let lastForestRequest = 0;
 
-// ============================
-// 🚫 FILTR TERENÓW
-// ============================
+// =========================
+// 🚫 FILTR
+// =========================
 function isBadForest(el, pts) {
 
 if (!el.tags) return true;
 if (el.type === "node") return true;
 
-// 🔥 NIE USUWAJ PARKÓW I REZERWATÓW
+// 🔥 NIE USUWAJ PARKÓW
 if (
 el.tags.boundary === "protected_area" ||
 el.tags.boundary === "national_park" ||
@@ -26,7 +26,7 @@ el.tags.name.includes("Rezerwat")
 return false;
 }
 
-// 🌆 miejskie tereny zielone
+// 🌆 miejskie
 const urbanGreen = [
 "park",
 "garden",
@@ -40,27 +40,21 @@ if (urbanGreen.includes(el.tags.leisure)) {
 return true;
 }
 
-// 🚫 małe obiekty
-if (pts.length < 25 && !el.tags.boundary) {
-return true;
-}
+// 🚫 małe
+if (pts.length < 25 && !el.tags.boundary) return true;
 
 // 🚫 małe lasy
-if (el.tags.landuse === "forest" && pts.length < 40) {
-return true;
-}
+if (el.tags.landuse === "forest" && pts.length < 40) return true;
 
 // 🚫 miejscowości
-if (el.tags.place) {
-return true;
-}
+if (el.tags.place) return true;
 
 return false;
 }
 
-// ============================
+// =========================
 // 🌲 LOAD FORESTS
-// ============================
+// =========================
 async function loadForests(lat, lng) {
 
 const now = Date.now();
@@ -72,7 +66,7 @@ return;
 
 lastForestRequest = now;
 
-// 🔥 POPRAWIONA NAZWA PARKU
+// 🔥 KLUCZ: multipolygon + relacje
 const q = `
 [out:json];
 
@@ -80,15 +74,15 @@ const q = `
   way["landuse"="forest"](around:15000,${lat},${lng});
   way["natural"="wood"](around:15000,${lat},${lng});
 
+  relation["type"="multipolygon"](around:15000,${lat},${lng});
+
   relation["boundary"="protected_area"](around:15000,${lat},${lng});
   relation["boundary"="national_park"](around:15000,${lat},${lng});
 
-  way["boundary"="protected_area"](around:15000,${lat},${lng});
-  way["boundary"="national_park"](around:15000,${lat},${lng});
+  relation["leisure"="nature_reserve"](around:15000,${lat},${lng});
 
-  relation["protect_class"](around:15000,${lat},${lng});
-
-  relation["name"~"Gostynińsko|Włocławski|Krajobrazowy|Rezerwat|Park",i](around:15000,${lat},${lng});
+  relation["name"~"Gostynińsko|Włocławski|Krajobrazowy|Rezerwat|Park",i]
+  (around:15000,${lat},${lng});
 );
 
 out geom;
@@ -114,13 +108,13 @@ const text = await res.text();
 
 if (!text.startsWith("{")) {
 console.error("❌ Overpass error:", text);
-document.getElementById("forestStatus").innerText = "❌ Błąd lasów";
+document.getElementById("forestStatus").innerText =
+"❌ Błąd lasów";
 return;
 }
 
 const data = JSON.parse(text);
 
-// reset warstwy
 forests = [];
 window.forestLayer.clearLayers();
 
@@ -128,6 +122,7 @@ data.elements.forEach(el => {
 
 let pts = [];
 
+// 🔥 geometry dla ways i relations
 if (el.geometry) {
 pts = el.geometry.map(p => [p.lat, p.lon]);
 }
@@ -138,7 +133,6 @@ if (isBadForest(el, pts)) return;
 
 if (pts.length < 3) return;
 
-// 🔥 RYSOWANIE
 let poly = L.polygon(pts, {
 color: "#2e8b57",
 fillColor: "#3cb371",
@@ -148,7 +142,6 @@ weight: 2
 
 forests.push(poly);
 
-// klik
 poly.on("click", (e) => {
 L.DomEvent.stopPropagation(e);
 showForestInfo(el, pts);
@@ -166,9 +159,9 @@ document.getElementById("forestStatus").innerText =
 }
 }
 
-// ============================
-// ℹ️ INFO PANEL (NIE RUSZAMY)
-// ============================
+// =========================
+// ℹ️ INFO (NIE RUSZAM)
+// =========================
 async function showForestInfo(el, pts) {
 
 let panel = document.getElementById("forestInfoPanel");
@@ -232,14 +225,13 @@ document.getElementById("forestChance").innerText =
 "🍄 Szansa: " + Math.round(chance) + "%";
 
 } catch (e) {
-console.log(e);
 document.getElementById("forestRain").innerText = "🌧️ Brak danych";
 }
 }
 
-// ============================
-// CLICK OUT (NIE RUSZAMY)
-// ============================
+// =========================
+// CLICK CLOSE (NIE RUSZAM)
+// =========================
 document.addEventListener("click", (e) => {
 const panel = document.getElementById("forestInfoPanel");
 if (!panel) return;
