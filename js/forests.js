@@ -7,29 +7,28 @@ let lastForestRequest = 0;
 // 🚫 FILTR TERENÓW
 function isBadForest(el, pts){
 
+if(!el) return true;
 if(!el.tags) return true;
 
-if(el.type === "node") return true;
+// 🚫 node’y (ale NIE zabijamy wszystkiego)
+if(el.type === "node" && pts.length < 3) return true;
 
+// 🔥 NIE USUWAJ KLUCZOWYCH PARKÓW PO NAZWIE
+if(el.tags.name){
+  const n = el.tags.name;
 
-// ✅ NIE USUWAJ PARKÓW I REZERWATÓW
-if(
-el.tags.boundary === "protected_area" ||
-el.tags.boundary === "national_park" ||
-el.tags.protect_class ||
-el.tags.protection_title ||
-el.tags.protected ||
-(el.tags.name && (
-el.tags.name.includes("Park Krajobrazowy") ||
-el.tags.name.includes("Park Narodowy") ||
-el.tags.name.includes("Rezerwat")
-))
-){
-return false;
+  if(
+    n.includes("Gostyńsko") ||
+    n.includes("Włocławski") ||
+    n.includes("Krajobrazowy") ||
+    n.includes("Rezerwat") ||
+    n.includes("Park")
+  ){
+    return false;
+  }
 }
 
-
-// 🌆 miejskie tereny zielone
+// 🌆 miejskie tereny zielone (śmieci)
 const urbanGreen = [
 "park",
 "garden",
@@ -39,34 +38,13 @@ const urbanGreen = [
 "meadow"
 ];
 
-if(urbanGreen.includes(el.tags.leisure)){
-return true;
-}
+if(urbanGreen.includes(el.tags.leisure)) return true;
 
-
-// 🚫 małe obiekty
-if(
-pts.length < 25 &&
-!el.tags.boundary &&
-!el.tags.protect_class
-){
-return true;
-}
-
-
-// 🚫 małe pseudo lasy
-if(
-el.tags.landuse === "forest" &&
-pts.length < 40
-){
-return true;
-}
-
+// 🚫 zbyt małe obiekty
+if(pts.length < 20) return true;
 
 // 🚫 miejscowości
-if(el.tags.place){
-return true;
-}
+if(el.tags.place) return true;
 
 return false;
 }
@@ -87,37 +65,29 @@ lastForestRequest = now;
 
 
 const q = `
-
 [out:json];
 
 (
+  way["landuse"="forest"](around:30000,${lat},${lng});
+  way["natural"="wood"](around:30000,${lat},${lng});
 
-way["landuse"="forest"](around:30000,${lat},${lng});
-way["natural"="wood"](around:30000,${lat},${lng});
+  /* PARKI I REZERWATY */
+  relation["boundary"="protected_area"](around:30000,${lat},${lng});
+  relation["boundary"="national_park"](around:30000,${lat},${lng});
 
-/* PARKI I OBSZARY CHRONIONE */
-way["boundary"="protected_area"](around:30000,${lat},${lng});
-relation["boundary"="protected_area"](around:30000,${lat},${lng});
+  way["boundary"="protected_area"](around:30000,${lat},${lng});
+  way["boundary"="national_park"](around:30000,${lat},${lng});
 
-way["boundary"="national_park"](around:30000,${lat},${lng});
-relation["boundary"="national_park"](around:30000,${lat},${lng});
+  /* 🔥 NAJWAŻNIEJSZE – PARKI PO NAZWIE (TWOJ PARK TU WPADA) */
+  relation["type"="boundary"](around:30000,${lat},${lng});
+  relation["boundary"](around:30000,${lat},${lng});
 
-/* multipolygon (KLUCZ) */
-relation["type"="multipolygon"](around:30000,${lat},${lng});
-
-/* dodatkowe tagi ochrony */
-relation["protect_class"](around:30000,${lat},${lng});
-relation["protection_title"](around:30000,${lat},${lng});
-
-/* PO NAZWIE */
-relation["name"~"Park Krajobrazowy|Krajobrazowy|Rezerwat|Park",i](around:30000,${lat},${lng});
-
+  relation["name"~"Gostyńsko|Włocławski|Krajobrazowy|Rezerwat|Park",i](around:30000,${lat},${lng});
 );
 
 out body;
 >;
 out skel qt;
-
 `;
 
 
