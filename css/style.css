@@ -1127,12 +1127,19 @@ grid-template-columns:repeat(2,1fr);
   bottom:80px;
   left:0;
   width:100%;
-  display:flex;
+
+  display:none;
+
   justify-content:center;
+  align-items:center; /* 🔥 DODAJ TO */
+
   z-index:5000;
   pointer-events:none;
 }
 
+body.screen-map .hudBottom{
+  display:flex;
+}
 #weatherCard{
   width:92%;
   max-width:520px;
