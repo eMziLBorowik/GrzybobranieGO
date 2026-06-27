@@ -12,7 +12,6 @@ if(!el.tags) return true;
 
 // ✅ NIE USUWAJ PARKÓW I REZERWATÓW
 if(
-if(
 el.tags.boundary === "protected_area" ||
 el.tags.boundary === "national_park" ||
 el.tags.protect_class ||
@@ -21,17 +20,6 @@ el.tags.protected ||
 (el.tags.name && (
 el.tags.name.includes("Park Krajobrazowy") ||
 el.tags.name.includes("Park Narodowy") ||
-el.tags.name.includes("Rezerwat")
-))
-){
-return false;
-}
-el.tags.protect_class ||
-el.tags.protection_title ||
-el.tags.protect_class ||
-(el.tags.name && (
-el.tags.name.includes("Park Narodowy") ||
-el.tags.name.includes("Park Krajobrazowy") ||
 el.tags.name.includes("Rezerwat")
 ))
 ){
@@ -50,7 +38,6 @@ const urbanGreen = [
 "meadow"
 ];
 
-
 if(urbanGreen.includes(el.tags.leisure)){
 return true;
 }
@@ -65,6 +52,7 @@ pts.length < 25 &&
 ){
 return true;
 }
+
 
 
 // 🚫 małe pseudo lasy
@@ -101,7 +89,6 @@ console.log("⏳ cooldown forests API");
 return;
 }
 
-
 lastForestRequest = now;
 
 
@@ -115,34 +102,23 @@ const q = `
 way["landuse"="forest"](around:30000,${lat},${lng});
 way["natural"="wood"](around:30000,${lat},${lng});
 
-
 /* PARKI I OBSZARY CHRONIONE */
 
 way["boundary"="protected_area"](around:30000,${lat},${lng});
 relation["boundary"="protected_area"](around:30000,${lat},${lng});
 
-
 way["boundary"="national_park"](around:30000,${lat},${lng});
 relation["boundary"="national_park"](around:30000,${lat},${lng});
-
 
 relation["protect_class"](around:30000,${lat},${lng});
 
 relation["protection_title"](around:30000,${lat},${lng});
 
-
-/* po nazwie */
-
+/* PO NAZWIE */
 relation["name"~"Park Krajobrazowy|Krajobrazowy|Rezerwat|Park",i]
 (around:30000,${lat},${lng});
 
 );
-
-out geom;
->;
-out geom;
-
-`;
 
 out geom;
 >;
@@ -157,63 +133,38 @@ const url =
 encodeURIComponent(q);
 
 
-
 try{
-
 
 const res = await fetch(url);
 
-
-
 if(res.status === 429){
-
 console.warn("⚠️ Overpass limit");
 
 setTimeout(()=>{
-
 loadForests(lat,lng);
-
 },10000);
 
 return;
-
 }
-
-
 
 const text = await res.text();
 
-
-
 if(!text.startsWith("{")){
-
 console.error("❌ Overpass error:",text);
-
 document.getElementById("forestStatus").innerText =
 "❌ Błąd lasów";
-
 return;
-
 }
-
-
 
 const data = JSON.parse(text);
 
-
-
 forests = [];
-
 window.forestLayer.clearLayers();
-
 
 
 data.elements.forEach(el=>{
 
-
 if(!el.geometry) return;
-
-
 
 const pts =
 el.geometry.map(p=>[
@@ -221,64 +172,37 @@ p.lat,
 p.lon
 ]);
 
-
-
 if(isBadForest(el,pts)) return;
-
-
 
 if(pts.length < 3) return;
 
-
-
 let poly =
-L.polygon(
-pts,
-{
+L.polygon(pts,{
 color:"#2e8b57",
 fillColor:"#3cb371",
 fillOpacity:0.25,
 weight:2
-}
-)
-.addTo(window.forestLayer);
-
-
+}).addTo(window.forestLayer);
 
 forests.push(poly);
 
-
-
 poly.on("click",(e)=>{
-
 L.DomEvent.stopPropagation(e);
-
 showForestInfo(el,pts);
-
 });
 
-
-
 });
-
 
 
 document.getElementById("forestStatus").innerText =
 "🌲 Lasy i parki gotowe";
 
-
-
 }
-
 catch(e){
-
 console.log(e);
-
 document.getElementById("forestStatus").innerText =
 "❌ Błąd lasów";
-
 }
-
 
 }
 
