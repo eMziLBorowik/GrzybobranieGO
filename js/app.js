@@ -167,7 +167,7 @@ window.onload = function () {
     };
   }
 
-  // =========================
+   // =========================
   // 📍 GPS
   // =========================
 
@@ -178,6 +178,15 @@ window.onload = function () {
       userLng = pos.coords.longitude;
 
       loadWeather?.(userLat, userLng);
+
+      // 🌿 EXP SYSTEM HOOK
+      if (typeof trackMovementEXP === "function") {
+        trackMovementEXP(
+          userLat,
+          userLng,
+          pos.coords.speed
+        );
+      }
 
       document.getElementById("forestStatus").innerText = "📍 GPS OK";
 
@@ -242,7 +251,6 @@ window.onload = function () {
   // =========================
   // 🎯 CENTER MAP
   // =========================
-
   const centerMapBtn = document.getElementById("centerMapBtn");
 
   if (centerMapBtn) {
