@@ -1,5 +1,5 @@
 // ============================
-// 🌿 EXP SYSTEM v5 FIXED STABLE
+// 🌿 EXP SYSTEM v5 FIXED STABLE (CLEAN PATCH)
 // Leśna Przygoda
 // SUPABASE READY
 // ============================
@@ -22,8 +22,8 @@ const CONFIG = {
 };
 
 
-// 🚶 STATE
-let state = {
+// 🚶 GLOBAL SAFE STATE (FIX RESET BUG)
+window.expState = window.expState || {
   lastLat: null,
   lastLng: null,
   distance: 0
@@ -73,7 +73,6 @@ function getRank(level) {
 async function syncPlayerToSupabase() {
 
   try {
-
     if (!window.supabase) return;
 
     const { data } = await supabase.auth.getUser();
@@ -102,7 +101,7 @@ async function syncPlayerToSupabase() {
 
 
 // ============================
-// 🌿 ADD EXP
+// 🌿 ADD EXP (SAFE)
 // ============================
 
 function addEXP(amount, source = "unknown") {
@@ -114,7 +113,6 @@ function addEXP(amount, source = "unknown") {
   console.log(`🌿 +${amount} EXP | ${source}`);
 
   while (window.player.exp >= getExpNeeded(window.player.level)) {
-
     window.player.exp -= getExpNeeded(window.player.level);
     window.player.level++;
 
@@ -124,12 +122,10 @@ function addEXP(amount, source = "unknown") {
   console.log(`📊 LVL ${window.player.level} (${getRank(window.player.level)})`);
   console.log(`📊 EXP: ${window.player.exp} / ${getExpNeeded(window.player.level)}`);
 
-  if (typeof updateEXPUI === "function") {
-    updateEXPUI();
-  }
+  updateEXPUI?.();
+  renderExpHeader?.();
 
-  // refresh header
-  renderExpHeader();
+  lockHeader?.();
 
   syncPlayerToSupabase();
 }
@@ -145,7 +141,7 @@ function isInForest(lat, lng) {
 
 
 // ============================
-// 🚶 TRACK MOVEMENT
+// 🚶 TRACK MOVEMENT (STABLE CORE)
 // ============================
 
 function trackMovementEXP(lat, lng, speed) {
@@ -153,31 +149,35 @@ function trackMovementEXP(lat, lng, speed) {
   if (!lat || !lng) return;
   if (!speed) return;
 
-  let kmh = speed * 3.6;
+  const kmh = speed * 3.6;
 
   console.log(`📡 SPEED: ${kmh.toFixed(1)} km/h`);
 
+  // 🚗 anti-car
   if (kmh > CONFIG.maxSpeedKmh) {
     console.log("🚗 AUTO DETECTED → NO EXP");
     return;
   }
 
+  // 🧍 idle ignore (ale NIE reset)
   if (kmh < CONFIG.minSpeedKmh) return;
 
-  if (state.lastLat !== null && state.lastLng !== null) {
+  if (typeof L === "undefined") return;
 
-    if (typeof L === "undefined") return;
+  // 📍 first point init
+  if (window.expState.lastLat !== null && window.expState.lastLng !== null) {
 
-    let dist = L.latLng(state.lastLat, state.lastLng)
+    const dist = L.latLng(window.expState.lastLat, window.expState.lastLng)
       .distanceTo(L.latLng(lat, lng));
 
     if (dist > 5) {
 
-      state.distance += dist;
+      window.expState.distance += dist;
 
-      console.log(`🚶 DIST: ${state.distance.toFixed(1)} m`);
+      console.log(`🚶 DIST: ${window.expState.distance.toFixed(1)} m`);
 
-      if (state.distance >= 1000) {
+      // 🔥 500m EXP (FIXED)
+      if (window.expState.distance >= 500) {
 
         let exp = CONFIG.expPerKm;
 
@@ -188,13 +188,13 @@ function trackMovementEXP(lat, lng, speed) {
 
         addEXP(Math.floor(exp), "movement");
 
-        state.distance = 0;
+        window.expState.distance = 0;
       }
     }
   }
 
-  state.lastLat = lat;
-  state.lastLng = lng;
+  window.expState.lastLat = lat;
+  window.expState.lastLng = lng;
 }
 
 
@@ -212,7 +212,6 @@ function setHeaderSmooth(html) {
 
   setTimeout(() => {
     sub.innerHTML = html;
-
     sub.style.opacity = "1";
     sub.style.transform = "translateY(0px)";
   }, 350);
@@ -220,7 +219,7 @@ function setHeaderSmooth(html) {
 
 
 // ============================
-// 📊 HEADER RENDER (EXP)
+// 📊 HEADER (EXP)
 // ============================
 
 function renderExpHeader() {
@@ -242,7 +241,7 @@ function renderExpHeader() {
 
 
 // ============================
-// 📊 HEADER RENDER (DEFAULT)
+// 📊 HEADER DEFAULT
 // ============================
 
 function renderDefaultHeader() {
@@ -273,7 +272,7 @@ setInterval(() => {
 
 
 // ============================
-// 🔒 LOCK AFTER EXP UPDATE
+// 🔒 LOCK HEADER
 // ============================
 
 function lockHeader() {
@@ -288,7 +287,7 @@ function lockHeader() {
 
 
 // ============================
-// 🌍 GLOBAL EXPORT
+// 🌍 EXPORT
 // ============================
 
 window.trackMovementEXP = trackMovementEXP;
