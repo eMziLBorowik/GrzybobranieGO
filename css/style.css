@@ -1284,3 +1284,59 @@ z-index:2500;
   height:100%;
   background:#00ff88;
 }
+/* =========================
+   👤 PROFIL - COLOR FIX (GAMING)
+   ========================= */
+
+#profilePanel{
+  background: radial-gradient(circle at top, #0b1a12, #050a07);
+}
+
+/* kontener */
+#profileContent{
+  color:#eaffea;
+}
+
+/* kafelki statystyk */
+.stat{
+  background: linear-gradient(135deg, #14261a, #0d1711);
+  border:1px solid rgba(0,255,136,0.15);
+  color:#eaffea;
+  box-shadow: 0 0 10px rgba(0,255,136,0.05);
+}
+
+/* główne bloki */
+.card, .highlight{
+  background: linear-gradient(135deg, #122016, #0a140e);
+  border:1px solid rgba(0,255,136,0.12);
+  color:#eaffea;
+}
+
+/* XP bar tło */
+.bar{
+  background:#08110b;
+  border:1px solid rgba(0,255,136,0.2);
+}
+
+/* XP fill */
+.bar div{
+  background: linear-gradient(90deg, #00ff88, #00c777);
+  box-shadow: 0 0 10px rgba(0,255,136,0.4);
+}
+
+/* nagłówki */
+#profileContent h2,
+#profileContent h3{
+  color:#7dffb2;
+}
+
+/* tekst pomocniczy */
+small{
+  color:#9fd9b8;
+}
+
+/* XP center tekst */
+.xpCenter{
+  color:#d6ffe7;
+  text-shadow:0 0 10px rgba(0,255,136,0.2);
+}
