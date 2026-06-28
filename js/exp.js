@@ -124,20 +124,19 @@ function addEXP(amount, source = "unknown") {
   console.log(`📊 LVL ${window.player.level} (${getRank(window.player.level)})`);
   console.log(`📊 EXP: ${window.player.exp} / ${getExpNeeded(window.player.level)}`);
 
-  // UI update (future safe)
   if (typeof updateEXPUI === "function") {
     updateEXPUI();
   }
 
-  // HEADER UPDATE
-  updateHeaderExpUI?.();
+  // refresh header
+  renderExpHeader();
 
   syncPlayerToSupabase();
 }
 
 
 // ============================
-// 🌲 FOREST CHECK (FUTURE)
+// 🌲 FOREST CHECK
 // ============================
 
 function isInForest(lat, lng) {
@@ -146,7 +145,7 @@ function isInForest(lat, lng) {
 
 
 // ============================
-// 🚶 TRACK MOVEMENT (SAFE GPS)
+// 🚶 TRACK MOVEMENT
 // ============================
 
 function trackMovementEXP(lat, lng, speed) {
@@ -158,16 +157,13 @@ function trackMovementEXP(lat, lng, speed) {
 
   console.log(`📡 SPEED: ${kmh.toFixed(1)} km/h`);
 
-  // 🚗 auto detection
   if (kmh > CONFIG.maxSpeedKmh) {
     console.log("🚗 AUTO DETECTED → NO EXP");
     return;
   }
 
-  // 💤 brak ruchu
   if (kmh < CONFIG.minSpeedKmh) return;
 
-  // 📏 dystans
   if (state.lastLat !== null && state.lastLng !== null) {
 
     if (typeof L === "undefined") return;
@@ -203,13 +199,31 @@ function trackMovementEXP(lat, lng, speed) {
 
 
 // ============================
-// 📊 HEADER UI EXP BAR
+// ✨ HEADER SMOOTH SYSTEM
 // ============================
 
-function updateHeaderExpUI() {
-
+function setHeaderSmooth(html) {
   const sub = document.querySelector(".sub");
   if (!sub) return;
+
+  sub.style.transition = "opacity 0.35s ease, transform 0.35s ease";
+  sub.style.opacity = "0";
+  sub.style.transform = "translateY(-6px)";
+
+  setTimeout(() => {
+    sub.innerHTML = html;
+
+    sub.style.opacity = "1";
+    sub.style.transform = "translateY(0px)";
+  }, 350);
+}
+
+
+// ============================
+// 📊 HEADER RENDER (EXP)
+// ============================
+
+function renderExpHeader() {
 
   const level = window.player?.level || 1;
   const exp = window.player?.exp || 0;
@@ -217,23 +231,60 @@ function updateHeaderExpUI() {
   const need = getExpNeeded(level);
   const percent = Math.min(100, (exp / need) * 100);
 
-  sub.innerHTML = `
+  setHeaderSmooth(`
     🌿 Poziom ${level} (${getRank(level)})<br>
     <div style="width:100%;height:8px;background:#162013;border-radius:10px;overflow:hidden;margin-top:5px;">
       <div style="width:${percent}%;height:100%;background:#6b8f3d;"></div>
     </div>
     <small>${Math.floor(exp)} / ${need} EXP</small>
-  `;
+  `);
 }
 
 
 // ============================
-// 🔁 AUTO REFRESH HEADER
+// 📊 HEADER RENDER (DEFAULT)
 // ============================
 
+function renderDefaultHeader() {
+  setHeaderSmooth("Odkrywanie lasów i przyrody 🔎🌲");
+}
+
+
+// ============================
+// 🔁 ROTATION SYSTEM
+// ============================
+
+let headerMode = 0;
+let headerLock = false;
+
 setInterval(() => {
-  updateHeaderExpUI();
-}, 5000);
+
+  if (headerLock) return;
+
+  if (headerMode === 0) {
+    renderDefaultHeader();
+    headerMode = 1;
+  } else {
+    renderExpHeader();
+    headerMode = 0;
+  }
+
+}, 30000);
+
+
+// ============================
+// 🔒 LOCK AFTER EXP UPDATE
+// ============================
+
+function lockHeader() {
+  headerLock = true;
+
+  renderExpHeader();
+
+  setTimeout(() => {
+    headerLock = false;
+  }, 2000);
+}
 
 
 // ============================
@@ -242,3 +293,6 @@ setInterval(() => {
 
 window.trackMovementEXP = trackMovementEXP;
 window.addEXP = addEXP;
+window.renderExpHeader = renderExpHeader;
+window.renderDefaultHeader = renderDefaultHeader;
+window.lockHeader = lockHeader;
