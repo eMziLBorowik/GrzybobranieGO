@@ -1196,3 +1196,29 @@ overflow-y:auto;
 z-index:2500;
 
 }
+#profilePanel {
+  position: absolute;
+  top: 90px;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #1b2417;
+  color: #fff;
+  overflow-y: auto;
+  padding: 15px;
+  z-index: 1500;
+}
+
+#profileContent {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+#profileContent .card {
+  background: rgba(255,255,255,0.05);
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  backdrop-filter: blur(6px);
+}
