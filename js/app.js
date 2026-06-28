@@ -41,7 +41,6 @@ window.onload = function () {
     if (screen === "survivalPanel") {
       if (surv) surv.style.display = "block";
 
-      // 🔥 KLUCZ: render survival
       if (typeof openSurvival === "function") {
         openSurvival();
       }
@@ -50,7 +49,6 @@ window.onload = function () {
     if (screen === "guidePanel") {
       if (guide) guide.style.display = "block";
 
-      // 🔥 KLUCZ: render guide
       if (typeof loadGuide === "function") {
         loadGuide();
       }
@@ -167,7 +165,7 @@ window.onload = function () {
     };
   }
 
-   // =========================
+  // =========================
   // 📍 GPS
   // =========================
 
@@ -179,13 +177,8 @@ window.onload = function () {
 
       loadWeather?.(userLat, userLng);
 
-      // 🌿 EXP SYSTEM HOOK
       if (typeof trackMovementEXP === "function") {
-        trackMovementEXP(
-          userLat,
-          userLng,
-          pos.coords.speed
-        );
+        trackMovementEXP(userLat, userLng, pos.coords.speed);
       }
 
       document.getElementById("forestStatus").innerText = "📍 GPS OK";
@@ -251,6 +244,7 @@ window.onload = function () {
   // =========================
   // 🎯 CENTER MAP
   // =========================
+
   const centerMapBtn = document.getElementById("centerMapBtn");
 
   if (centerMapBtn) {
@@ -262,20 +256,45 @@ window.onload = function () {
   }
 
   map.on("dragstart", () => followGPS = false);
+
+  // =========================
+  // 🔄 HEADER ROTATOR (EXP BAR)
+  // =========================
+
+  let headerMode = 0;
+
+  function updateHeaderExp() {
+
+    const sub = document.querySelector(".sub");
+    if (!sub) return;
+
+    if (!window.player || !window.getExpNeeded) return;
+
+    let expNeed = getExpNeeded(player.level);
+    let percent = Math.min(100, (player.exp / expNeed) * 100);
+
+    sub.innerHTML = `
+      🌿 Poziom ${player.level} (${getRank(player.level)})<br>
+      <div style="width:100%;height:8px;background:#162013;border-radius:10px;overflow:hidden;margin-top:5px;">
+        <div style="width:${percent}%;height:100%;background:#6b8f3d;"></div>
+      </div>
+      <small>${Math.floor(player.exp)} / ${expNeed} EXP</small>
+    `;
+  }
+
+  setInterval(() => {
+
+    const sub = document.querySelector(".sub");
+    if (!sub) return;
+
+    if (headerMode === 0) {
+      sub.innerHTML = "Odkrywanie lasów i przyrody 🔎🌲";
+      headerMode = 1;
+    } else {
+      updateHeaderExp();
+      headerMode = 0;
+    }
+
+  }, 30000);
+
 };
-
-
-// =========================
-// 🗺 ROUTE MAP
-// =========================
-
-function initRouteMap() {
-
-  if (routeMap) return;
-
-  routeMap = L.map("map").setView([52, 19], 6);
-
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution: "© OpenStreetMap"
-  }).addTo(routeMap);
-}
