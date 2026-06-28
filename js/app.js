@@ -16,14 +16,14 @@ window.onload = function () {
     const trails = document.getElementById("trailsPanel");
     const surv = document.getElementById("survivalPanel");
     const guide = document.getElementById("guidePanel");
-    const prof = document.getElementById("profilePanel"); // 👤 FIX
+    const profile = document.getElementById("profilePanel"); // 👈 DODANE
 
     if (mapEl) mapEl.style.display = "none";
     if (grzyd) grzyd.style.display = "none";
     if (trails) trails.style.display = "none";
     if (surv) surv.style.display = "none";
     if (guide) guide.style.display = "none";
-    if (prof) prof.style.display = "none"; // 👤 FIX
+    if (profile) profile.style.display = "none"; // 👈 DODANE
 
     document.body.classList.remove("screen-map");
 
@@ -50,14 +50,10 @@ window.onload = function () {
       if (typeof loadGuide === "function") loadGuide();
     }
 
-    // 👤 PROFILE FIX
+    // 👤 PROFIL
     if (screen === "profilePanel") {
-      if (prof) prof.style.display = "block";
-      console.log("👤 PROFILE OPEN");
-
-      if (typeof loadProfile === "function") {
-        loadProfile();
-      }
+      if (profile) profile.style.display = "block";
+      if (typeof renderProfile === "function") renderProfile();
     }
   }
 
@@ -145,7 +141,6 @@ window.onload = function () {
       document.getElementById("centerMapBtn").style.display = "none";
 
       showScreen("survivalPanel");
-
       if (typeof openSurvival === "function") openSurvival();
     };
   }
@@ -162,13 +157,12 @@ window.onload = function () {
       document.getElementById("centerMapBtn").style.display = "none";
 
       showScreen("guidePanel");
-
       if (typeof loadGuide === "function") loadGuide();
     };
   }
 
   // =========================
-  // 👤 PROFIL
+  // 👤 PROFIL (NOWE)
   // =========================
 
   const tabProfile = document.getElementById("sideProfile");
@@ -179,12 +173,6 @@ window.onload = function () {
       document.getElementById("centerMapBtn").style.display = "none";
 
       showScreen("profilePanel");
-
-      console.log("👤 PROFIL CLICK");
-
-      if (typeof loadProfile === "function") {
-        loadProfile();
-      }
     };
   }
 
@@ -280,26 +268,12 @@ window.onload = function () {
   map.on("dragstart", () => followGPS = false);
 
   // =========================
-  // 🔄 HEADER ROTATOR (SAFE EXP SYSTEM)
+  // 🔄 HEADER ROTATOR (EXP BAR)
   // =========================
 
   let headerMode = 0;
-  let headerLocked = false;
 
-  function renderDefaultHeader() {
-    const sub = document.querySelector(".sub");
-    if (!sub) return;
-
-    sub.style.transition = "opacity 0.35s ease";
-    sub.style.opacity = "0";
-
-    setTimeout(() => {
-      sub.innerHTML = "Odkrywanie lasów i przyrody 🔎🌲";
-      sub.style.opacity = "1";
-    }, 200);
-  }
-
-  function renderExpHeader() {
+  function updateHeaderExp() {
 
     const sub = document.querySelector(".sub");
     if (!sub) return;
@@ -309,42 +283,27 @@ window.onload = function () {
     let expNeed = getExpNeeded(player.level);
     let percent = Math.min(100, (player.exp / expNeed) * 100);
 
-    sub.style.transition = "opacity 0.35s ease";
-    sub.style.opacity = "0";
-
-    setTimeout(() => {
-      sub.innerHTML = `
-        🌿 Poziom ${player.level} (${getRank(player.level)})<br>
-        <div style="width:100%;height:8px;background:#162013;border-radius:10px;overflow:hidden;margin-top:5px;">
-          <div style="width:${percent}%;height:100%;background:#6b8f3d;"></div>
-        </div>
-        <small>${Math.floor(player.exp)} / ${expNeed} EXP</small>
-      `;
-      sub.style.opacity = "1";
-    }, 200);
+    sub.innerHTML = `
+      🌿 Poziom ${player.level} (${getRank(player.level)})<br>
+      <div style="width:100%;height:8px;background:#162013;border-radius:10px;overflow:hidden;margin-top:5px;">
+        <div style="width:${percent}%;height:100%;background:#6b8f3d;"></div>
+      </div>
+      <small>${Math.floor(player.exp)} / ${expNeed} EXP</small>
+    `;
   }
 
   setInterval(() => {
-
-    if (headerLocked) return;
+    const sub = document.querySelector(".sub");
+    if (!sub) return;
 
     if (headerMode === 0) {
-      renderDefaultHeader();
+      sub.innerHTML = "Odkrywanie lasów i przyrody 🔎🌲";
       headerMode = 1;
     } else {
-      renderExpHeader();
+      updateHeaderExp();
       headerMode = 0;
     }
 
   }, 30000);
 
-  window.lockHeader = function () {
-    headerLocked = true;
-
-    renderExpHeader();
-
-    setTimeout(() => {
-      headerLocked = false;
-    }, 2500);
-  };
 };
