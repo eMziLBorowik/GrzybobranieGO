@@ -16,44 +16,95 @@ window.onload = function () {
     const trails = document.getElementById("trailsPanel");
     const surv = document.getElementById("survivalPanel");
     const guide = document.getElementById("guidePanel");
-    const profile = document.getElementById("profilePanel"); // 👈 DODANE
+    const profile = document.getElementById("profilePanel");
 
+    const weather = document.getElementById("weatherCard");
+    const actionBar = document.getElementById("actionBar");
+    const forestInfo = document.getElementById("forestInfoPanel");
+
+    // 🔥 UKRYJ WSZYSTKO
     if (mapEl) mapEl.style.display = "none";
     if (grzyd) grzyd.style.display = "none";
     if (trails) trails.style.display = "none";
     if (surv) surv.style.display = "none";
     if (guide) guide.style.display = "none";
-    if (profile) profile.style.display = "none"; // 👈 DODANE
+    if (profile) profile.style.display = "none";
+
+    if (weather) weather.style.display = "none";
+    if (actionBar) actionBar.style.display = "none";
+    if (forestInfo) forestInfo.style.display = "none";
 
     document.body.classList.remove("screen-map");
 
+    // =========================
+    // 🗺 MAPA
+    // =========================
     if (screen === "map") {
       if (mapEl) mapEl.style.display = "block";
+      if (weather) weather.style.display = "block";
+      if (actionBar) actionBar.style.display = "block";
+      if (forestInfo) forestInfo.style.display = "block";
+
       document.body.classList.add("screen-map");
     }
 
+    // =========================
+    // 🍄 GRZYBDEX
+    // =========================
     if (screen === "grzybdex") {
       if (grzyd) grzyd.style.display = "block";
     }
 
+    // =========================
+    // 🥾 TRASY
+    // =========================
     if (screen === "trailsPanel") {
       if (trails) trails.style.display = "block";
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+
+          if (!routeMap) initRouteMap();
+
+          setTimeout(() => {
+            routeMap?.invalidateSize(true);
+
+            routeMap.setView(
+              [userLat || 52, userLng || 19],
+              userLat ? 16 : 6,
+              { animate: false }
+            );
+          }, 100);
+
+        });
+      });
     }
 
+    // =========================
+    // 🔥 SURVIVAL
+    // =========================
     if (screen === "survivalPanel") {
       if (surv) surv.style.display = "block";
-      if (typeof openSurvival === "function") openSurvival();
+      openSurvival?.();
     }
 
+    // =========================
+    // 📖 GUIDE
+    // =========================
     if (screen === "guidePanel") {
       if (guide) guide.style.display = "block";
-      if (typeof loadGuide === "function") loadGuide();
+      loadGuide?.();
     }
 
-    // 👤 PROFIL
+    // =========================
+    // 👤 PROFILE (NOWE)
+    // =========================
     if (screen === "profilePanel") {
       if (profile) profile.style.display = "block";
-      if (typeof renderProfile === "function") renderProfile();
+
+      if (typeof renderProfile === "function") {
+        renderProfile();
+      }
     }
   }
 
@@ -79,7 +130,7 @@ window.onload = function () {
     showScreen("map");
 
     setTimeout(() => {
-      if (map) map.invalidateSize();
+      map?.invalidateSize();
     }, 300);
   };
 
@@ -90,9 +141,7 @@ window.onload = function () {
   document.getElementById("sideDex").onclick = function () {
     sideMenu.classList.remove("active");
     document.getElementById("centerMapBtn").style.display = "none";
-
     showScreen("grzybdex");
-
     updateStats?.();
   };
 
@@ -100,78 +149,41 @@ window.onload = function () {
   // 🥾 TRASY
   // =========================
 
-  const tabTrails = document.getElementById("sideTrails");
-
-  if (tabTrails) {
-    tabTrails.onclick = function () {
-      sideMenu.classList.remove("active");
-      document.getElementById("centerMapBtn").style.display = "none";
-
-      showScreen("trailsPanel");
-
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-
-          if (!routeMap) initRouteMap();
-
-          setTimeout(() => {
-            routeMap?.invalidateSize(true);
-
-            routeMap.setView(
-              [userLat || 52, userLng || 19],
-              userLat ? 16 : 6,
-              { animate: false }
-            );
-          }, 100);
-
-        });
-      });
-    };
-  }
+  document.getElementById("sideTrails").onclick = function () {
+    sideMenu.classList.remove("active");
+    document.getElementById("centerMapBtn").style.display = "none";
+    showScreen("trailsPanel");
+  };
 
   // =========================
   // 🔥 SURVIVAL
   // =========================
 
-  const tabSurvival = document.getElementById("sideSurvival");
+  document.getElementById("sideSurvival").onclick = function () {
+    sideMenu.classList.remove("active");
+    document.getElementById("centerMapBtn").style.display = "none";
+    showScreen("survivalPanel");
+  };
 
-  if (tabSurvival) {
-    tabSurvival.onclick = function () {
+  // =========================
+  // 📖 GUIDE
+  // =========================
+
+  document.getElementById("sideGuide").onclick = function () {
+    sideMenu.classList.remove("active");
+    document.getElementById("centerMapBtn").style.display = "none";
+    showScreen("guidePanel");
+  };
+
+  // =========================
+  // 👤 PROFILE BUTTON (FIX)
+  // =========================
+
+  const profileBtn = document.getElementById("sideProfile");
+  if (profileBtn) {
+    profileBtn.onclick = function () {
       sideMenu.classList.remove("active");
       document.getElementById("centerMapBtn").style.display = "none";
-
-      showScreen("survivalPanel");
-      if (typeof openSurvival === "function") openSurvival();
-    };
-  }
-
-  // =========================
-  // 📖 PRZEWODNIK
-  // =========================
-
-  const tabGuide = document.getElementById("sideGuide");
-
-  if (tabGuide) {
-    tabGuide.onclick = function () {
-      sideMenu.classList.remove("active");
-      document.getElementById("centerMapBtn").style.display = "none";
-
-      showScreen("guidePanel");
-      if (typeof loadGuide === "function") loadGuide();
-    };
-  }
-
-  // =========================
-  // 👤 PROFIL (NOWE)
-  // =========================
-
-  const tabProfile = document.getElementById("sideProfile");
-
-  if (tabProfile) {
-    tabProfile.onclick = function () {
-      sideMenu.classList.remove("active");
-      document.getElementById("centerMapBtn").style.display = "none";
-
       showScreen("profilePanel");
     };
   }
@@ -188,13 +200,12 @@ window.onload = function () {
 
       loadWeather?.(userLat, userLng);
 
-      if (typeof trackMovementEXP === "function") {
-        trackMovementEXP(userLat, userLng, pos.coords.speed);
-      }
+      trackMovementEXP?.(userLat, userLng, pos.coords.speed);
 
       document.getElementById("forestStatus").innerText = "📍 GPS OK";
 
       if (!userMarker) {
+
         userMarker = L.marker([userLat, userLng]).addTo(map);
 
         if (firstGPS) {
@@ -207,21 +218,6 @@ window.onload = function () {
 
         if (followGPS && document.body.classList.contains("screen-map")) {
           map.setView([userLat, userLng], 16);
-        }
-      }
-
-      if (routeMap) {
-        if (!window.routeGpsMarker) {
-          window.routeGpsMarker = L.marker([userLat, userLng], {
-            icon: L.divIcon({
-              className: "gpsMarker",
-              html: "📍",
-              iconSize: [45, 45],
-              iconAnchor: [22, 45]
-            })
-          }).addTo(routeMap);
-        } else {
-          window.routeGpsMarker.setLatLng([userLat, userLng]);
         }
       }
 
@@ -266,44 +262,4 @@ window.onload = function () {
   }
 
   map.on("dragstart", () => followGPS = false);
-
-  // =========================
-  // 🔄 HEADER ROTATOR (EXP BAR)
-  // =========================
-
-  let headerMode = 0;
-
-  function updateHeaderExp() {
-
-    const sub = document.querySelector(".sub");
-    if (!sub) return;
-
-    if (!window.player || !window.getExpNeeded) return;
-
-    let expNeed = getExpNeeded(player.level);
-    let percent = Math.min(100, (player.exp / expNeed) * 100);
-
-    sub.innerHTML = `
-      🌿 Poziom ${player.level} (${getRank(player.level)})<br>
-      <div style="width:100%;height:8px;background:#162013;border-radius:10px;overflow:hidden;margin-top:5px;">
-        <div style="width:${percent}%;height:100%;background:#6b8f3d;"></div>
-      </div>
-      <small>${Math.floor(player.exp)} / ${expNeed} EXP</small>
-    `;
-  }
-
-  setInterval(() => {
-    const sub = document.querySelector(".sub");
-    if (!sub) return;
-
-    if (headerMode === 0) {
-      sub.innerHTML = "Odkrywanie lasów i przyrody 🔎🌲";
-      headerMode = 1;
-    } else {
-      updateHeaderExp();
-      headerMode = 0;
-    }
-
-  }, 30000);
-
 };
