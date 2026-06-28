@@ -1,5 +1,5 @@
 // ============================
-// 👤 PROFIL SYSTEM v2 SAFE
+// 👤 PROFIL SYSTEM v2 SAFE FIXED
 // Leśna Przygoda
 // SUPABASE SAFE (requires supabase.js)
 // ============================
@@ -20,10 +20,7 @@ let profileData = {
 // ============================
 
 function getSupabase() {
-  if (!window.supabase) {
-    console.log("⛔ Supabase not ready");
-    return null;
-  }
+  if (!window.supabase) return null;
   return window.supabase;
 }
 
@@ -53,12 +50,17 @@ async function loadProfile() {
     return;
   }
 
-  await Promise.all([
-    loadRoutes(sb, user.id),
-    loadExploration(sb),
-  ]);
+  try {
+    await Promise.all([
+      loadRoutes(sb, user.id),
+      loadExploration(sb),
+    ]);
 
-  renderProfile();
+    renderProfile();
+  } catch (e) {
+    console.log("❌ PROFILE ERROR:", e);
+    box.innerHTML = "❌ Błąd ładowania profilu";
+  }
 }
 
 
@@ -102,14 +104,14 @@ async function loadExploration(sb) {
   let totalRevealed = 0;
   let totalCells = 0;
 
-  let best = data[0];
+  let best = null;
 
   data.forEach(f => {
 
     totalRevealed += f.revealed_cells?.length || 0;
     totalCells += f.total_cells || 0;
 
-    if ((f.coverage_percent || 0) > (best.coverage_percent || 0)) {
+    if (!best || (f.coverage_percent || 0) > (best.coverage_percent || 0)) {
       best = f;
     }
   });
@@ -160,10 +162,9 @@ function renderProfile() {
     ? getForestName(profileData.bestForest.forest_id)
     : "Brak danych";
 
-  const bestPercent = profileData.bestForest?.coverage_percent || 0;
+  const bestPercent = profileData.bestForest?.coverage_percent ?? 0;
 
   box.innerHTML = `
-    
     <div class="card">
       👤 Profil gracza<br><br>
 
@@ -197,7 +198,6 @@ function renderProfile() {
         <div style="width:${bestPercent}%;height:100%;background:#6b8f3d;"></div>
       </div>
     </div>
-
   `;
 }
 
@@ -207,3 +207,4 @@ function renderProfile() {
 // ============================
 
 window.loadProfile = loadProfile;
+window.renderProfile = renderProfile;
