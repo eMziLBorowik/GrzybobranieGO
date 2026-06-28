@@ -1,210 +1,278 @@
-// ============================
-// 👤 PROFIL SYSTEM v2 SAFE FIXED
-// Leśna Przygoda
-// SUPABASE SAFE (requires supabase.js)
-// ============================
+let lastForestLat = null;
+let lastForestLng = null;
+let followGPS = true;
+let firstGPS = true;
 
-console.log("👤 Profile system ready");
+window.onload = function () {
 
-let profileData = {
-  totalDistance: 0,
-  routesCount: 0,
-  forestsVisited: 0,
-  bestForest: null,
-  exploration: 0
-};
+  // =========================
+  // 🔥 UI SYSTEM
+  // =========================
 
+  function showScreen(screen) {
 
-// ============================
-// ⛔ SAFE SUPABASE CHECK
-// ============================
+    const mapEl = document.getElementById("map");
+    const grzyd = document.getElementById("grzybdex");
+    const trails = document.getElementById("trailsPanel");
+    const surv = document.getElementById("survivalPanel");
+    const guide = document.getElementById("guidePanel");
+    const profile = document.getElementById("profilePanel");
 
-function getSupabase() {
-  if (!window.supabase) return null;
-  return window.supabase;
-}
+    if (mapEl) mapEl.style.display = "none";
+    if (grzyd) grzyd.style.display = "none";
+    if (trails) trails.style.display = "none";
+    if (surv) surv.style.display = "none";
+    if (guide) guide.style.display = "none";
+    if (profile) profile.style.display = "none";
 
+    document.body.classList.remove("screen-map");
 
-// ============================
-// 📊 LOAD PROFILE
-// ============================
-
-async function loadProfile() {
-
-  const box = document.getElementById("profileContent");
-  if (!box) return;
-
-  box.innerHTML = "⏳ Ładowanie profilu...";
-
-  const sb = getSupabase();
-  if (!sb) {
-    box.innerHTML = "⛔ Supabase nie gotowy";
-    return;
-  }
-
-  const { data } = await sb.auth.getUser();
-  const user = data?.user;
-
-  if (!user) {
-    box.innerHTML = "❌ Brak użytkownika";
-    return;
-  }
-
-  try {
-    await Promise.all([
-      loadRoutes(sb, user.id),
-      loadExploration(sb),
-    ]);
-
-    renderProfile();
-  } catch (e) {
-    console.log("❌ PROFILE ERROR:", e);
-    box.innerHTML = "❌ Błąd ładowania profilu";
-  }
-}
-
-
-// ============================
-// 🥾 TRASY
-// ============================
-
-async function loadRoutes(sb, userId) {
-
-  const { data } = await sb
-    .from("routes")
-    .select("*")
-    .eq("user_id", userId);
-
-  if (!data) return;
-
-  profileData.routesCount = data.length;
-
-  let total = 0;
-
-  data.forEach(r => {
-    total += r.distance || 0;
-  });
-
-  profileData.totalDistance = total / 1000;
-}
-
-
-// ============================
-// 🌲 LASY
-// ============================
-
-async function loadExploration(sb) {
-
-  const { data } = await sb
-    .from("forest_exploration")
-    .select("*");
-
-  if (!data || data.length === 0) return;
-
-  let totalRevealed = 0;
-  let totalCells = 0;
-
-  let best = null;
-
-  data.forEach(f => {
-
-    totalRevealed += f.revealed_cells?.length || 0;
-    totalCells += f.total_cells || 0;
-
-    if (!best || (f.coverage_percent || 0) > (best.coverage_percent || 0)) {
-      best = f;
+    if (screen === "map") {
+      if (mapEl) mapEl.style.display = "block";
+      document.body.classList.add("screen-map");
     }
-  });
 
-  profileData.exploration =
-    totalCells === 0 ? 0 : Math.round((totalRevealed / totalCells) * 100);
+    if (screen === "grzybdex") {
+      if (grzyd) grzyd.style.display = "block";
+    }
 
-  profileData.bestForest = best;
-}
+    if (screen === "trailsPanel") {
+      if (trails) trails.style.display = "block";
+    }
 
+    if (screen === "survivalPanel") {
+      if (surv) surv.style.display = "block";
+      if (typeof openSurvival === "function") openSurvival();
+    }
 
-// ============================
-// 🌲 NAZWA LASU SAFE
-// ============================
+    if (screen === "guidePanel") {
+      if (guide) guide.style.display = "block";
+      if (typeof loadGuide === "function") loadGuide();
+    }
 
-function getForestName(id) {
+    if (screen === "profilePanel") {
+      if (profile) profile.style.display = "block";
+    }
+  }
 
-  if (!window.forests) return id;
+  // =========================
+  // ☰ MENU
+  // =========================
 
-  const f = window.forests.find(x => {
-    if (!x.geometry || !x.geometry[0]) return false;
+  const menuBtn = document.getElementById("menuBtn");
+  const sideMenu = document.getElementById("sideMenu");
+  const closeMenu = document.getElementById("closeMenu");
 
-    let lat = x.geometry[0][0][0];
-    let lng = x.geometry[0][0][1];
+  if (menuBtn) menuBtn.onclick = () => sideMenu.classList.add("active");
+  if (closeMenu) closeMenu.onclick = () => sideMenu.classList.remove("active");
 
-    return (lat.toFixed(5) + "_" + lng.toFixed(5)) === id;
-  });
+  // =========================
+  // 🗺 MAPA
+  // =========================
 
-  return f?.name || id;
-}
+  document.getElementById("sideMap").onclick = function () {
+    sideMenu.classList.remove("active");
+    document.getElementById("centerMapBtn").style.display = "flex";
 
+    showScreen("map");
 
-// ============================
-// 📊 RENDER
-// ============================
+    setTimeout(() => {
+      if (map) map.invalidateSize();
+    }, 300);
+  };
 
-function renderProfile() {
+  // =========================
+  // 🍄 GRZYBDEX
+  // =========================
 
-  const box = document.getElementById("profileContent");
-  if (!box) return;
+  document.getElementById("sideDex").onclick = function () {
+    sideMenu.classList.remove("active");
+    document.getElementById("centerMapBtn").style.display = "none";
 
-  const p = window.player || { level: 1, exp: 0 };
+    showScreen("grzybdex");
 
-  const expNeed = window.getExpNeeded ? window.getExpNeeded(p.level) : 100;
-  const percent = Math.min(100, (p.exp / expNeed) * 100);
+    updateStats?.();
+  };
 
-  const bestForestName = profileData.bestForest
-    ? getForestName(profileData.bestForest.forest_id)
-    : "Brak danych";
+  // =========================
+  // 🥾 TRASY
+  // =========================
 
-  const bestPercent = profileData.bestForest?.coverage_percent ?? 0;
+  const tabTrails = document.getElementById("sideTrails");
 
-  box.innerHTML = `
-    <div class="card">
-      👤 Profil gracza<br><br>
+  if (tabTrails) {
+    tabTrails.onclick = function () {
+      sideMenu.classList.remove("active");
+      document.getElementById("centerMapBtn").style.display = "none";
 
-      🌿 Poziom ${p.level} (${window.getRank ? window.getRank(p.level) : "?"})<br>
+      showScreen("trailsPanel");
 
-      <div style="width:100%;height:8px;background:#162013;border-radius:10px;overflow:hidden;margin-top:8px;">
-        <div style="width:${percent}%;height:100%;background:#6b8f3d;"></div>
-      </div>
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
 
-      <small>${Math.floor(p.exp)} / ${expNeed} EXP</small>
-    </div>
+          if (!routeMap) initRouteMap();
 
+          setTimeout(() => {
+            routeMap?.invalidateSize(true);
 
-    <div class="card">
-      📊 Statystyki<br><br>
+            routeMap.setView(
+              [userLat || 52, userLng || 19],
+              userLat ? 16 : 6,
+              { animate: false }
+            );
+          }, 100);
 
-      📏 Dystans: ${profileData.totalDistance.toFixed(2)} km<br>
-      🥾 Trasy: ${profileData.routesCount}<br>
-      🌲 Eksploracja: ${profileData.exploration}%
-    </div>
+        });
+      });
+    };
+  }
 
+  // =========================
+  // 🔥 SURVIVAL
+  // =========================
 
-    <div class="card">
-      🌲 Najlepszy las<br><br>
+  const tabSurvival = document.getElementById("sideSurvival");
 
-      ${bestForestName}<br>
+  if (tabSurvival) {
+    tabSurvival.onclick = function () {
+      sideMenu.classList.remove("active");
+      document.getElementById("centerMapBtn").style.display = "none";
 
-      📊 ${bestPercent}%<br>
+      showScreen("survivalPanel");
 
-      <div style="width:100%;height:8px;background:#162013;border-radius:10px;overflow:hidden;margin-top:8px;">
-        <div style="width:${bestPercent}%;height:100%;background:#6b8f3d;"></div>
-      </div>
-    </div>
-  `;
-}
+      if (typeof openSurvival === "function") openSurvival();
+    };
+  }
 
+  // =========================
+  // 📖 PRZEWODNIK
+  // =========================
 
-// ============================
-// 🌍 EXPORT
-// ============================
+  const tabGuide = document.getElementById("sideGuide");
 
-window.loadProfile = loadProfile;
-window.renderProfile = renderProfile;
+  if (tabGuide) {
+    tabGuide.onclick = function () {
+      sideMenu.classList.remove("active");
+      document.getElementById("centerMapBtn").style.display = "none";
+
+      showScreen("guidePanel");
+
+      if (typeof loadGuide === "function") loadGuide();
+    };
+  }
+
+  // =========================
+  // 👤 PROFIL (FIX)
+  // =========================
+
+  const tabProfile = document.getElementById("sideProfile");
+
+  if (tabProfile) {
+    tabProfile.onclick = function () {
+
+      sideMenu.classList.remove("active");
+      document.getElementById("centerMapBtn").style.display = "none";
+
+      showScreen("profilePanel");
+
+      setTimeout(() => {
+        if (typeof loadProfile === "function") {
+          loadProfile();
+        } else {
+          console.log("❌ loadProfile nie działa");
+        }
+      }, 150);
+    };
+  }
+
+  // =========================
+  // 📍 GPS
+  // =========================
+
+  navigator.geolocation.watchPosition(
+    (pos) => {
+
+      userLat = pos.coords.latitude;
+      userLng = pos.coords.longitude;
+
+      loadWeather?.(userLat, userLng);
+
+      if (typeof trackMovementEXP === "function") {
+        trackMovementEXP(userLat, userLng, pos.coords.speed);
+      }
+
+      document.getElementById("forestStatus").innerText = "📍 GPS OK";
+
+      if (!userMarker) {
+        userMarker = L.marker([userLat, userLng]).addTo(map);
+
+        if (firstGPS) {
+          map.setView([userLat, userLng], 16);
+          firstGPS = false;
+        }
+
+      } else {
+        userMarker.setLatLng([userLat, userLng]);
+
+        if (followGPS && document.body.classList.contains("screen-map")) {
+          map.setView([userLat, userLng], 16);
+        }
+      }
+
+      if (routeMap) {
+        if (!window.routeGpsMarker) {
+          window.routeGpsMarker = L.marker([userLat, userLng], {
+            icon: L.divIcon({
+              className: "gpsMarker",
+              html: "📍",
+              iconSize: [45, 45],
+              iconAnchor: [22, 45]
+            })
+          }).addTo(routeMap);
+        } else {
+          window.routeGpsMarker.setLatLng([userLat, userLng]);
+        }
+      }
+
+      if (!lastForestLat || !lastForestLng) {
+        lastForestLat = userLat;
+        lastForestLng = userLng;
+        loadForests(userLat, userLng);
+      } else {
+        let d = L.latLng(lastForestLat, lastForestLng)
+          .distanceTo(L.latLng(userLat, userLng));
+
+        if (d > 1000) {
+          lastForestLat = userLat;
+          lastForestLng = userLng;
+          loadForests(userLat, userLng);
+        }
+      }
+
+    },
+    () => {
+      document.getElementById("forestStatus").innerText = "❌ GPS błąd";
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 0
+    }
+  );
+
+  // =========================
+  // 🎯 CENTER MAP
+  // =========================
+
+  const centerMapBtn = document.getElementById("centerMapBtn");
+
+  if (centerMapBtn) {
+    centerMapBtn.onclick = () => {
+      if (userLat && userLng) {
+        map.setView([userLat, userLng], 16);
+      }
+    };
+  }
+
+  map.on("dragstart", () => followGPS = false);
+};
