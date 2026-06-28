@@ -1,24 +1,24 @@
 // ============================
-// 🌿 EXP SYSTEM v3
+// 🌿 EXP SYSTEM v4
 // Leśna Przygoda
-// 75 LVL + Rangi + Las Boost
+// 75 LVL + Supabase Sync
 // ============================
 
 
-// 👤 GRACZ
+// 👤 GRACZ (LOCAL CACHE)
 window.player = {
   exp: 0,
   level: 1
 };
 
 
-// 🌲 KONFIGURACJA
+// 🌲 CONFIG
 const CONFIG = {
   expPerKm: 100,
   forestMultiplier: 1.75,
 
-  maxSpeedKmh: 8,    // anty samochód
-  minSpeedKmh: 0.5,  // anty AFK
+  maxSpeedKmh: 8,
+  minSpeedKmh: 0.5,
 };
 
 
@@ -31,7 +31,7 @@ let state = {
 
 
 // ============================
-// 📈 LEVEL CURVE (75 LVL BALANCED)
+// 📈 LEVEL SYSTEM (75 LVL BALANCED)
 // ============================
 
 function getExpNeeded(level) {
@@ -39,7 +39,6 @@ function getExpNeeded(level) {
   let base = 80;
   let exp = Math.floor(base * Math.pow(level, 1.45));
 
-  // lekkie przyspieszenie early game
   if (level <= 10) {
     exp *= 0.9;
   }
@@ -49,7 +48,7 @@ function getExpNeeded(level) {
 
 
 // ============================
-// 🏅 RANK SYSTEM
+// 🏅 RANGI
 // ============================
 
 function getRank(level) {
@@ -66,6 +65,41 @@ function getRank(level) {
 
 
 // ============================
+// ☁️ SUPABASE SYNC
+// ============================
+
+async function syncPlayerToSupabase() {
+
+  try {
+
+    if (!window.supabase) return;
+
+    const { data } = await supabase.auth.getUser();
+    const user = data?.user;
+
+    if (!user) return;
+
+    const { error } = await supabase
+      .from("profiles")
+      .upsert({
+        user_id: user.id,
+        level: player.level,
+        exp: player.exp
+      });
+
+    if (error) {
+      console.log("❌ SUPABASE ERROR:", error);
+    } else {
+      console.log("☁️ Sync OK (profiles)");
+    }
+
+  } catch (e) {
+    console.log("❌ Sync crash:", e);
+  }
+}
+
+
+// ============================
 // 🌿 ADD EXP
 // ============================
 
@@ -75,32 +109,28 @@ function addEXP(amount, source = "unknown") {
 
   console.log(`🌿 +${amount} EXP | ${source}`);
 
-  // level up loop
   while (player.exp >= getExpNeeded(player.level)) {
 
     player.exp -= getExpNeeded(player.level);
     player.level++;
 
-    console.log(`🎉 LEVEL UP! → ${player.level} | ${getRank(player.level)}`);
+    console.log(`🎉 LEVEL UP → ${player.level} | ${getRank(player.level)}`);
   }
 
   console.log(`📊 LVL ${player.level} (${getRank(player.level)})`);
   console.log(`📊 EXP: ${player.exp} / ${getExpNeeded(player.level)}`);
 
   updateEXPUI?.();
+  syncPlayerToSupabase(); // 🔥 zapis do chmury
 }
 
 
 // ============================
-// 🌲 DETEKCJA LASU (HOOK)
+// 🌲 LAS CHECK (HOOK)
 // ============================
 
-// To podłączysz później do polygonów z mapy
 function isInForest(lat, lng) {
-
-  // placeholder (NA RAZIE TRUE/FALSE LOSOWO NIE)
-  // później: turf.js + polygons
-  return window.isForest === true;
+  return window.isForest === true; // później polygony
 }
 
 
@@ -126,7 +156,6 @@ function trackMovementEXP(lat, lng, speed) {
   if (kmh < CONFIG.minSpeedKmh) return;
 
 
-  // dystans
   if (state.lastLat !== null && state.lastLng !== null) {
 
     let dist = L.latLng(state.lastLat, state.lastLng)
@@ -140,15 +169,14 @@ function trackMovementEXP(lat, lng, speed) {
 
       if (state.distance >= 1000) {
 
-        let multiplier = CONFIG.expPerKm;
+        let exp = CONFIG.expPerKm;
 
-        // 🌲 LAS BONUS
         if (isInForest(lat, lng)) {
-          multiplier *= CONFIG.forestMultiplier;
+          exp *= CONFIG.forestMultiplier;
           console.log("🌲 FOREST BONUS x1.75");
         }
 
-        addEXP(multiplier, "movement");
+        addEXP(exp, "movement");
 
         state.distance = 0;
       }
