@@ -257,13 +257,27 @@ window.onload = function () {
 
   map.on("dragstart", () => followGPS = false);
 
-  // =========================
-  // 🔄 HEADER ROTATOR (EXP BAR)
+   // =========================
+  // 🔄 HEADER ROTATOR (SAFE EXP SYSTEM)
   // =========================
 
   let headerMode = 0;
+  let headerLocked = false;
 
-  function updateHeaderExp() {
+  function renderDefaultHeader() {
+    const sub = document.querySelector(".sub");
+    if (!sub) return;
+
+    sub.style.transition = "opacity 0.35s ease";
+    sub.style.opacity = "0";
+
+    setTimeout(() => {
+      sub.innerHTML = "Odkrywanie lasów i przyrody 🔎🌲";
+      sub.style.opacity = "1";
+    }, 200);
+  }
+
+  function renderExpHeader() {
 
     const sub = document.querySelector(".sub");
     if (!sub) return;
@@ -273,28 +287,43 @@ window.onload = function () {
     let expNeed = getExpNeeded(player.level);
     let percent = Math.min(100, (player.exp / expNeed) * 100);
 
-    sub.innerHTML = `
-      🌿 Poziom ${player.level} (${getRank(player.level)})<br>
-      <div style="width:100%;height:8px;background:#162013;border-radius:10px;overflow:hidden;margin-top:5px;">
-        <div style="width:${percent}%;height:100%;background:#6b8f3d;"></div>
-      </div>
-      <small>${Math.floor(player.exp)} / ${expNeed} EXP</small>
-    `;
+    sub.style.transition = "opacity 0.35s ease";
+    sub.style.opacity = "0";
+
+    setTimeout(() => {
+      sub.innerHTML = `
+        🌿 Poziom ${player.level} (${getRank(player.level)})<br>
+        <div style="width:100%;height:8px;background:#162013;border-radius:10px;overflow:hidden;margin-top:5px;">
+          <div style="width:${percent}%;height:100%;background:#6b8f3d;"></div>
+        </div>
+        <small>${Math.floor(player.exp)} / ${expNeed} EXP</small>
+      `;
+      sub.style.opacity = "1";
+    }, 200);
   }
 
+  // 🔁 ROTATION (30s)
   setInterval(() => {
 
-    const sub = document.querySelector(".sub");
-    if (!sub) return;
+    if (headerLocked) return;
 
     if (headerMode === 0) {
-      sub.innerHTML = "Odkrywanie lasów i przyrody 🔎🌲";
+      renderDefaultHeader();
       headerMode = 1;
     } else {
-      updateHeaderExp();
+      renderExpHeader();
       headerMode = 0;
     }
 
   }, 30000);
 
-};
+  // 🔒 LOCK (po EXP gain)
+  window.lockHeader = function () {
+    headerLocked = true;
+
+    renderExpHeader();
+
+    setTimeout(() => {
+      headerLocked = false;
+    }, 2500);
+  };
