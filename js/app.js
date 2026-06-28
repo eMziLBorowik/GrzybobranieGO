@@ -16,12 +16,14 @@ window.onload = function () {
     const trails = document.getElementById("trailsPanel");
     const surv = document.getElementById("survivalPanel");
     const guide = document.getElementById("guidePanel");
+    const prof = document.getElementById("profilePanel"); // 👤 FIX
 
     if (mapEl) mapEl.style.display = "none";
     if (grzyd) grzyd.style.display = "none";
     if (trails) trails.style.display = "none";
     if (surv) surv.style.display = "none";
     if (guide) guide.style.display = "none";
+    if (prof) prof.style.display = "none"; // 👤 FIX
 
     document.body.classList.remove("screen-map");
 
@@ -40,17 +42,21 @@ window.onload = function () {
 
     if (screen === "survivalPanel") {
       if (surv) surv.style.display = "block";
-
-      if (typeof openSurvival === "function") {
-        openSurvival();
-      }
+      if (typeof openSurvival === "function") openSurvival();
     }
 
     if (screen === "guidePanel") {
       if (guide) guide.style.display = "block";
+      if (typeof loadGuide === "function") loadGuide();
+    }
 
-      if (typeof loadGuide === "function") {
-        loadGuide();
+    // 👤 PROFILE FIX
+    if (screen === "profilePanel") {
+      if (prof) prof.style.display = "block";
+      console.log("👤 PROFILE OPEN");
+
+      if (typeof loadProfile === "function") {
+        loadProfile();
       }
     }
   }
@@ -140,9 +146,7 @@ window.onload = function () {
 
       showScreen("survivalPanel");
 
-      if (typeof openSurvival === "function") {
-        openSurvival();
-      }
+      if (typeof openSurvival === "function") openSurvival();
     };
   }
 
@@ -159,8 +163,27 @@ window.onload = function () {
 
       showScreen("guidePanel");
 
-      if (typeof loadGuide === "function") {
-        loadGuide();
+      if (typeof loadGuide === "function") loadGuide();
+    };
+  }
+
+  // =========================
+  // 👤 PROFIL
+  // =========================
+
+  const tabProfile = document.getElementById("sideProfile");
+
+  if (tabProfile) {
+    tabProfile.onclick = function () {
+      sideMenu.classList.remove("active");
+      document.getElementById("centerMapBtn").style.display = "none";
+
+      showScreen("profilePanel");
+
+      console.log("👤 PROFIL CLICK");
+
+      if (typeof loadProfile === "function") {
+        loadProfile();
       }
     };
   }
@@ -184,7 +207,6 @@ window.onload = function () {
       document.getElementById("forestStatus").innerText = "📍 GPS OK";
 
       if (!userMarker) {
-
         userMarker = L.marker([userLat, userLng]).addTo(map);
 
         if (firstGPS) {
@@ -257,7 +279,7 @@ window.onload = function () {
 
   map.on("dragstart", () => followGPS = false);
 
-   // =========================
+  // =========================
   // 🔄 HEADER ROTATOR (SAFE EXP SYSTEM)
   // =========================
 
@@ -302,7 +324,6 @@ window.onload = function () {
     }, 200);
   }
 
-  // 🔁 ROTATION (30s)
   setInterval(() => {
 
     if (headerLocked) return;
@@ -317,7 +338,6 @@ window.onload = function () {
 
   }, 30000);
 
-  // 🔒 LOCK (po EXP gain)
   window.lockHeader = function () {
     headerLocked = true;
 
@@ -327,3 +347,4 @@ window.onload = function () {
       headerLocked = false;
     }, 2500);
   };
+};
