@@ -1,12 +1,12 @@
 // ============================
-// 🌿 EXP SYSTEM v4
+// 🌿 EXP SYSTEM v5 FIXED STABLE
 // Leśna Przygoda
-// 75 LVL + Supabase Sync
+// SUPABASE READY
 // ============================
 
 
-// 👤 GRACZ (LOCAL CACHE)
-window.player = {
+// 👤 GRACZ (GLOBAL + SAFE LOAD)
+window.player = window.player || {
   exp: 0,
   level: 1
 };
@@ -22,7 +22,7 @@ const CONFIG = {
 };
 
 
-// 🚶 STATE RUCHU
+// 🚶 STATE
 let state = {
   lastLat: null,
   lastLng: null,
@@ -31,41 +31,43 @@ let state = {
 
 
 // ============================
-// 📈 LEVEL SYSTEM (75 LVL BALANCED)
+// 🔥 START LOG
+// ============================
+
+console.log("📊 EXP system ready");
+
+
+// ============================
+// 📈 LEVEL SYSTEM
 // ============================
 
 function getExpNeeded(level) {
-
   let base = 80;
   let exp = Math.floor(base * Math.pow(level, 1.45));
 
-  if (level <= 10) {
-    exp *= 0.9;
-  }
+  if (level <= 10) exp *= 0.9;
 
   return exp;
 }
 
 
 // ============================
-// 🏅 RANGI
+// 🏅 RANKS
 // ============================
 
 function getRank(level) {
-
   if (level <= 3) return "🌱 Nowicjusz";
   if (level <= 8) return "🌿 Spacerowicz";
   if (level <= 15) return "🧭 Wędrowiec";
   if (level <= 30) return "🥾 Tropiciel";
   if (level <= 50) return "🏹 Łowca Lasu";
   if (level <= 74) return "🔥 Strażnik Natury";
-
   return "👑 Mistrz Lasu";
 }
 
 
 // ============================
-// ☁️ SUPABASE SYNC
+// ☁️ SUPABASE SAFE SYNC
 // ============================
 
 async function syncPlayerToSupabase() {
@@ -83,12 +85,12 @@ async function syncPlayerToSupabase() {
       .from("profiles")
       .upsert({
         user_id: user.id,
-        level: player.level,
-        exp: player.exp
+        level: window.player.level,
+        exp: window.player.exp
       });
 
     if (error) {
-      console.log("❌ SUPABASE ERROR:", error);
+      console.log("❌ SUPABASE ERROR:", error.message || error);
     } else {
       console.log("☁️ Sync OK (profiles)");
     }
@@ -105,40 +107,47 @@ async function syncPlayerToSupabase() {
 
 function addEXP(amount, source = "unknown") {
 
-  player.exp += amount;
+  if (!amount || amount <= 0) return;
+
+  window.player.exp += amount;
 
   console.log(`🌿 +${amount} EXP | ${source}`);
 
-  while (player.exp >= getExpNeeded(player.level)) {
+  while (window.player.exp >= getExpNeeded(window.player.level)) {
 
-    player.exp -= getExpNeeded(player.level);
-    player.level++;
+    window.player.exp -= getExpNeeded(window.player.level);
+    window.player.level++;
 
-    console.log(`🎉 LEVEL UP → ${player.level} | ${getRank(player.level)}`);
+    console.log(`🎉 LEVEL UP → ${window.player.level} | ${getRank(window.player.level)}`);
   }
 
-  console.log(`📊 LVL ${player.level} (${getRank(player.level)})`);
-  console.log(`📊 EXP: ${player.exp} / ${getExpNeeded(player.level)}`);
+  console.log(`📊 LVL ${window.player.level} (${getRank(window.player.level)})`);
+  console.log(`📊 EXP: ${window.player.exp} / ${getExpNeeded(window.player.level)}`);
 
-  updateEXPUI?.();
-  syncPlayerToSupabase(); // 🔥 zapis do chmury
+  if (typeof updateEXPUI === "function") {
+    updateEXPUI();
+  }
+
+  syncPlayerToSupabase();
 }
 
 
 // ============================
-// 🌲 LAS CHECK (HOOK)
+// 🌲 FOREST CHECK (FUTURE)
 // ============================
 
 function isInForest(lat, lng) {
-  return window.isForest === true; // później polygony
+  return window.isForest === true;
 }
 
 
 // ============================
-// 🚶 TRACKING RUCHU
+// 🚶 TRACK MOVEMENT (SAFE GPS)
 // ============================
 
 function trackMovementEXP(lat, lng, speed) {
+
+  if (!lat || !lng) return;
 
   if (!speed) return;
 
@@ -146,17 +155,19 @@ function trackMovementEXP(lat, lng, speed) {
 
   console.log(`📡 SPEED: ${kmh.toFixed(1)} km/h`);
 
-  // ❌ samochód
+  // 🚗 auto detection
   if (kmh > CONFIG.maxSpeedKmh) {
     console.log("🚗 AUTO DETECTED → NO EXP");
     return;
   }
 
-  // ❌ brak ruchu
+  // 💤 brak ruchu
   if (kmh < CONFIG.minSpeedKmh) return;
 
-
+  // 📏 dystans
   if (state.lastLat !== null && state.lastLng !== null) {
+
+    if (typeof L === "undefined") return;
 
     let dist = L.latLng(state.lastLat, state.lastLng)
       .distanceTo(L.latLng(lat, lng));
@@ -176,7 +187,7 @@ function trackMovementEXP(lat, lng, speed) {
           console.log("🌲 FOREST BONUS x1.75");
         }
 
-        addEXP(exp, "movement");
+        addEXP(Math.floor(exp), "movement");
 
         state.distance = 0;
       }
@@ -186,3 +197,11 @@ function trackMovementEXP(lat, lng, speed) {
   state.lastLat = lat;
   state.lastLng = lng;
 }
+
+
+// ============================
+// 🌍 GLOBAL EXPORT
+// ============================
+
+window.trackMovementEXP = trackMovementEXP;
+window.addEXP = addEXP;
