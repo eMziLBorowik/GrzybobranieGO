@@ -124,9 +124,13 @@ function addEXP(amount, source = "unknown") {
   console.log(`📊 LVL ${window.player.level} (${getRank(window.player.level)})`);
   console.log(`📊 EXP: ${window.player.exp} / ${getExpNeeded(window.player.level)}`);
 
+  // UI update (future safe)
   if (typeof updateEXPUI === "function") {
     updateEXPUI();
   }
+
+  // HEADER UPDATE
+  updateHeaderExpUI?.();
 
   syncPlayerToSupabase();
 }
@@ -148,7 +152,6 @@ function isInForest(lat, lng) {
 function trackMovementEXP(lat, lng, speed) {
 
   if (!lat || !lng) return;
-
   if (!speed) return;
 
   let kmh = speed * 3.6;
@@ -197,6 +200,40 @@ function trackMovementEXP(lat, lng, speed) {
   state.lastLat = lat;
   state.lastLng = lng;
 }
+
+
+// ============================
+// 📊 HEADER UI EXP BAR
+// ============================
+
+function updateHeaderExpUI() {
+
+  const sub = document.querySelector(".sub");
+  if (!sub) return;
+
+  const level = window.player?.level || 1;
+  const exp = window.player?.exp || 0;
+
+  const need = getExpNeeded(level);
+  const percent = Math.min(100, (exp / need) * 100);
+
+  sub.innerHTML = `
+    🌿 Poziom ${level} (${getRank(level)})<br>
+    <div style="width:100%;height:8px;background:#162013;border-radius:10px;overflow:hidden;margin-top:5px;">
+      <div style="width:${percent}%;height:100%;background:#6b8f3d;"></div>
+    </div>
+    <small>${Math.floor(exp)} / ${need} EXP</small>
+  `;
+}
+
+
+// ============================
+// 🔁 AUTO REFRESH HEADER
+// ============================
+
+setInterval(() => {
+  updateHeaderExpUI();
+}, 5000);
 
 
 // ============================
