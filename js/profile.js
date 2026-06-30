@@ -165,7 +165,7 @@ function renderProfile() {
     </div>
 
     <div class="info">
-      <div class="name">🌲 Leśny Wędrowiec</div>
+      <div class="name">${p.nick || "Gracz"}</div>
       <div class="rank">${window.getRank?.(p.level) || "Nowicjusz"}</div>
 
       <div class="expText">${Math.floor(safeExp)} / ${need} EXP</div>
