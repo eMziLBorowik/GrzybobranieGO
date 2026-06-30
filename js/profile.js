@@ -1,9 +1,13 @@
 // ============================
-// 👤 PROFIL SYSTEM v5 SUPABASE STABLE
+// 👤 PROFIL SYSTEM STABLE FIX
 // Leśna Przygoda
 // ============================
 
-console.log("👤 profile.js LOADED (SUPABASE STABLE)");
+console.log("👤 profile.js LOADED");
+
+// ============================
+// STATE
+// ============================
 
 let profileData = {
   totalDistance: 0,
@@ -13,7 +17,7 @@ let profileData = {
 };
 
 // ============================
-// SUPABASE SAFE
+// SUPABASE SAFE ACCESS
 // ============================
 
 function sb() {
@@ -21,7 +25,7 @@ function sb() {
 }
 
 // ============================
-// LOAD PROFILE
+// LOAD PROFILE (MAIN)
 // ============================
 
 async function loadProfile() {
@@ -29,11 +33,12 @@ async function loadProfile() {
   const box = document.getElementById("profileContent");
   if (!box) return;
 
-  box.innerHTML = `<div class="card">⏳ Ładowanie profilu...</div>`;
+  box.innerHTML = "⏳ Ładowanie profilu...";
 
   const supabase = sb();
+
   if (!supabase) {
-    box.innerHTML = `<div class="card">❌ Supabase offline</div>`;
+    box.innerHTML = "❌ Supabase offline";
     return;
   }
 
@@ -41,47 +46,57 @@ async function loadProfile() {
   const user = data?.user;
 
   if (!user) {
-    box.innerHTML = `<div class="card">❌ Brak użytkownika</div>`;
+    box.innerHTML = "❌ Brak użytkownika";
     return;
   }
 
-  await Promise.all([
-    loadProfileStats(supabase, user.id),
-    loadExploration(supabase)
-  ]);
+  try {
 
-  renderProfile();
+    await Promise.all([
+      loadStats(supabase, user.id),
+      loadExploration(supabase)
+    ]);
+
+    renderProfile();
+
+  } catch (err) {
+    console.log("PROFILE ERROR:", err);
+    box.innerHTML = "❌ Błąd ładowania profilu";
+  }
 }
 
 // ============================
-// PROFILE STATS (NOWE ŹRÓDŁO PRAWDY)
+// 📊 STATS (FROM PROFILES TABLE)
 // ============================
 
-async function loadProfileStats(sb, userId) {
+async function loadStats(sb, userId) {
 
-  const { data } = await sb
+  const { data, error } = await sb
     .from("profiles")
-    .select("*")
+    .select("total_distance, total_routes_lifetime")
     .eq("user_id", userId)
     .single();
 
-  if (!data) return;
+  if (error || !data) {
+    console.log("profiles error:", error);
+    return;
+  }
 
-  profileData.totalDistance = (data.total_distance || 0);
-  profileData.routesCount = data.total_routes || 0;
+  profileData.totalDistance = (data.total_distance || 0) / 1000;
+  profileData.routesCount = data.total_routes_lifetime || 0;
 }
 
 // ============================
-// EXPLORATION (FORESTS)
+// 🌲 FOREST EXP
 // ============================
 
 async function loadExploration(sb) {
 
-  const { data } = await sb
-    .from("explored_forests")
+  const { data, error } = await sb
+    .from("forest_exploration")
     .select("*");
 
-  if (!data || data.length === 0) return;
+  if (error || !data) return;
 
   let revealed = 0;
   let total = 0;
@@ -104,39 +119,7 @@ async function loadExploration(sb) {
 }
 
 // ============================
-// XP RING UI
-// ============================
-
-function xpRing(level, exp, need) {
-
-  const percent = Math.min(100, (exp / need) * 100);
-  const r = 54;
-  const c = 2 * Math.PI * r;
-  const offset = c - (percent / 100) * c;
-
-  return `
-  <div class="xpWrap">
-    <svg width="140" height="140">
-      <circle cx="70" cy="70" r="${r}" stroke="#1b2a1b" stroke-width="10" fill="none"/>
-      <circle cx="70" cy="70" r="${r}"
-        stroke="#00ff88"
-        stroke-width="10"
-        fill="none"
-        stroke-dasharray="${c}"
-        stroke-dashoffset="${offset}"
-        stroke-linecap="round"
-      />
-    </svg>
-
-    <div class="xpCenter">
-      <div class="lvl">LVL ${level}</div>
-      <div class="txt">${Math.floor(percent)}%</div>
-    </div>
-  </div>`;
-}
-
-// ============================
-// RENDER PROFILE
+// RENDER (YOUR UI SAFE)
 // ============================
 
 function renderProfile() {
@@ -149,51 +132,45 @@ function renderProfile() {
 
   const best = profileData.bestForest;
 
+  const expPercent = Math.min(100, (p.exp / need) * 100);
+
   box.innerHTML = `
+    
+    <div class="card">
+      👤 PROFIL GRACZA
+      <br><br>
 
-  <div class="profileHeader">
-    ${xpRing(p.level, p.exp, need)}
+      🌿 LVL ${p.level} (${window.getRank?.(p.level) || "Nowicjusz"})<br>
 
-    <div class="profileName">
-      🌲 Leśny Wędrowiec<br>
-      <span>${window.getRank?.(p.level) || "Nowicjusz"}</span>
-    </div>
-  </div>
+      <div style="width:100%;height:8px;background:#162013;border-radius:10px;overflow:hidden;margin-top:8px;">
+        <div style="width:${expPercent}%;height:100%;background:#6b8f3d;"></div>
+      </div>
 
-  <div class="grid">
-
-    <div class="card stat">
-      📏<br>
-      <b>${profileData.totalDistance.toFixed(2)} km</b>
-      <div>Łączny dystans (SUPABASE)</div>
+      <small>${Math.floor(p.exp)} / ${need} EXP</small>
     </div>
 
-    <div class="card stat">
-      🥾<br>
-      <b>${profileData.routesCount}</b>
-      <div>Trasy (historyczne)</div>
+
+    <div class="card">
+      📊 STATYSTYKI
+      <br><br>
+
+      📏 Dystans: <b>${profileData.totalDistance.toFixed(2)} km</b><br>
+      🥾 Trasy: <b>${profileData.routesCount}</b><br>
+      🌲 Eksploracja: <b>${profileData.exploration}%</b>
     </div>
 
-    <div class="card stat">
-      🌲<br>
-      <b>${profileData.exploration}%</b>
-      <div>Eksploracja lasów</div>
+
+    <div class="card">
+      🏆 NAJLEPSZY LAS
+      <br><br>
+
+      ${best ? best.forest_id : "Brak danych"}<br>
+      📊 ${best?.coverage_percent || 0}%<br>
+
+      <div style="width:100%;height:8px;background:#162013;border-radius:10px;overflow:hidden;margin-top:8px;">
+        <div style="width:${best?.coverage_percent || 0}%;height:100%;background:#6b8f3d;"></div>
+      </div>
     </div>
-
-  </div>
-
-  <div class="card highlight">
-
-    🏆 NAJLEPSZY LAS<br><br>
-
-    <b>${best ? best.forest_id : "Brak danych"}</b><br>
-    <small>${best?.coverage_percent || 0}% odkrycia</small>
-
-    <div class="bar">
-      <div style="width:${best?.coverage_percent || 0}%"></div>
-    </div>
-
-  </div>
 
   `;
 }
