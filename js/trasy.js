@@ -1,17 +1,21 @@
 let routeMap = null;
 
 let routeLine = null;
+
 let routePoints = [];
 
 let routeRunning = false;
+
 let routePaused = false;
 
 let routeStartTime = null;
+
 let routeTimer = null;
 
 let routeDistance = 0;
 
 let routeMarker = null;
+
 window.routeGpsMarker = null;
 
 let savedRoutes = [];
@@ -21,74 +25,307 @@ let totalPausedTime = 0;
 
 let gpsInterval = null;
 
+
+// ============================
+// 🌲 FOREST GRID SYSTEM
+// ============================
+
 let activeForest = null;
 let forestGridLayer = null;
 let forestExplorationState = {};
 
+
 // ============================
-// SAFETY HELPERS
+// 🧠 FIX ID LASU
 // ============================
 
-function sb(){
-  return window.supabase || null;
+function normalizeForestId(forest){
+
+if(forest.id) return forest.id;
+
+if(forest.geometry && forest.geometry[0]){
+let p = forest.geometry[0][0];
+return p[0].toFixed(5) + "_" + p[1].toFixed(5);
 }
 
+return "unknown";
+}
+
+
 // ============================
-// INIT MAP (FIXED STABLE)
+// SUPABASE FOREST LOAD
+// ============================
+
+async function loadForestExploration(forestId){
+
+const { data } = await supabase
+.from("forest_exploration")
+.select("*")
+.eq("forest_id", forestId)
+.single();
+
+return data || null;
+}
+
+
+// ============================
+// POINT IN POLYGON
+// ============================
+
+function pointInPolygon(point, vs){
+
+let x = point[0], y = point[1];
+let inside = false;
+
+for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+let xi = vs[i][0], yi = vs[i][1];
+let xj = vs[j][0], yj = vs[j][1];
+
+let intersect = ((yi > y) != (yj > y)) &&
+(x < (xj - xi) * (y - yi) / (yj - yi + 0.0000001) + xi);
+
+if (intersect) inside = !inside;
+}
+
+return inside;
+}
+
+
+// ============================
+// FIND FOREST
+// ============================
+
+function findForest(lat,lng){
+
+if(!forests || forests.length === 0) return null;
+
+for(let f of forests){
+if(!f.geometry || !f.geometry[0]) continue;
+
+if(pointInPolygon([lat,lng], f.geometry[0])){
+return f;
+}
+}
+
+return null;
+}
+
+
+// ============================
+// FOREST GRID
+// ============================
+
+async function createForestGrid(forest){
+
+if(forestGridLayer){
+forestGridLayer.remove();
+}
+
+forestGridLayer = L.layerGroup().addTo(routeMap);
+
+let id = normalizeForestId(forest);
+
+if(!forestExplorationState[id]){
+forestExplorationState[id] = {
+revealed: new Set(),
+total: 0
+};
+}
+
+let state = forestExplorationState[id];
+state.total = 0;
+
+let coords = forest.geometry[0];
+
+let lats = coords.map(c => c[0]);
+let lngs = coords.map(c => c[1]);
+
+let minLat = Math.min(...lats);
+let maxLat = Math.max(...lats);
+let minLng = Math.min(...lngs);
+let maxLng = Math.max(...lngs);
+
+let step = 0.00009;
+
+for(let lat = minLat; lat < maxLat; lat += step){
+for(let lng = minLng; lng < maxLng; lng += step){
+
+if(!pointInPolygon([lat,lng], coords)) continue;
+
+state.total++;
+
+L.rectangle([
+[lat,lng],
+[lat+step,lng+step]
+],{
+color:"transparent",
+fillColor:"#00ff88",
+fillOpacity:0.05,
+weight:0
+}).addTo(forestGridLayer);
+
+}
+}
+
+let saved = await loadForestExploration(id);
+
+if(saved && saved.revealed_cells){
+saved.revealed_cells.forEach(k=>{
+state.revealed.add(k);
+});
+}
+}
+
+
+// ============================
+// REVEAL CELL
+// ============================
+
+function revealForestCell(lat,lng){
+
+if(!routeRunning) return;
+if(!activeForest) return;
+
+let id = normalizeForestId(activeForest);
+let state = forestExplorationState[id];
+if(!state) return;
+
+let key = lat.toFixed(5)+"_"+lng.toFixed(5);
+
+if(state.revealed.has(key)) return;
+
+state.revealed.add(key);
+
+let step = 0.00009;
+
+L.rectangle([
+[lat,lng],
+[lat+step,lng+step]
+],{
+color:"#00ff88",
+fillColor:"#00ff88",
+fillOpacity:0.25,
+weight:1
+}).addTo(forestGridLayer);
+}
+
+
+// ============================
+// SAVE FOREST EXP
+// ============================
+
+async function saveForestExploration(){
+
+if(!activeForest) return;
+
+let id = normalizeForestId(activeForest);
+let state = forestExplorationState[id];
+if(!state) return;
+
+let coverage =
+state.total === 0 ? 0 :
+Math.round((state.revealed.size / state.total) * 100);
+
+await supabase.from("forest_exploration").upsert([{
+forest_id: id,
+coverage_percent: coverage,
+revealed_cells: Array.from(state.revealed),
+total_cells: state.total,
+date: new Date().toISOString()
+}],{
+onConflict:"forest_id"
+});
+}
+
+
+// ============================
+// INIT MAP
 // ============================
 
 function initRouteMap(){
 
-  if(routeMap) return;
+if(routeMap) return;
 
-  const el = document.getElementById("routeMiniMap");
-  if(!el) return;
 
-  routeMap = L.map(el, {
-    zoomControl:false,
-    attributionControl:false
-  });
+// 🥾 osobna mapa dla zakładki trasy
+routeMap = L.map("routeMiniMap", {
+zoomControl:false,
+attributionControl:false
+});
 
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution:"© OpenStreetMap"
-  }).addTo(routeMap);
 
-  let lat = window.userLat;
-  let lng = window.userLng;
+L.tileLayer(
+"https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+{
+attribution:"© OpenStreetMap"
+}
+).addTo(routeMap);
 
-  if(lat && lng){
-    routeMap.setView([lat, lng], 17);
+
+
+if(userLat && userLng){
+
+routeMap.setView(
+[userLat,userLng],
+17
+);
+
+}else{
+
+routeMap.setView(
+[52,19],
+6
+);
+
+}
+
+
+
+setTimeout(()=>{
+
+if(routeMap){
+
+routeMap.invalidateSize();
+
+}
+
+},300);
+
+
+// 📍 marker GPS dla mapy tras
+
+if(userLat && userLng){
 
     if(!window.routeGpsMarker){
-      window.routeGpsMarker = L.marker([lat, lng], {
-        icon: L.divIcon({
-          className: "gpsMarker",
-          html: "📍",
-          iconSize: [30, 30]
-        })
-      }).addTo(routeMap);
-    } else {
-      window.routeGpsMarker.setLatLng([lat, lng]);
+
+        window.routeGpsMarker = L.marker(
+            [userLat,userLng],
+            {
+                icon:L.divIcon({
+                    className:"gpsMarker",
+                    html:"📍",
+                    iconSize:[45,45]
+                })
+            }
+        ).addTo(routeMap);
+
+    }else{
+
+        window.routeGpsMarker.setLatLng(
+            [userLat,userLng]
+        );
+
     }
 
-  } else {
-    routeMap.setView([52, 19], 6);
-  }
-
-  setTimeout(() => {
-    routeMap?.invalidateSize();
-  }, 500);
 }
 
+
 // ============================
-// UPDATE GPS MARKER
+// KONIEC INIT MAPY
 // ============================
 
-function updateGps(lat, lng){
-  if(window.routeGpsMarker){
-    window.routeGpsMarker.setLatLng([lat, lng]);
-  }
-}
+} 
+
 
 // ============================
 // START ROUTE
@@ -96,41 +333,150 @@ function updateGps(lat, lng){
 
 function startRoute(){
 
-  if(!routeMap) initRouteMap();
+if(!routeMap) initRouteMap();
 
-  routePoints = [];
-  routeDistance = 0;
+routePoints=[];
+routeDistance=0;
 
-  routeStartTime = Date.now();
+routeStartTime = Date.now();
 
-  routeRunning = true;
-  routePaused = false;
+routeRunning=true;
+routePaused=false;
 
-  pausedAt = null;
-  totalPausedTime = 0;
+pausedAt=null;
+totalPausedTime=0;
 
-  activeForest = null;
+activeForest=null;
 
-  forestGridLayer?.remove();
-  forestGridLayer = null;
 
-  routeLine = L.polyline([], {
-    color:"red",
-    weight:6
-  }).addTo(routeMap);
+if(forestGridLayer){
 
-  gpsInterval = setInterval(() => {
+forestGridLayer.remove();
+forestGridLayer=null;
 
-    if(!routeRunning || routePaused) return;
-
-    if(window.userLat && window.userLng){
-      addRoutePoint(window.userLat, window.userLng);
-    }
-
-  }, 15000);
-
-  routeTimer = setInterval(updateRouteTime, 1000);
 }
+
+
+routeLine = L.polyline([],{
+
+color:"red",
+weight:6
+
+}).addTo(routeMap);
+
+
+
+gpsInterval = setInterval(()=>{
+
+if(!routeRunning || routePaused) return;
+
+
+if(userLat && userLng){
+
+addRoutePoint(
+userLat,
+userLng
+);
+
+}
+
+
+},15000);
+
+
+
+routeTimer = setInterval(
+updateRouteTime,
+1000
+);
+}
+
+
+// ============================
+// END ROUTE
+// ============================
+
+async function endRoute(){
+
+routeRunning=false;
+
+clearInterval(routeTimer);
+clearInterval(gpsInterval);
+
+let time =
+Math.floor((Date.now()-routeStartTime-totalPausedTime)/1000);
+
+if(routePoints.length > 1){
+
+const { data:{user} } = await supabase.auth.getUser();
+
+if(!user){
+console.log("no user");
+return;
+}
+
+await supabase.from("routes").insert([{
+user_id:user.id,
+name:"Trasa",
+points:routePoints,
+distance:Math.round(routeDistance),
+duration:time
+}]);
+
+await enforceRouteLimit();
+
+showSavedRoutes();
+}
+
+saveForestExploration();
+}
+
+
+// ============================
+// LIMIT 15
+// ============================
+
+async function enforceRouteLimit(){
+
+const { data:{user} } = await supabase.auth.getUser();
+if(!user) return;
+
+const { data } = await supabase
+.from("routes")
+.select("id,created_at")
+.eq("user_id",user.id)
+.order("created_at",{ascending:true});
+
+if(!data || data.length <= 15) return;
+
+const toDelete = data.slice(0,data.length-15);
+
+await supabase.from("routes")
+.delete()
+.in("id",toDelete.map(r=>r.id));
+}
+
+
+// ============================
+// TIMER
+// ============================
+
+function updateRouteTime(){
+
+if(!routeStartTime) return;
+
+if(routePaused) return;
+
+let sec =
+Math.floor((Date.now()-routeStartTime-totalPausedTime)/1000);
+
+let min = Math.floor(sec/60);
+let seconds = sec%60;
+
+document.getElementById("routeTime").innerText =
+min+" min "+seconds+" s";
+}
+
 
 // ============================
 // ADD POINT
@@ -140,165 +486,197 @@ let lastPoint = null;
 
 function addRoutePoint(lat,lng){
 
-  if(!routeRunning || routePaused) return;
+if(!routeRunning) return;
+if(routePaused) return;
 
-  if(lastPoint){
-    let d = L.latLng(lastPoint).distanceTo(L.latLng(lat,lng));
-    if(d < 3) return;
-  }
-
-  lastPoint = [lat,lng];
-
-  const point = [lat,lng];
-
-  routePoints.push(point);
-  routeLine.addLatLng(point);
-
-  if(routePoints.length > 1){
-    let last = routePoints[routePoints.length - 2];
-    routeDistance += L.latLng(last).distanceTo(L.latLng(point));
-  }
-
-  document.getElementById("routeDistance") &&
-  (document.getElementById("routeDistance").innerText =
-    Math.round(routeDistance) + " m");
-
-  updateGps(lat, lng);
-
-  if(routeMarker){
-    routeMarker.setLatLng(point);
-  }
-
-  let forest = findForest(lat,lng);
-
-  if(forest){
-    if(!activeForest || normalizeForestId(activeForest) !== normalizeForestId(forest)){
-      activeForest = forest;
-      createForestGrid(forest);
-    }
-    revealForestCell(lat,lng);
-  }
+if(lastPoint){
+let d = L.latLng(lastPoint).distanceTo(L.latLng(lat,lng));
+if(d < 3) return;
 }
 
-// ============================
-// TIMER
-// ============================
+lastPoint = [lat,lng];
 
-function updateRouteTime(){
+let point=[lat,lng];
 
-  if(!routeStartTime || routePaused) return;
+routePoints.push(point);
 
-  let sec = Math.floor((Date.now()-routeStartTime-totalPausedTime)/1000);
+routeLine.addLatLng(point);
 
-  let min = Math.floor(sec/60);
-  let seconds = sec % 60;
-
-  const el = document.getElementById("routeTime");
-  if(el){
-    el.innerText = `${min} min ${seconds} s`;
-  }
+if(routePoints.length>1){
+let last = routePoints[routePoints.length-2];
+routeDistance += L.latLng(last).distanceTo(L.latLng(point));
 }
 
-// ============================
-// END ROUTE (FIXED)
-// ============================
+document.getElementById("routeDistance").innerText =
+Math.round(routeDistance)+" m";
 
-async function endRoute(){
-
-  routeRunning = false;
-
-  clearInterval(routeTimer);
-  clearInterval(gpsInterval);
-
-  let time =
-    Math.floor((Date.now()-routeStartTime-totalPausedTime)/1000);
-
-  if(routePoints.length <= 1) return;
-
-  const supabase = sb();
-  if(!supabase) return;
-
-  const { data:{user} } = await supabase.auth.getUser();
-  if(!user) return;
-
-  await supabase.from("routes").insert([{
-    user_id: user.id,
-    name: "Trasa",
-    points: routePoints,
-    distance: Math.round(routeDistance),
-    duration: time
-  }]);
-
-  const { data: prof } = await supabase
-    .from("profiles")
-    .select("total_distance, total_routes_lifetime")
-    .eq("user_id", user.id)
-    .single();
-
-  await supabase.from("profiles").upsert({
-    user_id: user.id,
-    total_distance: (prof?.total_distance || 0) + Math.round(routeDistance),
-    total_routes_lifetime: (prof?.total_routes_lifetime || 0) + 1
-  });
-
-  await enforceRouteLimit();
-  await showSavedRoutes?.();
-  await saveForestExploration?.();
+if(routeMarker){
+routeMarker.setLatLng(point);
 }
 
-// ============================
-// LIMIT ROUTES
-// ============================
+let forest=findForest(lat,lng);
 
-async function enforceRouteLimit(){
+if(forest){
 
-  const supabase = sb();
-  if(!supabase) return;
+if(!activeForest || normalizeForestId(activeForest)!==normalizeForestId(forest)){
 
-  const { data:{user} } = await supabase.auth.getUser();
-  if(!user) return;
-
-  const { data } = await supabase
-    .from("routes")
-    .select("id,created_at")
-    .eq("user_id",user.id)
-    .order("created_at",{ascending:true});
-
-  if(!data || data.length <= 15) return;
-
-  const toDelete = data.slice(0, data.length - 15);
-
-  await supabase.from("routes")
-    .delete()
-    .in("id", toDelete.map(r => r.id));
+activeForest=forest;
+createForestGrid(forest);
 }
+
+revealForestCell(lat,lng);
+}
+}
+
+
+// ============================
+// SHOW ROUTES
+// ============================
+
+async function showSavedRoutes(){
+
+let box=document.getElementById("routesList");
+if(!box) return;
+
+const { data:{user} } = await supabase.auth.getUser();
+if(!user) return;
+
+const { data } = await supabase
+.from("routes")
+.select("*")
+.eq("user_id",user.id)
+.order("created_at",{ascending:false});
+
+if(!data || data.length===0){
+box.innerHTML="Brak zapisanych tras";
+return;
+}
+
+savedRoutes=data;
+
+box.innerHTML="";
+
+savedRoutes.forEach((r,i)=>{
+
+let div=document.createElement("div");
+div.className="card";
+
+div.innerHTML=`
+🥾 Trasa ${i+1}<br>
+📅 ${new Date(r.created_at).toLocaleString()}<br>
+📏 ${r.distance} m<br>
+⏱ ${Math.floor(r.duration/60)} min<br><br>
+<button>Pokaż trasę</button>
+`;
+
+div.querySelector("button").onclick=()=>showSavedRoute(r);
+
+box.appendChild(div);
+});
+}
+
+
+// ============================
+// PREVIEW
+// ============================
+
+function showSavedRoute(r){
+
+let old=document.getElementById("routePreview");
+if(old) old.remove();
+
+let box=document.createElement("div");
+box.id="routePreview";
+
+box.innerHTML=`
+<h3>🥾 Zapisana trasa</h3>
+📅 ${new Date(r.created_at).toLocaleString()}<br>
+📏 ${r.distance} m<br>
+⏱ ${Math.floor(r.duration/60)} min
+<div id="previewMap"></div>
+<button id="closePreview">❌ Zamknij</button>
+`;
+
+document.body.appendChild(box);
+
+let m=L.map("previewMap");
+
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(m);
+
+let line=L.polyline(r.points,{
+color:"red",
+weight:6
+}).addTo(m);
+
+m.fitBounds(line.getBounds());
+
+document.getElementById("closePreview").onclick=()=>box.remove();
+}
+
 
 // ============================
 // BUTTONS
 // ============================
 
+document.addEventListener("DOMContentLoaded",()=>{
+
+const start=document.getElementById("startRouteBtn");
+const pause=document.getElementById("pauseRouteBtn");
+const end=document.getElementById("endRouteBtn");
+const center=document.getElementById("centerRouteBtn");
+
+if(start){
+start.onclick=()=>{
+startRoute();
+start.style.display="none";
+pause.style.display="block";
+end.style.display="block";
+};
+}
+
+if(pause){
+pause.onclick=()=>{
+
+routePaused=!routePaused;
+
+if(routePaused){
+pausedAt=Date.now();
+} else {
+totalPausedTime+=Date.now()-pausedAt;
+pausedAt=null;
+}
+
+pause.innerText=routePaused?"▶ Wznów":"⏸ Pauza";
+};
+}
+
+if(end){
+end.onclick=()=>{
+endRoute();
+start.style.display="block";
+pause.style.display="none";
+end.style.display="none";
+};
+}
+
+if(center){
+center.onclick=()=>{
+if(userLat&&userLng){
+routeMap.setView([userLat,userLng],17);
+}
+};
+}
+
+});
+
+document.addEventListener("DOMContentLoaded", async () => {
+  await showSavedRoutes();
+});
+
 document.addEventListener("DOMContentLoaded", () => {
-
-  document.getElementById("startRouteBtn")?.addEventListener("click", startRoute);
-
-  document.getElementById("pauseRouteBtn")?.addEventListener("click", () => {
-    routePaused = !routePaused;
-
-    if(routePaused){
-      pausedAt = Date.now();
-    } else {
-      totalPausedTime += Date.now() - pausedAt;
-      pausedAt = null;
-    }
-  });
-
-  document.getElementById("endRouteBtn")?.addEventListener("click", endRoute);
-
-  document.getElementById("centerRouteBtn")?.addEventListener("click", () => {
-    if(window.userLat && window.userLng){
-      routeMap?.setView([window.userLat, window.userLng], 17);
-    }
-  });
-
   initRouteMap();
+
+  setTimeout(() => {
+    if (routeMap) routeMap.invalidateSize();
+  }, 300);
 });
