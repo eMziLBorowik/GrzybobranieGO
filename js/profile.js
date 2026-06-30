@@ -1,13 +1,9 @@
 // ============================
-// 👤 PROFIL SYSTEM STABLE FIX
+// 👤 PROFIL SYSTEM GAMING UI v2
 // Leśna Przygoda
 // ============================
 
-console.log("👤 profile.js LOADED");
-
-// ============================
-// STATE
-// ============================
+console.log("👤 profile.js GAMING LOADED");
 
 let profileData = {
   totalDistance: 0,
@@ -17,7 +13,7 @@ let profileData = {
 };
 
 // ============================
-// SUPABASE SAFE ACCESS
+// SUPABASE SAFE
 // ============================
 
 function sb() {
@@ -25,7 +21,7 @@ function sb() {
 }
 
 // ============================
-// LOAD PROFILE (MAIN)
+// LOAD PROFILE
 // ============================
 
 async function loadProfile() {
@@ -33,12 +29,12 @@ async function loadProfile() {
   const box = document.getElementById("profileContent");
   if (!box) return;
 
-  box.innerHTML = "⏳ Ładowanie profilu...";
+  box.innerHTML = `<div class="card glow">⏳ Ładowanie profilu...</div>`;
 
   const supabase = sb();
 
   if (!supabase) {
-    box.innerHTML = "❌ Supabase offline";
+    box.innerHTML = `<div class="card">❌ Supabase offline</div>`;
     return;
   }
 
@@ -46,12 +42,11 @@ async function loadProfile() {
   const user = data?.user;
 
   if (!user) {
-    box.innerHTML = "❌ Brak użytkownika";
+    box.innerHTML = `<div class="card">❌ Brak użytkownika</div>`;
     return;
   }
 
   try {
-
     await Promise.all([
       loadStats(supabase, user.id),
       loadExploration(supabase)
@@ -61,12 +56,12 @@ async function loadProfile() {
 
   } catch (err) {
     console.log("PROFILE ERROR:", err);
-    box.innerHTML = "❌ Błąd ładowania profilu";
+    box.innerHTML = `<div class="card">❌ Błąd profilu</div>`;
   }
 }
 
 // ============================
-// 📊 STATS (FROM PROFILES TABLE)
+// STATS
 // ============================
 
 async function loadStats(sb, userId) {
@@ -77,17 +72,14 @@ async function loadStats(sb, userId) {
     .eq("user_id", userId)
     .single();
 
-  if (error || !data) {
-    console.log("profiles error:", error);
-    return;
-  }
+  if (error || !data) return;
 
   profileData.totalDistance = (data.total_distance || 0) / 1000;
   profileData.routesCount = data.total_routes_lifetime || 0;
 }
 
 // ============================
-// 🌲 FOREST EXP
+// FOREST EXP
 // ============================
 
 async function loadExploration(sb) {
@@ -112,14 +104,26 @@ async function loadExploration(sb) {
     }
   }
 
-  profileData.exploration =
-    total ? Math.round((revealed / total) * 100) : 0;
-
+  profileData.exploration = total ? Math.round((revealed / total) * 100) : 0;
   profileData.bestForest = best;
 }
 
 // ============================
-// RENDER (YOUR UI SAFE)
+// UI HELPERS (GLASS CARDS)
+// ============================
+
+function statCard(icon, value, label) {
+  return `
+    <div class="card statCard">
+      <div class="icon">${icon}</div>
+      <div class="value">${value}</div>
+      <div class="label">${label}</div>
+    </div>
+  `;
+}
+
+// ============================
+// RENDER GAMING UI
 // ============================
 
 function renderProfile() {
@@ -130,47 +134,65 @@ function renderProfile() {
   const p = window.player || { level: 1, exp: 0 };
   const need = window.getExpNeeded?.(p.level) || 100;
 
+  const expPercent = Math.min(100, (p.exp / need) * 100);
   const best = profileData.bestForest;
 
-  const expPercent = Math.min(100, (p.exp / need) * 100);
-
   box.innerHTML = `
-    
-    <div class="card">
-      👤 PROFIL GRACZA
-      <br><br>
 
-      🌿 LVL ${p.level} (${window.getRank?.(p.level) || "Nowicjusz"})<br>
+  <div class="profileWrap">
 
-      <div style="width:100%;height:8px;background:#162013;border-radius:10px;overflow:hidden;margin-top:8px;">
-        <div style="width:${expPercent}%;height:100%;background:#6b8f3d;"></div>
+    <!-- HEADER CARD -->
+    <div class="card profileHeader glow">
+
+      <div class="levelCircle">
+        <div class="levelText">LVL ${p.level}</div>
+        <div class="expText">${Math.floor(expPercent)}%</div>
       </div>
 
-      <small>${Math.floor(p.exp)} / ${need} EXP</small>
-    </div>
+      <div class="profileInfo">
+        <div class="name">🌲 Leśny Wędrowiec</div>
+        <div class="rank">${window.getRank?.(p.level) || "Nowicjusz"}</div>
 
+        <div class="expBar">
+          <div style="width:${expPercent}%"></div>
+        </div>
 
-    <div class="card">
-      📊 STATYSTYKI
-      <br><br>
-
-      📏 Dystans: <b>${profileData.totalDistance.toFixed(2)} km</b><br>
-      🥾 Trasy: <b>${profileData.routesCount}</b><br>
-      🌲 Eksploracja: <b>${profileData.exploration}%</b>
-    </div>
-
-
-    <div class="card">
-      🏆 NAJLEPSZY LAS
-      <br><br>
-
-      ${best ? best.forest_id : "Brak danych"}<br>
-      📊 ${best?.coverage_percent || 0}%<br>
-
-      <div style="width:100%;height:8px;background:#162013;border-radius:10px;overflow:hidden;margin-top:8px;">
-        <div style="width:${best?.coverage_percent || 0}%;height:100%;background:#6b8f3d;"></div>
+        <div class="expNumbers">
+          ${Math.floor(p.exp)} / ${need} EXP
+        </div>
       </div>
+
     </div>
+
+    <!-- STATS GRID -->
+    <div class="statsGrid">
+
+      ${statCard("📏", profileData.totalDistance.toFixed(2) + " km", "Dystans")}
+      ${statCard("🥾", profileData.routesCount, "Trasy")}
+      ${statCard("🌲", profileData.exploration + "%", "Eksploracja")}
+
+    </div>
+
+    <!-- BEST FOREST -->
+    <div class="card forestCard">
+
+      <div class="forestTitle">🏆 NAJLEPSZY LAS</div>
+
+      <div class="forestName">
+        ${best ? best.forest_id : "Brak danych"}
+      </div>
+
+      <div class="forestPercent">
+        ${best?.coverage_percent || 0}% odkrycia
+      </div>
+
+      <div class="forestBar">
+        <div style="width:${best?.coverage_percent || 0}%"></div>
+      </div>
+
+    </div>
+
+  </div>
 
   `;
 }
