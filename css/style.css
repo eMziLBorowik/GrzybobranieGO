@@ -1197,7 +1197,7 @@ z-index:2500;
 
 }
 /* =========================
-   👤 PROFIL - GAMING CLEAN UI (FINAL STABLE FIX)
+   👤 PROFIL - FIXED (COMPATIBLE Z profile.js)
    ========================= */
 
 #profilePanel{
@@ -1214,7 +1214,7 @@ z-index:2500;
   background: radial-gradient(circle at top, #0b1a12, #050a07);
 }
 
-/* główny kontener */
+/* kontener */
 #profileContent{
   width:100%;
   max-width:900px;
@@ -1228,10 +1228,10 @@ z-index:2500;
 }
 
 /* =========================
-   HEADER + XP RING
+   TOP SECTION
    ========================= */
 
-.profileHeader{
+.profileTop{
   display:flex;
   flex-direction:column;
   align-items:center;
@@ -1239,27 +1239,24 @@ z-index:2500;
   text-align:center;
 
   gap:15px;
-  padding:20px;
 }
 
 /* =========================
-   XP RING (SAFE LAYER FIX)
+   AVATAR + RING FIX (KLUCZ)
    ========================= */
 
-.xpWrap{
+.avatarWrap{
   position:relative;
-  width:160px;
-  height:160px;
-
-  margin:0 auto;
+  width:130px;
+  height:130px;
 
   display:flex;
   align-items:center;
   justify-content:center;
 }
 
-/* RING LAYER (BEHIND) */
-.xpWrap svg{
+/* 🔥 RING (z JS: xpRing) */
+.xpRing{
   position:absolute;
   top:50%;
   left:50%;
@@ -1273,51 +1270,22 @@ z-index:2500;
   pointer-events:none;
 }
 
-.xpWrap circle{
+/* tło ringa */
+.xpRing circle:first-child{
   fill:none;
   stroke:#1b2a1b;
   stroke-width:10;
 }
 
-.xpWrap circle:last-child{
+/* progress ring */
+.xpRing circle:last-child{
+  fill:none;
   stroke:#00ff88;
+  stroke-width:10;
   stroke-linecap:round;
 }
 
-/* CENTER TEXT */
-.xpCenter{
-  position:absolute;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-50%);
-
-  text-align:center;
-  color:#d6ffe7;
-
-  z-index:3;
-
-  text-shadow:0 0 10px rgba(0,255,136,0.2);
-}
-
-/* =========================
-   AVATAR WRAP (CRITICAL FIX)
-   ========================= */
-
-.avatarWrap{
-  position:relative;
-  width:130px;
-  height:130px;
-
-  margin:10px auto;
-
-  display:flex;
-  align-items:center;
-  justify-content:center;
-
-  z-index:5; /* WAŻNE: NAD RINGIEM */
-}
-
-/* avatar FRONT LAYER */
+/* avatar NA RINGU */
 .avatar{
   width:90px;
   height:90px;
@@ -1329,7 +1297,7 @@ z-index:2500;
   background:#0f1a12;
 
   position:relative;
-  z-index:6; /* NAJWAŻNIEJSZE */
+  z-index:2;
 }
 
 .avatar img{
@@ -1338,7 +1306,7 @@ z-index:2500;
   object-fit:cover;
 }
 
-/* lvl badge */
+/* level badge */
 .lvlBadge{
   position:absolute;
   bottom:0;
@@ -1353,11 +1321,47 @@ z-index:2500;
   border-radius:6px;
   font-weight:bold;
 
-  z-index:7;
+  z-index:3;
 }
 
 /* =========================
-   GRID STATS
+   INFO
+   ========================= */
+
+.info .name{
+  font-size:18px;
+  font-weight:bold;
+}
+
+.rank{
+  font-size:13px;
+  color:#9fd9b8;
+}
+
+.expText{
+  font-size:13px;
+  margin-top:5px;
+}
+
+/* EXP BAR */
+.expBar{
+  width:200px;
+  height:8px;
+
+  background:#08110b;
+  border-radius:10px;
+
+  margin-top:8px;
+  overflow:hidden;
+}
+
+.expBar div{
+  height:100%;
+  background: linear-gradient(90deg, #00ff88, #00c777);
+}
+
+/* =========================
+   GRID
    ========================= */
 
 .grid{
@@ -1368,7 +1372,7 @@ z-index:2500;
   gap:12px;
 }
 
-/* stat box */
+/* stat card */
 .stat{
   text-align:center;
   padding:15px;
@@ -1378,8 +1382,6 @@ z-index:2500;
 
   border-radius:14px;
   color:#eaffea;
-
-  box-shadow: 0 0 10px rgba(0,255,136,0.05);
 }
 
 /* =========================
@@ -1404,23 +1406,7 @@ z-index:2500;
 }
 
 /* =========================
-   HIGHLIGHT SECTION
-   ========================= */
-
-.highlight{
-  width:100%;
-
-  padding:18px;
-  background: linear-gradient(135deg, #132a18, #0f1f12);
-
-  border-radius:14px;
-  border:1px solid rgba(0,255,136,0.12);
-
-  color:#eaffea;
-}
-
-/* =========================
-   PROGRESS BAR
+   PROGRESS BAR (FOREST)
    ========================= */
 
 .bar{
@@ -1437,24 +1423,10 @@ z-index:2500;
 .bar div{
   height:100%;
   background: linear-gradient(90deg, #00ff88, #00c777);
-
   box-shadow: 0 0 10px rgba(0,255,136,0.4);
 }
 
-/* =========================
-   TEXT
-   ========================= */
-
-.name{
-  font-size:18px;
-  font-weight:bold;
-}
-
-.rank{
-  font-size:13px;
-  color:#9fd9b8;
-}
-
+/* text */
 small{
   color:#9fd9b8;
 }
