@@ -416,6 +416,30 @@ return;
 }
 
 await supabase.from("routes").insert([{
+  user_id: user.id,
+  name: "Trasa",
+  points: routePoints,
+  distance: Math.round(routeDistance),
+  duration: time
+}]);
+
+// ============================
+// 👤 UPDATE PROFILU (LIFETIME FIX)
+// ============================
+
+const { data: prof } = await supabase
+  .from("profiles")
+  .select("total_distance, total_routes_lifetime")
+  .eq("user_id", user.id)
+  .single();
+
+await supabase
+  .from("profiles")
+  .upsert({
+    user_id: user.id,
+    total_distance: (prof?.total_distance || 0) + Math.round(routeDistance),
+    total_routes_lifetime: (prof?.total_routes_lifetime || 0) + 1
+  });nsert([{
 user_id:user.id,
 name:"Trasa",
 points:routePoints,
