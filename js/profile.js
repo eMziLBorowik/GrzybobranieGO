@@ -1,9 +1,9 @@
 // ============================
-// 👤 PROFIL SYSTEM GAMING UI v2
+// 👤 PROFIL SYSTEM GAMING + AVATAR RING
 // Leśna Przygoda
 // ============================
 
-console.log("👤 profile.js GAMING LOADED");
+console.log("👤 profile.js RING LOADED");
 
 let profileData = {
   totalDistance: 0,
@@ -29,10 +29,9 @@ async function loadProfile() {
   const box = document.getElementById("profileContent");
   if (!box) return;
 
-  box.innerHTML = `<div class="card glow">⏳ Ładowanie profilu...</div>`;
+  box.innerHTML = `<div class="card">⏳ Ładowanie profilu...</div>`;
 
   const supabase = sb();
-
   if (!supabase) {
     box.innerHTML = `<div class="card">❌ Supabase offline</div>`;
     return;
@@ -46,18 +45,12 @@ async function loadProfile() {
     return;
   }
 
-  try {
-    await Promise.all([
-      loadStats(supabase, user.id),
-      loadExploration(supabase)
-    ]);
+  await Promise.all([
+    loadStats(supabase, user.id),
+    loadExploration(supabase)
+  ]);
 
-    renderProfile();
-
-  } catch (err) {
-    console.log("PROFILE ERROR:", err);
-    box.innerHTML = `<div class="card">❌ Błąd profilu</div>`;
-  }
+  renderProfile();
 }
 
 // ============================
@@ -66,13 +59,13 @@ async function loadProfile() {
 
 async function loadStats(sb, userId) {
 
-  const { data, error } = await sb
+  const { data } = await sb
     .from("profiles")
     .select("total_distance, total_routes_lifetime")
     .eq("user_id", userId)
     .single();
 
-  if (error || !data) return;
+  if (!data) return;
 
   profileData.totalDistance = (data.total_distance || 0) / 1000;
   profileData.routesCount = data.total_routes_lifetime || 0;
@@ -84,11 +77,11 @@ async function loadStats(sb, userId) {
 
 async function loadExploration(sb) {
 
-  const { data, error } = await sb
+  const { data } = await sb
     .from("forest_exploration")
     .select("*");
 
-  if (error || !data) return;
+  if (!data) return;
 
   let revealed = 0;
   let total = 0;
@@ -109,21 +102,25 @@ async function loadExploration(sb) {
 }
 
 // ============================
-// UI HELPERS (GLASS CARDS)
+// EXP RING CALC
 // ============================
 
-function statCard(icon, value, label) {
+function expRing(percent) {
+  const r = 52;
+  const c = 2 * Math.PI * r;
+  const offset = c - (percent / 100) * c;
+
   return `
-    <div class="card statCard">
-      <div class="icon">${icon}</div>
-      <div class="value">${value}</div>
-      <div class="label">${label}</div>
-    </div>
-  `;
+  <svg class="expRing" width="130" height="130">
+    <circle cx="65" cy="65" r="${r}" />
+    <circle cx="65" cy="65" r="${r}"
+      style="stroke-dasharray:${c};stroke-dashoffset:${offset};"
+    />
+  </svg>`;
 }
 
 // ============================
-// RENDER GAMING UI
+// RENDER
 // ============================
 
 function renderProfile() {
@@ -134,62 +131,76 @@ function renderProfile() {
   const p = window.player || { level: 1, exp: 0 };
   const need = window.getExpNeeded?.(p.level) || 100;
 
-  const expPercent = Math.min(100, (p.exp / need) * 100);
+  const percent = Math.min(100, (p.exp / need) * 100);
   const best = profileData.bestForest;
 
   box.innerHTML = `
 
-  <div class="profileWrap">
+  <div class="profileTop">
 
-    <!-- HEADER CARD -->
-    <div class="card profileHeader glow">
+    <!-- AVATAR + RING -->
+    <div class="avatarWrap">
 
-      <div class="levelCircle">
-        <div class="levelText">LVL ${p.level}</div>
-        <div class="expText">${Math.floor(expPercent)}%</div>
+      ${expRing(percent)}
+
+      <div class="avatar">
+        <img src="https://api.dicebear.com/7.x/forest/svg?seed=${p.level}" />
       </div>
 
-      <div class="profileInfo">
-        <div class="name">🌲 Leśny Wędrowiec</div>
-        <div class="rank">${window.getRank?.(p.level) || "Nowicjusz"}</div>
-
-        <div class="expBar">
-          <div style="width:${expPercent}%"></div>
-        </div>
-
-        <div class="expNumbers">
-          ${Math.floor(p.exp)} / ${need} EXP
-        </div>
-      </div>
+      <div class="lvlBadge">LVL ${p.level}</div>
 
     </div>
 
-    <!-- STATS GRID -->
-    <div class="statsGrid">
+    <!-- INFO -->
+    <div class="info">
+      <div class="name">🌲 Leśny Wędrowiec</div>
+      <div class="rank">${window.getRank?.(p.level) || "Nowicjusz"}</div>
 
-      ${statCard("📏", profileData.totalDistance.toFixed(2) + " km", "Dystans")}
-      ${statCard("🥾", profileData.routesCount, "Trasy")}
-      ${statCard("🌲", profileData.exploration + "%", "Eksploracja")}
+      <div class="expText">${Math.floor(p.exp)} / ${need} EXP</div>
 
+      <div class="expBar">
+        <div style="width:${percent}%"></div>
+      </div>
     </div>
 
-    <!-- BEST FOREST -->
-    <div class="card forestCard">
+  </div>
 
-      <div class="forestTitle">🏆 NAJLEPSZY LAS</div>
+  <div class="grid">
 
-      <div class="forestName">
-        ${best ? best.forest_id : "Brak danych"}
-      </div>
+    <div class="card stat">
+      📏<br>
+      <b>${profileData.totalDistance.toFixed(2)} km</b>
+      <div>Dystans</div>
+    </div>
 
-      <div class="forestPercent">
-        ${best?.coverage_percent || 0}% odkrycia
-      </div>
+    <div class="card stat">
+      🥾<br>
+      <b>${profileData.routesCount}</b>
+      <div>Trasy</div>
+    </div>
 
-      <div class="forestBar">
-        <div style="width:${best?.coverage_percent || 0}%"></div>
-      </div>
+    <div class="card stat">
+      🌲<br>
+      <b>${profileData.exploration}%</b>
+      <div>Las</div>
+    </div>
 
+  </div>
+
+  <div class="card forest">
+
+    <div class="title">🏆 Najlepszy las</div>
+
+    <div class="value">
+      ${best ? best.forest_id : "Brak danych"}
+    </div>
+
+    <div class="sub">
+      ${best?.coverage_percent || 0}% odkrycia
+    </div>
+
+    <div class="bar">
+      <div style="width:${best?.coverage_percent || 0}%"></div>
     </div>
 
   </div>
