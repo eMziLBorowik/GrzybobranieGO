@@ -1197,17 +1197,19 @@ z-index:2500;
 
 }
 /* =========================
-   👤 PROFIL - GAMING CLEAN UI
+   👤 PROFIL - GAMING CLEAN UI (FIXED)
    ========================= */
 
 #profilePanel{
   width:100%;
-  height:100%;
+  height:calc(100vh - 90px);
+
   display:flex;
   justify-content:center;
-  align-items:center;
+  align-items:flex-start;
+
   padding:20px;
-  overflow:auto;
+  overflow-y:auto;
 
   background: radial-gradient(circle at top, #0b1a12, #050a07);
 }
@@ -1220,13 +1222,13 @@ z-index:2500;
   display:flex;
   flex-direction:column;
   align-items:center;
-  justify-content:center;
 
+  gap:20px;
   color:#eaffea;
 }
 
 /* =========================
-   XP RING
+   HEADER + XP RING
    ========================= */
 
 .profileHeader{
@@ -1235,10 +1237,12 @@ z-index:2500;
   align-items:center;
   justify-content:center;
   text-align:center;
+
   gap:15px;
   padding:20px;
 }
 
+/* XP RING */
 .xpWrap{
   position:relative;
   width:160px;
@@ -1248,6 +1252,12 @@ z-index:2500;
 
 .xpWrap svg{
   position:absolute;
+  top:0;
+  left:0;
+
+  width:160px;
+  height:160px;
+
   transform:rotate(-90deg);
 }
 
@@ -1267,37 +1277,46 @@ z-index:2500;
   top:50%;
   left:50%;
   transform:translate(-50%,-50%);
+
   text-align:center;
   color:#d6ffe7;
+
   text-shadow:0 0 10px rgba(0,255,136,0.2);
 }
 
 /* =========================
-   AVATAR (jeśli używasz)
+   AVATAR
    ========================= */
 
 .avatarWrap{
   position:relative;
   width:130px;
   height:130px;
+
   display:flex;
   align-items:center;
   justify-content:center;
+
   margin:10px auto;
 }
 
 .avatar{
   width:90px;
   height:90px;
+
   border-radius:50%;
   overflow:hidden;
+
   border:2px solid #2a3d2a;
   z-index:2;
+
+  background:#0f1a12;
 }
 
 .avatar img{
   width:100%;
   height:100%;
+  object-fit:cover;
 }
 
 /* lvl badge */
@@ -1305,24 +1324,27 @@ z-index:2500;
   position:absolute;
   bottom:0;
   right:0;
+
   background:#00ff88;
   color:#000;
+
   font-size:11px;
   padding:3px 6px;
+
   border-radius:6px;
   font-weight:bold;
 }
 
 /* =========================
-   GRID
+   GRID STATS
    ========================= */
 
 .grid{
-  display:grid;
-  grid-template-columns:repeat(3, minmax(120px, 1fr));
-  gap:12px;
-  margin-top:20px;
   width:100%;
+
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));
+  gap:12px;
 }
 
 /* stat box */
@@ -1346,19 +1368,33 @@ z-index:2500;
 .card{
   background: linear-gradient(135deg, #122016, #0a140e);
   border:1px solid rgba(0,255,136,0.12);
+
   border-radius:14px;
+  padding:15px;
 
   color:#eaffea;
-  padding:15px;
+
+  transition:0.2s ease;
 }
 
-/* najlepszy las */
+.card:hover{
+  transform:translateY(-2px);
+  box-shadow:0 0 15px rgba(0,255,136,0.15);
+}
+
+/* =========================
+   HIGHLIGHT SECTION
+   ========================= */
+
 .highlight{
-  margin-top:20px;
+  width:100%;
+
   padding:18px;
   background: linear-gradient(135deg, #132a18, #0f1f12);
+
   border-radius:14px;
   border:1px solid rgba(0,255,136,0.12);
+
   color:#eaffea;
 }
 
@@ -1369,8 +1405,10 @@ z-index:2500;
 .bar{
   height:10px;
   background:#08110b;
+
   border:1px solid rgba(0,255,136,0.2);
   border-radius:10px;
+
   margin-top:10px;
   overflow:hidden;
 }
@@ -1378,11 +1416,12 @@ z-index:2500;
 .bar div{
   height:100%;
   background: linear-gradient(90deg, #00ff88, #00c777);
+
   box-shadow: 0 0 10px rgba(0,255,136,0.4);
 }
 
 /* =========================
-   TEXT STYLE
+   TEXT
    ========================= */
 
 .name{
@@ -1397,17 +1436,4 @@ z-index:2500;
 
 small{
   color:#9fd9b8;
-}
-
-/* =========================
-   HOVER EFFECT (gaming feel)
-   ========================= */
-
-.card{
-  transition:0.2s ease;
-}
-
-.card:hover{
-  transform:translateY(-2px);
-  box-shadow:0 0 15px rgba(0,255,136,0.15);
 }
