@@ -1,20 +1,20 @@
 // ============================
-// 🌿 EXP SYSTEM v5 FIXED STABLE (CLEAN PATCH)
+// 🌿 EXP SYSTEM v7 FINAL BALANCED
 // Leśna Przygoda
-// SUPABASE READY
+// SUPABASE SAFE
 // ============================
 
 
-// 👤 GRACZ (GLOBAL + SAFE LOAD)
+// 👤 PLAYER SAFE INIT
 window.player = window.player || {
   exp: 0,
   level: 1
 };
 
 
-// 🌲 CONFIG
+// 🌲 CONFIG (BALANCED ECONOMY)
 const CONFIG = {
-  expPerKm: 100,
+  expPerKm: 100,       // 1 KM = 100 EXP
   forestMultiplier: 1.75,
 
   maxSpeedKmh: 8,
@@ -22,31 +22,34 @@ const CONFIG = {
 };
 
 
-// 🚶 GLOBAL SAFE STATE (FIX RESET BUG)
-window.expState = window.expState || {
+// ============================
+// 💾 MEMORY SYSTEM
+// ============================
+
+window.expState = JSON.parse(
+  localStorage.getItem("expState")
+) || {
   lastLat: null,
   lastLng: null,
   distance: 0
 };
 
+function saveEXPState() {
+  localStorage.setItem(
+    "expState",
+    JSON.stringify(window.expState)
+  );
+}
+
 
 // ============================
-// 🔥 START LOG
-// ============================
-
-console.log("📊 EXP system ready");
-
-
-// ============================
-// 📈 LEVEL SYSTEM
+// 📊 LEVEL SYSTEM
 // ============================
 
 function getExpNeeded(level) {
   let base = 80;
   let exp = Math.floor(base * Math.pow(level, 1.45));
-
   if (level <= 10) exp *= 0.9;
-
   return exp;
 }
 
@@ -67,20 +70,18 @@ function getRank(level) {
 
 
 // ============================
-// ☁️ SUPABASE SAFE SYNC
+// ☁️ SUPABASE SYNC (SAFE)
 // ============================
 
 async function syncPlayerToSupabase() {
-
   try {
     if (!window.supabase) return;
 
     const { data } = await supabase.auth.getUser();
     const user = data?.user;
-
     if (!user) return;
 
-    const { error } = await supabase
+    await supabase
       .from("profiles")
       .upsert({
         user_id: user.id,
@@ -88,24 +89,17 @@ async function syncPlayerToSupabase() {
         exp: window.player.exp
       });
 
-    if (error) {
-      console.log("❌ SUPABASE ERROR:", error.message || error);
-    } else {
-      console.log("☁️ Sync OK (profiles)");
-    }
-
   } catch (e) {
-    console.log("❌ Sync crash:", e);
+    console.log("❌ Supabase sync error:", e);
   }
 }
 
 
 // ============================
-// 🌿 ADD EXP (SAFE)
+// 🌿 ADD EXP
 // ============================
 
 function addEXP(amount, source = "unknown") {
-
   if (!amount || amount <= 0) return;
 
   window.player.exp += amount;
@@ -115,16 +109,11 @@ function addEXP(amount, source = "unknown") {
   while (window.player.exp >= getExpNeeded(window.player.level)) {
     window.player.exp -= getExpNeeded(window.player.level);
     window.player.level++;
-
-    console.log(`🎉 LEVEL UP → ${window.player.level} | ${getRank(window.player.level)}`);
+    console.log(`🎉 LEVEL UP → ${window.player.level}`);
   }
-
-  console.log(`📊 LVL ${window.player.level} (${getRank(window.player.level)})`);
-  console.log(`📊 EXP: ${window.player.exp} / ${getExpNeeded(window.player.level)}`);
 
   updateEXPUI?.();
   renderExpHeader?.();
-
   lockHeader?.();
 
   syncPlayerToSupabase();
@@ -135,36 +124,26 @@ function addEXP(amount, source = "unknown") {
 // 🌲 FOREST CHECK
 // ============================
 
-function isInForest(lat, lng) {
+function isInForest() {
   return window.isForest === true;
 }
 
 
 // ============================
-// 🚶 TRACK MOVEMENT (STABLE CORE)
+// 🚶 MOVEMENT EXP (500m = 50 EXP)
 // ============================
 
 function trackMovementEXP(lat, lng, speed) {
-
   if (!lat || !lng) return;
   if (!speed) return;
 
   const kmh = speed * 3.6;
 
-  console.log(`📡 SPEED: ${kmh.toFixed(1)} km/h`);
-
-  // 🚗 anti-car
-  if (kmh > CONFIG.maxSpeedKmh) {
-    console.log("🚗 AUTO DETECTED → NO EXP");
-    return;
-  }
-
-  // 🧍 idle ignore (ale NIE reset)
+  if (kmh > CONFIG.maxSpeedKmh) return;
   if (kmh < CONFIG.minSpeedKmh) return;
 
   if (typeof L === "undefined") return;
 
-  // 📍 first point init
   if (window.expState.lastLat !== null && window.expState.lastLng !== null) {
 
     const dist = L.latLng(window.expState.lastLat, window.expState.lastLng)
@@ -174,63 +153,106 @@ function trackMovementEXP(lat, lng, speed) {
 
       window.expState.distance += dist;
 
-      console.log(`🚶 DIST: ${window.expState.distance.toFixed(1)} m`);
-
-      // 🔥 500m EXP (FIXED)
+      // 🎯 500m reward
       if (window.expState.distance >= 500) {
 
-        let exp = CONFIG.expPerKm;
+        // 🔥 BALANCED EXP: 1km = 100 EXP → 500m = 50 EXP
+        let exp = CONFIG.expPerKm / 2;
 
-        if (isInForest(lat, lng)) {
+        if (isInForest()) {
           exp *= CONFIG.forestMultiplier;
-          console.log("🌲 FOREST BONUS x1.75");
         }
 
         addEXP(Math.floor(exp), "movement");
 
         window.expState.distance = 0;
       }
+
+      saveEXPState();
     }
   }
 
   window.expState.lastLat = lat;
   window.expState.lastLng = lng;
+
+  saveEXPState();
 }
 
 
 // ============================
-// ✨ HEADER SMOOTH SYSTEM
+// 🌲 OLD ROUTES SYNC
 // ============================
 
-function setHeaderSmooth(html) {
+async function syncOldRoutesEXP() {
+  try {
+
+    if (!window.supabase) return;
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const key = "rewardedRouteKm_" + user.id;
+
+    const { data: routes, error } = await supabase
+      .from("routes")
+      .select("distance")
+      .eq("user_id", user.id);
+
+    if (error || !routes) return;
+
+    let totalMeters = 0;
+
+    routes.forEach(r => {
+      totalMeters += r.distance || 0;
+    });
+
+    let totalKm = totalMeters / 1000;
+
+    let rewardedKm = Number(localStorage.getItem(key) || 0);
+
+    let newKm = totalKm - rewardedKm;
+
+    if (newKm <= 0) return;
+
+    let gained = Math.floor(newKm * CONFIG.expPerKm);
+
+    addEXP(gained, "stare trasy");
+
+    localStorage.setItem(key, totalKm.toFixed(2));
+
+    console.log("🌲 OLD ROUTES:", newKm.toFixed(2), "km +", gained);
+
+  } catch (e) {
+    console.log("❌ syncOldRoutesEXP error:", e);
+  }
+}
+
+
+// ============================
+// ✨ HEADER SYSTEM
+// ============================
+
+function setHeader(html) {
   const sub = document.querySelector(".sub");
   if (!sub) return;
 
-  sub.style.transition = "opacity 0.35s ease, transform 0.35s ease";
+  sub.style.transition = "opacity 0.3s ease";
   sub.style.opacity = "0";
-  sub.style.transform = "translateY(-6px)";
 
   setTimeout(() => {
     sub.innerHTML = html;
     sub.style.opacity = "1";
-    sub.style.transform = "translateY(0px)";
-  }, 350);
+  }, 200);
 }
 
-
-// ============================
-// 📊 HEADER (EXP)
-// ============================
-
 function renderExpHeader() {
-
-  const level = window.player?.level || 1;
-  const exp = window.player?.exp || 0;
+  const level = window.player.level;
+  const exp = window.player.exp;
 
   const need = getExpNeeded(level);
   const percent = Math.min(100, (exp / need) * 100);
 
-  setHeaderSmooth(`
+  setHeader(`
     🌿 Poziom ${level} (${getRank(level)})<br>
     <div style="width:100%;height:8px;background:#162013;border-radius:10px;overflow:hidden;margin-top:5px;">
       <div style="width:${percent}%;height:100%;background:#6b8f3d;"></div>
@@ -239,25 +261,19 @@ function renderExpHeader() {
   `);
 }
 
-
-// ============================
-// 📊 HEADER DEFAULT
-// ============================
-
 function renderDefaultHeader() {
-  setHeaderSmooth("Odkrywanie lasów i przyrody 🔎🌲");
+  setHeader("Odkrywanie lasów i przyrody 🔎🌲");
 }
 
 
 // ============================
-// 🔁 ROTATION SYSTEM
+// 🔁 ROTATION
 // ============================
 
 let headerMode = 0;
 let headerLock = false;
 
 setInterval(() => {
-
   if (headerLock) return;
 
   if (headerMode === 0) {
@@ -267,7 +283,6 @@ setInterval(() => {
     renderExpHeader();
     headerMode = 0;
   }
-
 }, 30000);
 
 
@@ -277,7 +292,6 @@ setInterval(() => {
 
 function lockHeader() {
   headerLock = true;
-
   renderExpHeader();
 
   setTimeout(() => {
@@ -287,7 +301,7 @@ function lockHeader() {
 
 
 // ============================
-// 🌍 EXPORT
+// 🌍 EXPORTS
 // ============================
 
 window.trackMovementEXP = trackMovementEXP;
@@ -295,3 +309,16 @@ window.addEXP = addEXP;
 window.renderExpHeader = renderExpHeader;
 window.renderDefaultHeader = renderDefaultHeader;
 window.lockHeader = lockHeader;
+window.syncOldRoutesEXP = syncOldRoutesEXP;
+
+
+// INIT
+setTimeout(() => {
+  syncOldRoutesEXP();
+}, 5000);
+
+
+// SAVE STATE ON EXIT / TAB SWITCH
+window.addEventListener("beforeunload", () => {
+  saveEXPState();
+});
