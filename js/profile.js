@@ -1,9 +1,9 @@
 // ============================
-// 👤 PROFIL SYSTEM v5 SAFE (SUPABASE STATS)
+// 👤 PROFIL SYSTEM v5 SUPABASE STABLE
 // Leśna Przygoda
 // ============================
 
-console.log("👤 profile.js v5 LOADED");
+console.log("👤 profile.js LOADED (SUPABASE STABLE)");
 
 let profileData = {
   totalDistance: 0,
@@ -13,7 +13,7 @@ let profileData = {
 };
 
 // ============================
-// SAFE SUPABASE
+// SUPABASE SAFE
 // ============================
 
 function sb() {
@@ -41,87 +41,47 @@ async function loadProfile() {
   const user = data?.user;
 
   if (!user) {
-    box.innerHTML = `<div class="card">❌ Brak konta</div>`;
+    box.innerHTML = `<div class="card">❌ Brak użytkownika</div>`;
     return;
   }
 
-  try {
+  await Promise.all([
+    loadProfileStats(supabase, user.id),
+    loadExploration(supabase)
+  ]);
 
-    await Promise.all([
-      loadDistance(supabase, user.id),
-      loadRoutesCount(supabase, user.id),
-      loadExploration(supabase)
-    ]);
-
-    renderProfile();
-
-  } catch (e) {
-    console.log("PROFILE ERROR:", e);
-    box.innerHTML = `<div class="card">❌ Błąd profilu</div>`;
-  }
+  renderProfile();
 }
 
 // ============================
-// 🧭 DISTANCE (NOWE ŹRÓDŁO)
+// PROFILE STATS (NOWE ŹRÓDŁO PRAWDY)
 // ============================
 
-async function loadDistance(sb, userId) {
-
-  const { data, error } = await sb
-    .from("player_stats")
-    .select("total_distance")
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  if (error) {
-    console.log("player_stats missing -> fallback routes");
-    return loadDistanceFallback(sb, userId);
-  }
-
-  profileData.totalDistance = data?.total_distance || 0;
-}
-
-// fallback (jak nie masz tabeli)
-async function loadDistanceFallback(sb, userId) {
+async function loadProfileStats(sb, userId) {
 
   const { data } = await sb
-    .from("routes")
-    .select("distance")
-    .eq("user_id", userId);
+    .from("profiles")
+    .select("*")
+    .eq("user_id", userId)
+    .single();
 
   if (!data) return;
 
-  let total = 0;
-  data.forEach(r => total += r.distance || 0);
-
-  profileData.totalDistance = total / 1000;
+  profileData.totalDistance = (data.total_distance || 0);
+  profileData.routesCount = data.total_routes || 0;
 }
 
 // ============================
-// 🥾 ROUTES COUNT (SAFE)
-// ============================
-
-async function loadRoutesCount(sb, userId) {
-
-  const { data } = await sb
-    .from("routes")
-    .select("id")
-    .eq("user_id", userId);
-
-  profileData.routesCount = data?.length || 0;
-}
-
-// ============================
-// 🌲 FOREST EXP
+// EXPLORATION (FORESTS)
 // ============================
 
 async function loadExploration(sb) {
 
   const { data } = await sb
-    .from("forest_exploration")
+    .from("explored_forests")
     .select("*");
 
-  if (!data) return;
+  if (!data || data.length === 0) return;
 
   let revealed = 0;
   let total = 0;
@@ -144,7 +104,39 @@ async function loadExploration(sb) {
 }
 
 // ============================
-// UI RENDER
+// XP RING UI
+// ============================
+
+function xpRing(level, exp, need) {
+
+  const percent = Math.min(100, (exp / need) * 100);
+  const r = 54;
+  const c = 2 * Math.PI * r;
+  const offset = c - (percent / 100) * c;
+
+  return `
+  <div class="xpWrap">
+    <svg width="140" height="140">
+      <circle cx="70" cy="70" r="${r}" stroke="#1b2a1b" stroke-width="10" fill="none"/>
+      <circle cx="70" cy="70" r="${r}"
+        stroke="#00ff88"
+        stroke-width="10"
+        fill="none"
+        stroke-dasharray="${c}"
+        stroke-dashoffset="${offset}"
+        stroke-linecap="round"
+      />
+    </svg>
+
+    <div class="xpCenter">
+      <div class="lvl">LVL ${level}</div>
+      <div class="txt">${Math.floor(percent)}%</div>
+    </div>
+  </div>`;
+}
+
+// ============================
+// RENDER PROFILE
 // ============================
 
 function renderProfile() {
@@ -153,43 +145,56 @@ function renderProfile() {
   if (!box) return;
 
   const p = window.player || { level: 1, exp: 0 };
-
   const need = window.getExpNeeded?.(p.level) || 100;
-  const percent = Math.min(100, (p.exp / need) * 100);
 
   const best = profileData.bestForest;
 
   box.innerHTML = `
-    <div class="card">
-      👤 PROFIL GRACZA<br><br>
 
-      🌿 Poziom ${p.level} (${window.getRank?.(p.level) || "?"})<br>
+  <div class="profileHeader">
+    ${xpRing(p.level, p.exp, need)}
 
-      <div style="width:100%;height:8px;background:#162013;border-radius:10px;overflow:hidden;margin-top:8px;">
-        <div style="width:${percent}%;height:100%;background:#6b8f3d;"></div>
-      </div>
+    <div class="profileName">
+      🌲 Leśny Wędrowiec<br>
+      <span>${window.getRank?.(p.level) || "Nowicjusz"}</span>
+    </div>
+  </div>
 
-      <small>${Math.floor(p.exp)} / ${need} EXP</small>
+  <div class="grid">
+
+    <div class="card stat">
+      📏<br>
+      <b>${profileData.totalDistance.toFixed(2)} km</b>
+      <div>Łączny dystans (SUPABASE)</div>
     </div>
 
-    <div class="card">
-      📊 STATYSTYKI<br><br>
-
-      📏 Dystans: ${profileData.totalDistance.toFixed(2)} km<br>
-      🥾 Trasy: ${profileData.routesCount}<br>
-      🌲 Eksploracja: ${profileData.exploration}%
+    <div class="card stat">
+      🥾<br>
+      <b>${profileData.routesCount}</b>
+      <div>Trasy (historyczne)</div>
     </div>
 
-    <div class="card">
-      🏆 NAJLEPSZY LAS<br><br>
-
-      ${best ? best.forest_id : "Brak danych"}<br>
-      📊 ${best?.coverage_percent || 0}%<br>
-
-      <div style="width:100%;height:8px;background:#162013;border-radius:10px;overflow:hidden;margin-top:8px;">
-        <div style="width:${best?.coverage_percent || 0}%;height:100%;background:#6b8f3d;"></div>
-      </div>
+    <div class="card stat">
+      🌲<br>
+      <b>${profileData.exploration}%</b>
+      <div>Eksploracja lasów</div>
     </div>
+
+  </div>
+
+  <div class="card highlight">
+
+    🏆 NAJLEPSZY LAS<br><br>
+
+    <b>${best ? best.forest_id : "Brak danych"}</b><br>
+    <small>${best?.coverage_percent || 0}% odkrycia</small>
+
+    <div class="bar">
+      <div style="width:${best?.coverage_percent || 0}%"></div>
+    </div>
+
+  </div>
+
   `;
 }
 
