@@ -1197,7 +1197,7 @@ z-index:2500;
 
 }
 /* =========================
-   👤 PROFIL - CENTER FIX
+   👤 PROFIL - GAMING CLEAN UI
    ========================= */
 
 #profilePanel{
@@ -1208,15 +1208,27 @@ z-index:2500;
   align-items:center;
   padding:20px;
   overflow:auto;
+
+  background: radial-gradient(circle at top, #0b1a12, #050a07);
 }
 
-/* główny kontener profilu */
+/* główny kontener */
 #profileContent{
   width:100%;
   max-width:900px;
+
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+
+  color:#eaffea;
 }
 
-/* header (XP + nazwa) */
+/* =========================
+   XP RING
+   ========================= */
+
 .profileHeader{
   display:flex;
   flex-direction:column;
@@ -1227,7 +1239,6 @@ z-index:2500;
   padding:20px;
 }
 
-/* XP ring centralnie */
 .xpWrap{
   position:relative;
   width:160px;
@@ -1235,46 +1246,130 @@ z-index:2500;
   margin:0 auto;
 }
 
-/* tekst w środku */
+.xpWrap svg{
+  position:absolute;
+  transform:rotate(-90deg);
+}
+
+.xpWrap circle{
+  fill:none;
+  stroke:#1b2a1b;
+  stroke-width:10;
+}
+
+.xpWrap circle:last-child{
+  stroke:#00ff88;
+  stroke-linecap:round;
+}
+
 .xpCenter{
   position:absolute;
   top:50%;
   left:50%;
   transform:translate(-50%,-50%);
   text-align:center;
-  color:#fff;
+  color:#d6ffe7;
+  text-shadow:0 0 10px rgba(0,255,136,0.2);
 }
 
-/* GRID - centrowanie */
+/* =========================
+   AVATAR (jeśli używasz)
+   ========================= */
+
+.avatarWrap{
+  position:relative;
+  width:130px;
+  height:130px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin:10px auto;
+}
+
+.avatar{
+  width:90px;
+  height:90px;
+  border-radius:50%;
+  overflow:hidden;
+  border:2px solid #2a3d2a;
+  z-index:2;
+}
+
+.avatar img{
+  width:100%;
+  height:100%;
+}
+
+/* lvl badge */
+.lvlBadge{
+  position:absolute;
+  bottom:0;
+  right:0;
+  background:#00ff88;
+  color:#000;
+  font-size:11px;
+  padding:3px 6px;
+  border-radius:6px;
+  font-weight:bold;
+}
+
+/* =========================
+   GRID
+   ========================= */
+
 .grid{
   display:grid;
-  grid-template-columns:repeat(3,1fr);
+  grid-template-columns:repeat(3, minmax(120px, 1fr));
   gap:12px;
   margin-top:20px;
+  width:100%;
 }
 
-/* kafelki */
+/* stat box */
 .stat{
   text-align:center;
   padding:15px;
-  background:#152015;
+
+  background: linear-gradient(135deg, #14261a, #0d1711);
+  border:1px solid rgba(0,255,136,0.15);
+
   border-radius:14px;
-  color:#fff;
+  color:#eaffea;
+
+  box-shadow: 0 0 10px rgba(0,255,136,0.05);
+}
+
+/* =========================
+   CARD BASE
+   ========================= */
+
+.card{
+  background: linear-gradient(135deg, #122016, #0a140e);
+  border:1px solid rgba(0,255,136,0.12);
+  border-radius:14px;
+
+  color:#eaffea;
+  padding:15px;
 }
 
 /* najlepszy las */
 .highlight{
   margin-top:20px;
   padding:18px;
-  background:linear-gradient(135deg,#132a18,#0f1f12);
+  background: linear-gradient(135deg, #132a18, #0f1f12);
   border-radius:14px;
-  color:#fff;
+  border:1px solid rgba(0,255,136,0.12);
+  color:#eaffea;
 }
 
-/* pasek */
+/* =========================
+   PROGRESS BAR
+   ========================= */
+
 .bar{
   height:10px;
-  background:#0f1a10;
+  background:#08110b;
+  border:1px solid rgba(0,255,136,0.2);
   border-radius:10px;
   margin-top:10px;
   overflow:hidden;
@@ -1282,61 +1377,37 @@ z-index:2500;
 
 .bar div{
   height:100%;
-  background:#00ff88;
-}
-/* =========================
-   👤 PROFIL - COLOR FIX (GAMING)
-   ========================= */
-
-#profilePanel{
-  background: radial-gradient(circle at top, #0b1a12, #050a07);
-}
-
-/* kontener */
-#profileContent{
-  color:#eaffea;
-}
-
-/* kafelki statystyk */
-.stat{
-  background: linear-gradient(135deg, #14261a, #0d1711);
-  border:1px solid rgba(0,255,136,0.15);
-  color:#eaffea;
-  box-shadow: 0 0 10px rgba(0,255,136,0.05);
-}
-
-/* główne bloki */
-.card, .highlight{
-  background: linear-gradient(135deg, #122016, #0a140e);
-  border:1px solid rgba(0,255,136,0.12);
-  color:#eaffea;
-}
-
-/* XP bar tło */
-.bar{
-  background:#08110b;
-  border:1px solid rgba(0,255,136,0.2);
-}
-
-/* XP fill */
-.bar div{
   background: linear-gradient(90deg, #00ff88, #00c777);
   box-shadow: 0 0 10px rgba(0,255,136,0.4);
 }
 
-/* nagłówki */
-#profileContent h2,
-#profileContent h3{
-  color:#7dffb2;
+/* =========================
+   TEXT STYLE
+   ========================= */
+
+.name{
+  font-size:18px;
+  font-weight:bold;
 }
 
-/* tekst pomocniczy */
+.rank{
+  font-size:13px;
+  color:#9fd9b8;
+}
+
 small{
   color:#9fd9b8;
 }
 
-/* XP center tekst */
-.xpCenter{
-  color:#d6ffe7;
-  text-shadow:0 0 10px rgba(0,255,136,0.2);
+/* =========================
+   HOVER EFFECT (gaming feel)
+   ========================= */
+
+.card{
+  transition:0.2s ease;
+}
+
+.card:hover{
+  transform:translateY(-2px);
+  box-shadow:0 0 15px rgba(0,255,136,0.15);
 }
