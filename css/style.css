@@ -1197,7 +1197,7 @@ z-index:2500;
 
 }
 /* =========================
-   👤 PROFIL - GAMING CLEAN UI (STABLE FIX)
+   👤 PROFIL - GAMING CLEAN UI (FINAL STABLE FIX)
    ========================= */
 
 #profilePanel{
@@ -1243,7 +1243,7 @@ z-index:2500;
 }
 
 /* =========================
-   XP RING (FIXED CENTER)
+   XP RING (SAFE LAYER FIX)
    ========================= */
 
 .xpWrap{
@@ -1258,7 +1258,7 @@ z-index:2500;
   justify-content:center;
 }
 
-/* SVG MUST be centered */
+/* RING LAYER (BEHIND) */
 .xpWrap svg{
   position:absolute;
   top:50%;
@@ -1270,6 +1270,7 @@ z-index:2500;
   height:160px;
 
   z-index:1;
+  pointer-events:none;
 }
 
 .xpWrap circle{
@@ -1283,7 +1284,7 @@ z-index:2500;
   stroke-linecap:round;
 }
 
-/* center text inside ring */
+/* CENTER TEXT */
 .xpCenter{
   position:absolute;
   top:50%;
@@ -1293,13 +1294,13 @@ z-index:2500;
   text-align:center;
   color:#d6ffe7;
 
-  z-index:2;
+  z-index:3;
 
   text-shadow:0 0 10px rgba(0,255,136,0.2);
 }
 
 /* =========================
-   AVATAR (CRITICAL FIX)
+   AVATAR WRAP (CRITICAL FIX)
    ========================= */
 
 .avatarWrap{
@@ -1313,10 +1314,10 @@ z-index:2500;
   align-items:center;
   justify-content:center;
 
-  z-index:2;
+  z-index:5; /* WAŻNE: NAD RINGIEM */
 }
 
-/* avatar layer */
+/* avatar FRONT LAYER */
 .avatar{
   width:90px;
   height:90px;
@@ -1328,7 +1329,7 @@ z-index:2500;
   background:#0f1a12;
 
   position:relative;
-  z-index:3;
+  z-index:6; /* NAJWAŻNIEJSZE */
 }
 
 .avatar img{
@@ -1352,7 +1353,7 @@ z-index:2500;
   border-radius:6px;
   font-weight:bold;
 
-  z-index:4;
+  z-index:7;
 }
 
 /* =========================
