@@ -122,7 +122,7 @@ function expRing(percent) {
   const offset = c - (safePercent / 100) * c;
 
   return `
-  <svg class="expRing" width="130" height="130" viewBox="0 0 130 130">
+  <svg class="xpRing" width="130" height="130" viewBox="0 0 130 130">
     <circle cx="65" cy="65" r="${r}" />
     <circle cx="65" cy="65" r="${r}"
       style="stroke-dasharray:${c};stroke-dashoffset:${offset};"
