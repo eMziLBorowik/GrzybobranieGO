@@ -1444,8 +1444,15 @@ small{
   object-fit:contain;
 }
 
-/* ⛔ UKRYJ CAŁĄ APP NA START */
-#authPanel,
+
+/* =========================
+   ⛔ START APP STATE
+   ========================= */
+
+#authPanel {
+  display: flex;
+}
+
 .panel,
 .page,
 #sideMenu,
@@ -1460,16 +1467,59 @@ small{
   display: none;
 }
 
-/* ⏳ LOADER NA WIERZCHU */
+/* =========================
+   ⏳ LOADER FULL SCREEN
+   ========================= */
+
 #loadingScreen {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
   background: #1b2417;
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 999999;
+}
+
+/* =========================
+   🌲 LOADER CONTENT
+   ========================= */
+
+.loaderBox {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  z-index: 2;
+}
+
+/* =========================
+   🖼️ IMAGE FULL SCREEN
+   ========================= */
+
+.loadingImg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  object-fit: cover;   /* full ekran jak gra */
+  z-index: 1;
+  filter: brightness(0.8);
+}
+
+/* =========================
+   ⏳ TEXT LOADING
+   ========================= */
+
+#loadingText {
+  font-size: 20px;
+  color: #cfe8c4;
+  font-family: Arial, sans-serif;
+  z-index: 3;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.6);
 }
