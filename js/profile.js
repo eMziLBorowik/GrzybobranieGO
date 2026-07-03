@@ -116,7 +116,7 @@ async function loadProfile() {
 
 
 // ============================
-// STATS (FIX SAFE NUMBERS)
+// STATS (FIXED – NO 406 + SAFE TYPES)
 // ============================
 
 async function loadStats(sb, userId) {
@@ -125,9 +125,13 @@ async function loadStats(sb, userId) {
     .from("profiles")
     .select("total_distance, total_routes")
     .eq("user_id", userId)
-    .single();
+    .maybeSingle(); // 🔥 FIX 406
 
-  if (error || !data) return;
+  if (error || !data) {
+    profileData.routesCount = 0;
+    profileData.totalDistance = 0;
+    return;
+  }
 
   profileData.routesCount = Number(data.total_routes) || 0;
 
@@ -198,7 +202,7 @@ function expRing(percent) {
 
 
 // ============================
-// RENDER (NO VISUAL CHANGES)
+// RENDER (UNCHANGED VISUAL)
 // ============================
 
 function renderProfile() {
