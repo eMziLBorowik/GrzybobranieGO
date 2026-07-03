@@ -1,12 +1,12 @@
 // ============================
-// 🌿 EXP SYSTEM v8.5 STABLE SAFE
+// 🌿 EXP SYSTEM v8.6 STABLE FIX (NO RESET / NO DOUBLE BACKFILL)
 // ============================
 
 
-// 👤 PLAYER INIT (NO RESET PROTECTION)
+// 👤 PLAYER INIT (SAFE PERSIST + NO OVERWRITE FROM BACKFILL)
 window.player = window.player || {
-  exp: Number(localStorage.getItem("exp")) || 0,
-  level: Number(localStorage.getItem("level")) || 1
+  exp: Number(localStorage.getItem("exp") || 0),
+  level: Number(localStorage.getItem("level") || 1)
 };
 
 
@@ -23,7 +23,7 @@ const CONFIG = {
 
 
 // ============================
-// BACKFILL GUARD
+// BACKFILL GUARD (STRICT)
 // ============================
 
 window.expBackfillDone =
@@ -63,9 +63,7 @@ function saveEXPState() {
 function getExpNeeded(level) {
   let base = 80;
   let exp = Math.floor(base * Math.pow(level, 1.45));
-
   if (level <= 10) exp *= 0.9;
-
   return Math.max(1, exp);
 }
 
@@ -104,7 +102,7 @@ function sb() {
 
 
 // ============================
-// LOAD PLAYER (NO RESET BUG FIX)
+// LOAD PLAYER (NO RESET BUG FIXED)
 // ============================
 
 async function loadPlayerFromSupabase() {
@@ -115,7 +113,6 @@ async function loadPlayerFromSupabase() {
 
     const { data } = await supabase.auth.getUser();
     const user = data?.user;
-
     if (!user) return;
 
     const { data: profile } = await supabase
@@ -126,7 +123,8 @@ async function loadPlayerFromSupabase() {
 
     if (!profile) return;
 
-    if (profile.level != null) {
+    // IMPORTANT: NEVER overwrite with lower values
+    if (profile.level > (window.player.level || 1)) {
       window.player.level = profile.level;
       localStorage.setItem("level", profile.level);
     }
@@ -159,7 +157,6 @@ async function syncPlayerToSupabase() {
 
     const { data } = await supabase.auth.getUser();
     const user = data?.user;
-
     if (!user) return;
 
     await supabase.from("profiles").upsert({
@@ -178,20 +175,17 @@ async function syncPlayerToSupabase() {
 
 
 // ============================
-// BACKFILL SAFE (NO DOUBLE APPLY)
+// BACKFILL (SAFE - NO DOUBLE APPLY + NO RESET LEVEL)
 // ============================
 
 async function backfillEXPFromRoutesByDate() {
   try {
 
     const supabase = sb();
-    if (!supabase) return;
-
-    if (window.expBackfillDone) return;
+    if (!supabase || window.expBackfillDone) return;
 
     const { data: userData } = await supabase.auth.getUser();
     const user = userData?.user;
-
     if (!user) return;
 
     const { data: routes } = await supabase
@@ -200,7 +194,7 @@ async function backfillEXPFromRoutesByDate() {
       .eq("user_id", user.id)
       .order("created_at", { ascending: true });
 
-    if (!routes || routes.length === 0) {
+    if (!routes?.length) {
       window.expBackfillDone = true;
       localStorage.setItem("expBackfillDone", "true");
       return;
@@ -209,20 +203,17 @@ async function backfillEXPFromRoutesByDate() {
     let totalExp = 0;
 
     for (const r of routes) {
-      let dist = r.distance || 0;
-
+      const dist = r.distance || 0;
       let exp = (dist / 500) * CONFIG.expPer500m;
 
-      if (isInForest()) {
-        exp *= CONFIG.forestMultiplier;
-      }
+      if (isInForest()) exp *= CONFIG.forestMultiplier;
 
       totalExp += exp;
     }
 
     totalExp = Math.floor(totalExp);
 
-    // APPLY SAFE
+    // APPLY SAFELY (BUT DO NOT RESET LEVEL)
     window.player.exp += totalExp;
 
     while (window.player.exp >= getExpNeeded(window.player.level)) {
@@ -287,7 +278,7 @@ function trackMovementEXP(lat, lng, speed) {
     return;
   }
 
-  let dist = L.latLng(
+  const dist = L.latLng(
     window.expState.lastLat,
     window.expState.lastLng
   ).distanceTo(L.latLng(lat, lng));
@@ -301,7 +292,7 @@ function trackMovementEXP(lat, lng, speed) {
     return;
   }
 
-  let kmh = speed ? speed * 3.6 : 0;
+  const kmh = speed ? speed * 3.6 : 0;
   if (kmh > CONFIG.maxSpeedKmh) return;
 
   window.expState.distance += dist;
@@ -309,7 +300,6 @@ function trackMovementEXP(lat, lng, speed) {
   if (window.expState.distance >= 500) {
 
     let reward = CONFIG.expPer500m;
-
     if (isInForest()) reward *= CONFIG.forestMultiplier;
 
     addEXP(Math.floor(reward), "500m walk");
@@ -335,8 +325,8 @@ function setHeader(html) {
 }
 
 function renderExpHeader() {
-  let need = getExpNeeded(window.player.level);
-  let percent = Math.min(100, (window.player.exp / need) * 100);
+  const need = getExpNeeded(window.player.level);
+  const percent = Math.min(100, (window.player.exp / need) * 100);
 
   setHeader(`
     🌿 Poziom ${window.player.level}
@@ -354,7 +344,7 @@ function renderExpHeader() {
 
 
 // ============================
-// INIT SAFE
+// INIT SAFE (NO DOUBLE RESET)
 // ============================
 
 let expInitDone = false;
