@@ -4,9 +4,10 @@
 
 
 // 👤 PLAYER INIT (SAFE PERSIST + NO OVERWRITE FROM BACKFILL)
+// 🔥 FIX: NIE WSTAWIA LOCALSTORAGE JEŚLI SUPABASE ISTNIEJE
 window.player = window.player || {
-  exp: Number(localStorage.getItem("exp") || 0),
-  level: Number(localStorage.getItem("level") || 1)
+  exp: 0,
+  level: 1
 };
 
 
@@ -102,7 +103,7 @@ function sb() {
 
 
 // ============================
-// LOAD PLAYER (NO RESET FIX)
+// LOAD PLAYER (🔥 FIX: SUPABASE MA PRIORYTET)
 // ============================
 
 async function loadPlayerFromSupabase() {
@@ -123,12 +124,15 @@ async function loadPlayerFromSupabase() {
 
     if (!profile) return;
 
-    // 🔥 SAFE MERGE (NO RESET)
-    window.player.level = Math.max(window.player.level || 1, profile.level || 1);
-    window.player.exp = Math.max(window.player.exp || 0, profile.exp || 0);
+    const dbLevel = Number(profile.level) || 1;
+    const dbExp = Number(profile.exp) || 0;
 
-    localStorage.setItem("level", window.player.level);
-    localStorage.setItem("exp", window.player.exp);
+    // 🔥 FIX: zawsze SUPABASE WYGRYWA (nie localStorage)
+    window.player.level = dbLevel;
+    window.player.exp = dbExp;
+
+    localStorage.setItem("level", dbLevel);
+    localStorage.setItem("exp", dbExp);
 
   } catch (e) {
     console.log("LOAD ERROR", e);
@@ -209,7 +213,6 @@ async function backfillEXPFromRoutesByDate() {
 
     totalExp = Math.floor(totalExp);
 
-    // APPLY
     window.player.exp += totalExp;
 
     while (window.player.exp >= getExpNeeded(window.player.level)) {
@@ -217,7 +220,6 @@ async function backfillEXPFromRoutesByDate() {
       window.player.level++;
     }
 
-    // 🔥 FIX: ZAPIS DO SUPABASE (BRAKOWAŁO TEGO)
     await syncPlayerToSupabase();
 
     window.expBackfillDone = true;
