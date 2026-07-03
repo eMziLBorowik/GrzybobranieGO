@@ -1,5 +1,5 @@
 // ============================
-// 👤 PROFIL SYSTEM GAMING + AVATAR RING (FIXED SAFE)
+// 👤 PROFIL SYSTEM GAMING + AVATAR RING (FIXED SAFE + LOADING HOOK)
 // ============================
 
 console.log("👤 profile.js RING LOADED");
@@ -10,6 +10,9 @@ let profileData = {
   exploration: 0,
   bestForest: null
 };
+
+// 🔥 LOADING STATE (DO EKRANU ŁADOWANIA)
+window.profileLoading = false;
 
 // ============================
 // SAFE SUPABASE
@@ -28,10 +31,15 @@ async function loadProfile() {
   const box = document.getElementById("profileContent");
   if (!box) return;
 
+  // 🔥 START LOADING
+  window.profileLoading = true;
+  window.dispatchEvent(new Event("profileLoadingStart"));
+
   box.innerHTML = `<div class="card">⏳ Ładowanie profilu...</div>`;
 
   const supabase = sb();
   if (!supabase) {
+    window.profileLoading = false;
     box.innerHTML = `<div class="card">❌ Supabase offline</div>`;
     return;
   }
@@ -42,6 +50,7 @@ async function loadProfile() {
     const user = data?.user;
 
     if (!user) {
+      window.profileLoading = false;
       box.innerHTML = `<div class="card">❌ Brak użytkownika</div>`;
       return;
     }
@@ -53,8 +62,14 @@ async function loadProfile() {
 
     renderProfile();
 
+    // 🔥 END LOADING
+    window.profileLoading = false;
+    window.dispatchEvent(new Event("profileLoaded"));
+
   } catch (err) {
     console.error("PROFILE ERROR:", err);
+
+    window.profileLoading = false;
     box.innerHTML = `<div class="card">❌ Błąd profilu</div>`;
   }
 }
