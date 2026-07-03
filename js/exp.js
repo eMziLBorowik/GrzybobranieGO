@@ -1,10 +1,9 @@
 // ============================
-// 🌿 EXP SYSTEM v8.1 PRODUCTION PATCH
-// Leśna Przygoda
+// 🌿 EXP SYSTEM v8.2 FIXED + BACKFILL
 // ============================
 
 
-// 👤 PLAYER SAFE INIT
+// 👤 PLAYER INIT
 window.player = window.player || {
   exp: 0,
   level: 1
@@ -24,33 +23,24 @@ const CONFIG = {
 
 
 // ============================
-// LOADING HOOK (READY FOR LOADING SCREEN)
+// BACKFILL GUARD
 // ============================
 
-window.expSystemReady = false;
-
-function setExpSystemReady(state) {
-  window.expSystemReady = state;
-  window.dispatchEvent(new Event("expSystemReady"));
-}
+window.expBackfillDone =
+  localStorage.getItem("expBackfillDone") === "true";
 
 
 // ============================
-// SAFE STORAGE
+// SAFE STATE
 // ============================
 
-function safeParse(json, fallback) {
+function safeParse(v, fallback) {
   try {
-    return JSON.parse(json) ?? fallback;
+    return JSON.parse(v) ?? fallback;
   } catch {
     return fallback;
   }
 }
-
-
-// ============================
-// MEMORY (LOCAL STORAGE)
-// ============================
 
 window.expState =
   safeParse(localStorage.getItem("expState"), null) || {
@@ -62,9 +52,7 @@ window.expState =
 function saveEXPState() {
   try {
     localStorage.setItem("expState", JSON.stringify(window.expState));
-  } catch (e) {
-    console.log("EXP STATE SAVE ERROR", e);
-  }
+  } catch {}
 }
 
 
@@ -74,7 +62,6 @@ function saveEXPState() {
 
 function getExpNeeded(level) {
   let base = 80;
-
   let exp = Math.floor(base * Math.pow(level, 1.45));
 
   if (level <= 10) exp *= 0.9;
@@ -84,7 +71,7 @@ function getExpNeeded(level) {
 
 
 // ============================
-// RANK SYSTEM
+// RANKS
 // ============================
 
 function getRank(level) {
@@ -99,7 +86,16 @@ function getRank(level) {
 
 
 // ============================
-// SUPABASE LOAD (LOGIN SYNC)
+// FOREST CHECK
+// ============================
+
+function isInForest() {
+  return window.isForest === true;
+}
+
+
+// ============================
+// SUPABASE LOAD
 // ============================
 
 async function loadPlayerFromSupabase() {
@@ -120,32 +116,26 @@ async function loadPlayerFromSupabase() {
     if (profile) {
       window.player.level = profile.level ?? 1;
       window.player.exp = profile.exp ?? 0;
-
-      console.log("📥 PROFILE LOADED", profile);
     }
 
-    setExpSystemReady(true);
-    renderExpHeader();
-
   } catch (e) {
-    console.log("EXP LOAD ERROR", e);
+    console.log("LOAD ERROR", e);
   }
 }
 
 
 // ============================
-// SUPABASE SYNC (THROTTLED)
+// SUPABASE SYNC (SAFE)
 // ============================
 
-let lastSyncTime = 0;
+let lastSync = 0;
 
 async function syncPlayerToSupabase() {
   try {
     if (!window.supabase) return;
 
-    const now = Date.now();
-    if (now - lastSyncTime < 5000) return;
-    lastSyncTime = now;
+    if (Date.now() - lastSync < 5000) return;
+    lastSync = Date.now();
 
     const { data } = await supabase.auth.getUser();
     const user = data?.user;
@@ -159,13 +149,69 @@ async function syncPlayerToSupabase() {
     });
 
   } catch (e) {
-    console.log("EXP SYNC ERROR", e);
+    console.log("SYNC ERROR", e);
   }
 }
 
 
 // ============================
-// ADD EXP (UNCHANGED LOGIC)
+// BACKFILL FROM ROUTES (BY DATE)
+// ============================
+
+async function backfillEXPFromRoutesByDate() {
+  try {
+    if (!window.supabase) return;
+
+    if (window.expBackfillDone) return;
+
+    const { data: userData } = await supabase.auth.getUser();
+    const user = userData?.user;
+
+    if (!user) return;
+
+    const { data: routes } = await supabase
+      .from("routes")
+      .select("distance, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: true });
+
+    if (!routes || routes.length === 0) {
+      window.expBackfillDone = true;
+      localStorage.setItem("expBackfillDone", "true");
+      return;
+    }
+
+    let totalExp = 0;
+
+    for (const r of routes) {
+      if (!r.distance) continue;
+
+      let exp = (r.distance / 500) * CONFIG.expPer500m;
+
+      if (isInForest()) {
+        exp *= CONFIG.forestMultiplier;
+      }
+
+      totalExp += exp;
+    }
+
+    totalExp = Math.floor(totalExp);
+
+    if (totalExp > 0) {
+      addEXP(totalExp, "routes backfill");
+    }
+
+    window.expBackfillDone = true;
+    localStorage.setItem("expBackfillDone", "true");
+
+  } catch (e) {
+    console.log("BACKFILL ERROR", e);
+  }
+}
+
+
+// ============================
+// ADD EXP (CORE)
 // ============================
 
 function addEXP(amount, source = "unknown") {
@@ -175,12 +221,9 @@ function addEXP(amount, source = "unknown") {
 
   window.player.exp += amount;
 
-  console.log("🌿 +" + amount + " EXP", source);
-
   while (window.player.exp >= getExpNeeded(window.player.level)) {
     window.player.exp -= getExpNeeded(window.player.level);
     window.player.level++;
-    console.log("🎉 LEVEL UP", window.player.level);
   }
 
   updateEXPUI?.();
@@ -192,23 +235,14 @@ function addEXP(amount, source = "unknown") {
 
 
 // ============================
-// FOREST CHECK
-// ============================
-
-function isInForest() {
-  return window.isForest === true;
-}
-
-
-// ============================
-// GPS TRACKING (SAFE PATCH ONLY)
+// GPS TRACKING
 // ============================
 
 function trackMovementEXP(lat, lng, speed) {
   if (lat == null || lng == null) return;
   if (typeof L === "undefined") return;
 
-  if (window.expState.lastLat == null || window.expState.lastLng == null) {
+  if (window.expState.lastLat == null) {
     window.expState.lastLat = lat;
     window.expState.lastLng = lng;
     saveEXPState();
@@ -240,7 +274,7 @@ function trackMovementEXP(lat, lng, speed) {
 
     if (isInForest()) reward *= CONFIG.forestMultiplier;
 
-    addEXP(Math.floor(reward), "500m spacer");
+    addEXP(Math.floor(reward), "500m walk");
 
     window.expState.distance = 0;
   }
@@ -253,16 +287,7 @@ function trackMovementEXP(lat, lng, speed) {
 
 
 // ============================
-// OLD ROUTES (DISABLED SAFE)
-// ============================
-
-async function syncOldRoutesEXP() {
-  console.log("🌲 OLD ROUTES EXP OFF");
-}
-
-
-// ============================
-// HEADER SYSTEM (UNCHANGED LOGIC)
+// HEADER
 // ============================
 
 function setHeader(html) {
@@ -271,21 +296,13 @@ function setHeader(html) {
   sub.innerHTML = html;
 }
 
-function getProgressPercent() {
-  let need = getExpNeeded(window.player.level);
-  return Math.min(100, (window.player.exp / need) * 100);
-}
-
 function renderExpHeader() {
-  let level = window.player.level;
-  let exp = window.player.exp;
-  let need = getExpNeeded(level);
-
-  let percent = getProgressPercent();
+  let need = getExpNeeded(window.player.level);
+  let percent = Math.min(100, (window.player.exp / need) * 100);
 
   setHeader(`
-    🌿 Poziom ${level}
-    (${getRank(level)})
+    🌿 Poziom ${window.player.level}
+    (${getRank(window.player.level)})
 
     <br>
 
@@ -293,7 +310,7 @@ function renderExpHeader() {
       <div style="width:${percent}%;height:100%;background:#6b8f3d;"></div>
     </div>
 
-    <small>${Math.floor(exp)} / ${need} EXP</small>
+    <small>${Math.floor(window.player.exp)} / ${need} EXP</small>
   `);
 }
 
@@ -303,69 +320,32 @@ function renderDefaultHeader() {
 
 
 // ============================
-// HEADER ROTATION SAFE
-// ============================
-
-let headerMode = 0;
-let headerLock = false;
-
-if (!window.__expHeaderInterval) {
-  window.__expHeaderInterval = setInterval(() => {
-    if (headerLock) return;
-
-    headerMode = headerMode === 0 ? 1 : 0;
-
-    if (headerMode === 0) renderDefaultHeader();
-    else renderExpHeader();
-
-  }, 30000);
-}
-
-function lockHeader() {
-  headerLock = true;
-  renderExpHeader();
-
-  setTimeout(() => {
-    headerLock = false;
-  }, 2000);
-}
-
-
-// ============================
 // INIT SYSTEM (IMPORTANT)
 // ============================
 
 async function initEXPSystem() {
-  setExpSystemReady(false);
-
   await loadPlayerFromSupabase();
 
-  // fallback jeśli brak logowania
-  if (!window.player.level) window.player.level = 1;
-  if (window.player.exp == null) window.player.exp = 0;
+  await backfillEXPFromRoutesByDate();
 
   renderExpHeader();
-  setExpSystemReady(true);
 }
 
 
+// auto start
+setTimeout(() => {
+  initEXPSystem();
+}, 500);
+
+
 // ============================
-// EXPORT
+// EXPORTS
 // ============================
 
-window.initEXPSystem = initEXPSystem;
 window.trackMovementEXP = trackMovementEXP;
 window.addEXP = addEXP;
 window.getExpNeeded = getExpNeeded;
 window.getRank = getRank;
 window.renderExpHeader = renderExpHeader;
 window.renderDefaultHeader = renderDefaultHeader;
-window.lockHeader = lockHeader;
-window.syncOldRoutesEXP = syncOldRoutesEXP;
-
-console.log("🌿 EXP SYSTEM v8.1 READY");
-
-// auto-init safe
-setTimeout(() => {
-  initEXPSystem();
-}, 500);
+window.initEXPSystem = initEXPSystem;
