@@ -116,7 +116,7 @@ async function loadProfile() {
 
 
 // ============================
-// STATS (SAFE FIX)
+// STATS (SAFE FIXED)
 // ============================
 
 async function loadStats(sb, userId) {
@@ -131,24 +131,22 @@ async function loadStats(sb, userId) {
 
   profileData.routesCount = data.total_routes || 0;
 
-  let dbKm = data.total_distance || 0;
-  let liveKm = window.expState?.distance || 0;
+  const dbKm = Number(data.total_distance) || 0;
+  const liveKm = Number(window.expState?.distance) || 0;
 
-  if (isNaN(liveKm)) liveKm = 0;
-
-  profileData.totalDistance =
-    (dbKm + liveKm) / 1000;
+  profileData.totalDistance = (dbKm + liveKm) / 1000;
 }
 
 
 // ============================
-// FOREST EXP
+// FOREST EXP (FIXED TABLE)
 // ============================
 
 async function loadExploration(sb) {
 
+  // 🔥 FIX: correct table name (NO 404)
   const { data, error } = await sb
-    .from("forest_exploration")
+    .from("explored_forests")
     .select("*");
 
   if (error || !data) return;
@@ -212,7 +210,7 @@ function renderProfile() {
   const p = window.player || { level: 1, exp: 0 };
   const need = window.getExpNeeded?.(p.level) || 100;
 
-  const safeExp = isNaN(p.exp) ? 0 : p.exp;
+  const safeExp = Number(p.exp) || 0;
 
   const percent = need
     ? Math.min(100, (safeExp / need) * 100)
