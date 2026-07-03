@@ -120,7 +120,7 @@ async function loadStats(sb, userId) {
 
   const { data, error } = await sb
     .from("profiles")
-    .select("total_distance, total_routes_lifetime")
+    .select("total_distance, total_routes")
     .eq("user_id", userId)
     .single();
 
@@ -128,7 +128,7 @@ async function loadStats(sb, userId) {
 
   // TRASY (IMMUTABLE)
   profileData.routesCount =
-    data.total_routes_lifetime || 0;
+    data.total_routes || 0;
 
   // KM TOTAL (IMMUTABLE + LIVE GPS)
   let liveKm = window.expState?.distance || 0;
