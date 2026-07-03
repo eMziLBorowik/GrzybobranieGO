@@ -1,26 +1,18 @@
 
-// ============================
-// ⏳ EKRAN ŁADOWANIA - STABILNY
-// ============================
-
 window.addEventListener("DOMContentLoaded", () => {
 
   const loadingScreen = document.getElementById("loadingScreen");
   const loadingText = document.getElementById("loadingText");
   const authPanel = document.getElementById("authPanel");
 
-  // 🔒 zabezpieczenie
   if (!loadingScreen || !loadingText || !authPanel) {
-    console.error("❌ Loader: brak elementów w HTML");
+    console.error("❌ Brak elementów loadera");
     return;
   }
-
-  console.log("⏳ Loader START");
 
   let dots = 0;
   let interval = null;
 
-  // animacja tekstu
   function startDots() {
     interval = setInterval(() => {
       dots = (dots + 1) % 4;
@@ -32,43 +24,55 @@ window.addEventListener("DOMContentLoaded", () => {
     clearInterval(interval);
   }
 
-  // 🔧 czekamy aż WSZYSTKIE skrypty się załadują
-  function waitForSystems() {
+  // =========================
+  // 🔥 REAL CHECK SYSTEM READY
+  // =========================
+  function isAppReady() {
+
+    const supabaseReady = !!window.supabase;
+    const leafletReady = !!window.L;
+    const turfReady = !!window.turf;
+
+    // możesz tu dodać swoje systemy
+    return supabaseReady && leafletReady && turfReady;
+  }
+
+  function waitForAppReady() {
+
     return new Promise((resolve) => {
-      let checks = 0;
+
+      let tries = 0;
 
       const check = setInterval(() => {
 
-        checks++;
+        tries++;
 
-        // warunek "minimum gotowości"
-        const supabaseReady = typeof window.supabase !== "undefined";
-        const loginReady = document.readyState === "complete";
-
-        if (supabaseReady && loginReady) {
+        if (isAppReady()) {
           clearInterval(check);
-          resolve();
+          resolve(true);
         }
 
-        // awaryjnie po 3s puszczamy dalej
-        if (checks > 15) {
+        // awaryjnie po ~5s puszczamy (żeby nie zablokować na zawsze)
+        if (tries > 25) {
+          console.warn("⚠️ Loader timeout – wymuszam start");
           clearInterval(check);
-          resolve();
+          resolve(false);
         }
 
       }, 200);
+
     });
+
   }
 
   async function startLoader() {
 
     startDots();
 
-    await waitForSystems();
+    await waitForAppReady();
 
     stopDots();
 
-    // fade out
     loadingScreen.style.transition = "opacity 0.4s ease";
     loadingScreen.style.opacity = "0";
 
@@ -76,10 +80,10 @@ window.addEventListener("DOMContentLoaded", () => {
 
       loadingScreen.style.display = "none";
 
-      // 👉 pokaz loginu
+      // 👉 dopiero TERAZ login
       authPanel.style.display = "flex";
 
-      console.log("✅ Loader DONE");
+      console.log("✅ APP READY → LOGIN UNLOCKED");
 
     }, 400);
 
