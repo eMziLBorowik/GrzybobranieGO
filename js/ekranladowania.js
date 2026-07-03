@@ -1,69 +1,59 @@
 // ============================
-// ⏳ EKRAN ŁADOWANIA (PRO)
+// ⏳ EKRAN ŁADOWANIA
 // ============================
 
 const loadingScreen = document.getElementById("loadingScreen");
-const app = document.getElementById("app");
 const loadingText = document.getElementById("loadingText");
+const authPanel = document.getElementById("authPanel");
 
-// 🔵 animowane kropki
+// zabezpieczenie
+if (!loadingScreen || !loadingText || !authPanel) {
+  console.error("❌ Brakuje elementów loadera w HTML");
+}
+
+// animacja kropek
 let dots = 0;
-let loadingInterval = null;
+let interval = null;
 
-// start animacji tekstu
-function startLoadingAnimation() {
-  loadingInterval = setInterval(() => {
-    dots = (dots + 1) % 4; // 0-3 kropki
-
-    let dotText = ".".repeat(dots);
-    loadingText.innerText = "Ładowanie" + dotText;
+function startDots() {
+  interval = setInterval(() => {
+    dots = (dots + 1) % 4;
+    loadingText.innerText = "Ładowanie" + ".".repeat(dots);
   }, 500);
 }
 
-// stop animacji
-function stopLoadingAnimation() {
-  clearInterval(loadingInterval);
+function stopDots() {
+  clearInterval(interval);
 }
 
-// symulacja sprawdzania logowania
-function checkLogin() {
+// symulacja ładowania (tu możesz podpiąć API później)
+function fakeLoad() {
   return new Promise((resolve) => {
-    const user = localStorage.getItem("user");
-    setTimeout(() => resolve(!!user), 600);
-  });
-}
-
-// symulacja ładowania danych
-function loadData() {
-  return new Promise((resolve) => {
-    setTimeout(() => resolve(true), 1200);
-  });
-}
-
-// start aplikacji
-async function initApp() {
-  startLoadingAnimation();
-
-  const isLoggedIn = await checkLogin();
-  const isReady = await loadData();
-
-  if (!isLoggedIn) {
-    stopLoadingAnimation();
-    loadingText.innerText = "Musisz się zalogować...";
-    return;
-  }
-
-  if (isLoggedIn && isReady) {
-    stopLoadingAnimation();
-
-    loadingScreen.style.opacity = "0";
-
     setTimeout(() => {
-      loadingScreen.style.display = "none";
-      app.style.display = "block";
-    }, 400);
-  }
+      resolve(true);
+    }, 1500);
+  });
+}
+
+// główny start
+async function initLoader() {
+  startDots();
+
+  await fakeLoad();
+
+  stopDots();
+
+  // fade out
+  loadingScreen.style.opacity = "0";
+
+  setTimeout(() => {
+    loadingScreen.style.display = "none";
+
+    // 👉 pokazujemy login
+    authPanel.style.display = "flex";
+
+  }, 400);
 }
 
 // start po pełnym załadowaniu strony
-window.addEventListener("load", initApp);
+window.addEventListener("load", initLoader);
