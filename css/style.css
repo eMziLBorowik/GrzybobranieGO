@@ -1430,3 +1430,16 @@ z-index:2500;
 small{
   color:#9fd9b8;
 }
+
+.loaderBox{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:12px;
+}
+
+.loadingImg{
+  width:140px;
+  height:140px;
+  object-fit:contain;
+}
