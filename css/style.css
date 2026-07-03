@@ -1444,15 +1444,32 @@ small{
   object-fit:contain;
 }
 
-#loadingScreen{
-  position:fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  background:#1b2417;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  z-index:999999;
+/* ⛔ UKRYJ CAŁĄ APP NA START */
+#authPanel,
+.panel,
+.page,
+#sideMenu,
+#grzybdex,
+#trailsPanel,
+#survivalPanel,
+#guidePanel,
+#profilePanel,
+#actionBar,
+#forestInfoPanel,
+#centerMapBtn {
+  display: none;
+}
+
+/* ⏳ LOADER NA WIERZCHU */
+#loadingScreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #1b2417;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999999;
 }
