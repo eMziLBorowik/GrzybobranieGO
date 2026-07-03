@@ -1,5 +1,5 @@
 // ============================
-// 👤 PROFIL SYSTEM GAMING + AVATAR RING (FIXED SAFE + LOADING HOOK)
+// 👤 PROFIL SYSTEM GAMING + AVATAR RING (STRAVA FIX FINAL)
 // ============================
 
 console.log("👤 profile.js RING LOADED");
@@ -10,9 +10,6 @@ let profileData = {
   exploration: 0,
   bestForest: null
 };
-
-// 🔥 LOADING STATE (DO EKRANU ŁADOWANIA)
-window.profileLoading = false;
 
 // ============================
 // SAFE SUPABASE
@@ -31,7 +28,6 @@ async function loadProfile() {
   const box = document.getElementById("profileContent");
   if (!box) return;
 
-  // 🔥 START LOADING
   window.profileLoading = true;
   window.dispatchEvent(new Event("profileLoadingStart"));
 
@@ -62,7 +58,6 @@ async function loadProfile() {
 
     renderProfile();
 
-    // 🔥 END LOADING
     window.profileLoading = false;
     window.dispatchEvent(new Event("profileLoaded"));
 
@@ -75,7 +70,7 @@ async function loadProfile() {
 }
 
 // ============================
-// STATS (SAFE)
+// STATS (STRAVA IMMUTABLE FIX)
 // ============================
 
 async function loadStats(sb, userId) {
@@ -88,12 +83,29 @@ async function loadStats(sb, userId) {
 
   if (error || !data) return;
 
-  profileData.totalDistance = (data.total_distance || 0) / 1000;
-  profileData.routesCount = data.total_routes_lifetime || 0;
+  // =========================
+  // TRASY (NIGDY NIE SPADAJĄ)
+  // =========================
+
+  profileData.routesCount =
+    data.total_routes_lifetime || 0;
+
+  // =========================
+  // KM TOTAL (NIGDY NIE SPADAJĄ)
+  // =========================
+
+  let liveKm = 0;
+
+  if (window.expState?.distance) {
+    liveKm = window.expState.distance;
+  }
+
+  profileData.totalDistance =
+    ((data.total_distance || 0) + liveKm) / 1000;
 }
 
 // ============================
-// FOREST EXP (SAFE)
+// FOREST EXP
 // ============================
 
 async function loadExploration(sb) {
@@ -125,7 +137,7 @@ async function loadExploration(sb) {
 }
 
 // ============================
-// EXP RING (SAFE SVG)
+// EXP RING (UNCHANGED)
 // ============================
 
 function expRing(percent) {
@@ -146,7 +158,7 @@ function expRing(percent) {
 }
 
 // ============================
-// RENDER (SAFE UI)
+// RENDER (UNCHANGED UI)
 // ============================
 
 function renderProfile() {
@@ -164,6 +176,8 @@ function renderProfile() {
   const best = profileData.bestForest;
 
   box.innerHTML = `
+
+  <div style="padding-top:20px;"></div>
 
   <div class="profileTop">
 
@@ -206,28 +220,30 @@ function renderProfile() {
       <div>Trasy</div>
     </div>
 
-    <div class="card stat">
-      🌲<br>
-      <b>${profileData.exploration}%</b>
-      <div>Las</div>
-    </div>
-
   </div>
 
-  <div class="card forest">
+  <div style="
+    display:flex;
+    justify-content:center;
+    margin-top:15px;
+  ">
 
-    <div class="title">🏆 Najlepszy las</div>
+    <div class="card forest" style="width:100%;max-width:320px;text-align:center;">
 
-    <div class="value">
-      ${best?.forest_id || "Brak danych"}
-    </div>
+      <div class="title">🏆 Najlepszy las</div>
 
-    <div class="sub">
-      ${best?.coverage_percent || 0}% odkrycia
-    </div>
+      <div class="value">
+        ${best?.forest_id || "Brak danych"}
+      </div>
 
-    <div class="bar">
-      <div style="width:${best?.coverage_percent || 0}%"></div>
+      <div class="sub">
+        ${best?.coverage_percent || 0}% odkrycia
+      </div>
+
+      <div class="bar">
+        <div style="width:${best?.coverage_percent || 0}%"></div>
+      </div>
+
     </div>
 
   </div>
