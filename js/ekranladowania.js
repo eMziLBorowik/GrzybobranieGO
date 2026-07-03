@@ -1,14 +1,14 @@
 // ============================
-// ⏳ EKRAN ŁADOWANIA
+// ⏳ EKRAN ŁADOWANIA - FINAL
 // ============================
 
 const loadingScreen = document.getElementById("loadingScreen");
 const loadingText = document.getElementById("loadingText");
 const authPanel = document.getElementById("authPanel");
 
-// zabezpieczenie
+// zabezpieczenie (żeby nie było crasha)
 if (!loadingScreen || !loadingText || !authPanel) {
-  console.error("❌ Brakuje elementów loadera w HTML");
+  console.error("❌ Brakuje elementów: loadingScreen / loadingText / authPanel");
 }
 
 // animacja kropek
@@ -26,13 +26,18 @@ function stopDots() {
   clearInterval(interval);
 }
 
-// symulacja ładowania (tu możesz podpiąć API później)
+// symulacja ładowania (możesz później podpiąć prawdziwe API)
 function fakeLoad() {
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve(true);
     }, 1500);
   });
+}
+
+// pokaz loginu
+function showLogin() {
+  authPanel.style.display = "flex";
 }
 
 // główny start
@@ -43,14 +48,14 @@ async function initLoader() {
 
   stopDots();
 
-  // fade out
+  // fade out loadera
   loadingScreen.style.opacity = "0";
 
   setTimeout(() => {
     loadingScreen.style.display = "none";
 
-    // 👉 pokazujemy login
-    authPanel.style.display = "flex";
+    // 👉 POKAŻ LOGIN
+    showLogin();
 
   }, 400);
 }
