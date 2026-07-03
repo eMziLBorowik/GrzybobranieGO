@@ -1,5 +1,5 @@
 // ============================
-// 👤 PROFIL SYSTEM GAMING + AVATAR RING (FINAL STRAVA FIX + BACKFILL)
+// 👤 PROFIL SYSTEM GAMING + AVATAR RING (FINAL SAFE FIX)
 // ============================
 
 console.log("👤 profile.js RING LOADED");
@@ -15,6 +15,7 @@ let profileData = {
 window.routesBackfilled =
   localStorage.getItem("routesBackfilled") === "true";
 
+
 // ============================
 // SAFE SUPABASE
 // ============================
@@ -22,6 +23,7 @@ window.routesBackfilled =
 function sb() {
   return window.supabase || null;
 }
+
 
 // ============================
 // BACKFILL OLD ROUTES (ONLY ONCE)
@@ -49,7 +51,7 @@ async function backfillOldRoutesOnce(supabase, userId) {
     .from("profiles")
     .update({
       total_distance: totalKm,
-      total_routes_lifetime: count
+      total_routes: count
     })
     .eq("user_id", userId);
 
@@ -58,6 +60,7 @@ async function backfillOldRoutesOnce(supabase, userId) {
 
   console.log("🚀 BACKFILL ROUTES DONE");
 }
+
 
 // ============================
 // LOAD PROFILE
@@ -91,7 +94,6 @@ async function loadProfile() {
       return;
     }
 
-    // 🔥 BACKFILL OLD DATA ONCE
     await backfillOldRoutesOnce(supabase, user.id);
 
     await Promise.all([
@@ -112,8 +114,9 @@ async function loadProfile() {
   }
 }
 
+
 // ============================
-// STATS (STRAVA STYLE)
+// STATS (SAFE FIX)
 // ============================
 
 async function loadStats(sb, userId) {
@@ -126,16 +129,17 @@ async function loadStats(sb, userId) {
 
   if (error || !data) return;
 
-  // TRASY (IMMUTABLE)
-  profileData.routesCount =
-    data.total_routes || 0;
+  profileData.routesCount = data.total_routes || 0;
 
-  // KM TOTAL (IMMUTABLE + LIVE GPS)
+  let dbKm = data.total_distance || 0;
   let liveKm = window.expState?.distance || 0;
 
+  if (isNaN(liveKm)) liveKm = 0;
+
   profileData.totalDistance =
-    ((data.total_distance || 0) + liveKm) / 1000;
+    (dbKm + liveKm) / 1000;
 }
+
 
 // ============================
 // FOREST EXP
@@ -172,8 +176,9 @@ async function loadExploration(sb) {
   profileData.bestForest = best;
 }
 
+
 // ============================
-// EXP RING (NO CHANGE UI)
+// EXP RING (UNCHANGED UI)
 // ============================
 
 function expRing(percent) {
@@ -194,8 +199,9 @@ function expRing(percent) {
   </svg>`;
 }
 
+
 // ============================
-// RENDER (UNCHANGED VISUAL)
+// RENDER (NO VISUAL CHANGES)
 // ============================
 
 function renderProfile() {
@@ -292,6 +298,7 @@ function renderProfile() {
 
   `;
 }
+
 
 // ============================
 // EXPORT
