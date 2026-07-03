@@ -1,5 +1,5 @@
 // ============================
-// 🌿 EXP SYSTEM v8.2 FIXED + BACKFILL
+// 🌿 EXP SYSTEM v8.3 FIXED + BACKFILL SAFE
 // ============================
 
 
@@ -95,12 +95,22 @@ function isInForest() {
 
 
 // ============================
-// SUPABASE LOAD
+// SAFE SUPABASE GET
+// ============================
+
+function sb() {
+  return window.supabase || null;
+}
+
+
+// ============================
+// LOAD PLAYER
 // ============================
 
 async function loadPlayerFromSupabase() {
   try {
-    if (!window.supabase) return;
+    const supabase = sb();
+    if (!supabase) return;
 
     const { data } = await supabase.auth.getUser();
     const user = data?.user;
@@ -125,14 +135,15 @@ async function loadPlayerFromSupabase() {
 
 
 // ============================
-// SUPABASE SYNC (SAFE)
+// SYNC SAFE
 // ============================
 
 let lastSync = 0;
 
 async function syncPlayerToSupabase() {
   try {
-    if (!window.supabase) return;
+    const supabase = sb();
+    if (!supabase) return;
 
     if (Date.now() - lastSync < 5000) return;
     lastSync = Date.now();
@@ -155,12 +166,14 @@ async function syncPlayerToSupabase() {
 
 
 // ============================
-// BACKFILL FROM ROUTES (BY DATE)
+// BACKFILL (SAFE FIXED)
 // ============================
 
 async function backfillEXPFromRoutesByDate() {
   try {
-    if (!window.supabase) return;
+
+    const supabase = sb();
+    if (!supabase) return;
 
     if (window.expBackfillDone) return;
 
@@ -171,7 +184,7 @@ async function backfillEXPFromRoutesByDate() {
 
     const { data: routes } = await supabase
       .from("routes")
-      .select("distance, created_at")
+      .select("distance")
       .eq("user_id", user.id)
       .order("created_at", { ascending: true });
 
@@ -184,9 +197,9 @@ async function backfillEXPFromRoutesByDate() {
     let totalExp = 0;
 
     for (const r of routes) {
-      if (!r.distance) continue;
+      let dist = r.distance || 0;
 
-      let exp = (r.distance / 500) * CONFIG.expPer500m;
+      let exp = (dist / 500) * CONFIG.expPer500m;
 
       if (isInForest()) {
         exp *= CONFIG.forestMultiplier;
@@ -197,12 +210,18 @@ async function backfillEXPFromRoutesByDate() {
 
     totalExp = Math.floor(totalExp);
 
-    if (totalExp > 0) {
-      addEXP(totalExp, "routes backfill");
+    // 🔥 IMPORTANT: direct APPLY (no addEXP loop bug)
+    window.player.exp += totalExp;
+
+    while (window.player.exp >= getExpNeeded(window.player.level)) {
+      window.player.exp -= getExpNeeded(window.player.level);
+      window.player.level++;
     }
 
     window.expBackfillDone = true;
     localStorage.setItem("expBackfillDone", "true");
+
+    console.log("🚀 BACKFILL DONE:", totalExp);
 
   } catch (e) {
     console.log("BACKFILL ERROR", e);
@@ -211,7 +230,7 @@ async function backfillEXPFromRoutesByDate() {
 
 
 // ============================
-// ADD EXP (CORE)
+// ADD EXP (SAFE)
 // ============================
 
 function addEXP(amount, source = "unknown") {
@@ -226,7 +245,10 @@ function addEXP(amount, source = "unknown") {
     window.player.level++;
   }
 
-  updateEXPUI?.();
+  // 🔥 SAFE GUARD (FIX CRASH)
+  window.updateEXPUI = window.updateEXPUI || function(){};
+
+  updateEXPUI();
   renderExpHeader?.();
   lockHeader?.();
 
@@ -235,7 +257,7 @@ function addEXP(amount, source = "unknown") {
 
 
 // ============================
-// GPS TRACKING
+// GPS
 // ============================
 
 function trackMovementEXP(lat, lng, speed) {
@@ -314,25 +336,17 @@ function renderExpHeader() {
   `);
 }
 
-function renderDefaultHeader() {
-  setHeader("Odkrywanie lasów i przyrody 🔎🌲");
-}
-
 
 // ============================
-// INIT SYSTEM (IMPORTANT)
+// INIT
 // ============================
 
 async function initEXPSystem() {
   await loadPlayerFromSupabase();
-
   await backfillEXPFromRoutesByDate();
-
   renderExpHeader();
 }
 
-
-// auto start
 setTimeout(() => {
   initEXPSystem();
 }, 500);
@@ -347,5 +361,4 @@ window.addEXP = addEXP;
 window.getExpNeeded = getExpNeeded;
 window.getRank = getRank;
 window.renderExpHeader = renderExpHeader;
-window.renderDefaultHeader = renderDefaultHeader;
 window.initEXPSystem = initEXPSystem;
