@@ -1,64 +1,90 @@
+
 // ============================
-// ⏳ EKRAN ŁADOWANIA - FINAL
+// ⏳ EKRAN ŁADOWANIA - STABILNY
 // ============================
 
-const loadingScreen = document.getElementById("loadingScreen");
-const loadingText = document.getElementById("loadingText");
-const authPanel = document.getElementById("authPanel");
+window.addEventListener("DOMContentLoaded", () => {
 
-// zabezpieczenie (żeby nie było crasha)
-if (!loadingScreen || !loadingText || !authPanel) {
-  console.error("❌ Brakuje elementów: loadingScreen / loadingText / authPanel");
-}
+  const loadingScreen = document.getElementById("loadingScreen");
+  const loadingText = document.getElementById("loadingText");
+  const authPanel = document.getElementById("authPanel");
 
-// animacja kropek
-let dots = 0;
-let interval = null;
+  // 🔒 zabezpieczenie
+  if (!loadingScreen || !loadingText || !authPanel) {
+    console.error("❌ Loader: brak elementów w HTML");
+    return;
+  }
 
-function startDots() {
-  interval = setInterval(() => {
-    dots = (dots + 1) % 4;
-    loadingText.innerText = "Ładowanie" + ".".repeat(dots);
-  }, 500);
-}
+  console.log("⏳ Loader START");
 
-function stopDots() {
-  clearInterval(interval);
-}
+  let dots = 0;
+  let interval = null;
 
-// symulacja ładowania (możesz później podpiąć prawdziwe API)
-function fakeLoad() {
-  return new Promise((resolve) => {
+  // animacja tekstu
+  function startDots() {
+    interval = setInterval(() => {
+      dots = (dots + 1) % 4;
+      loadingText.innerText = "Ładowanie" + ".".repeat(dots);
+    }, 400);
+  }
+
+  function stopDots() {
+    clearInterval(interval);
+  }
+
+  // 🔧 czekamy aż WSZYSTKIE skrypty się załadują
+  function waitForSystems() {
+    return new Promise((resolve) => {
+      let checks = 0;
+
+      const check = setInterval(() => {
+
+        checks++;
+
+        // warunek "minimum gotowości"
+        const supabaseReady = typeof window.supabase !== "undefined";
+        const loginReady = document.readyState === "complete";
+
+        if (supabaseReady && loginReady) {
+          clearInterval(check);
+          resolve();
+        }
+
+        // awaryjnie po 3s puszczamy dalej
+        if (checks > 15) {
+          clearInterval(check);
+          resolve();
+        }
+
+      }, 200);
+    });
+  }
+
+  async function startLoader() {
+
+    startDots();
+
+    await waitForSystems();
+
+    stopDots();
+
+    // fade out
+    loadingScreen.style.transition = "opacity 0.4s ease";
+    loadingScreen.style.opacity = "0";
+
     setTimeout(() => {
-      resolve(true);
-    }, 1500);
-  });
-}
 
-// pokaz loginu
-function showLogin() {
-  authPanel.style.display = "flex";
-}
+      loadingScreen.style.display = "none";
 
-// główny start
-async function initLoader() {
-  startDots();
+      // 👉 pokaz loginu
+      authPanel.style.display = "flex";
 
-  await fakeLoad();
+      console.log("✅ Loader DONE");
 
-  stopDots();
+    }, 400);
 
-  // fade out loadera
-  loadingScreen.style.opacity = "0";
+  }
 
-  setTimeout(() => {
-    loadingScreen.style.display = "none";
+  startLoader();
 
-    // 👉 POKAŻ LOGIN
-    showLogin();
-
-  }, 400);
-}
-
-// start po pełnym załadowaniu strony
-window.addEventListener("load", initLoader);
+});
