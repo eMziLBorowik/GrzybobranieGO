@@ -1,5 +1,5 @@
 // ============================
-// 🌿 EXP SYSTEM v8.3 FIXED + BACKFILL SAFE
+// 🌿 EXP SYSTEM v8.4 STABLE FIX
 // ============================
 
 
@@ -95,7 +95,7 @@ function isInForest() {
 
 
 // ============================
-// SAFE SUPABASE GET
+// SAFE SUPABASE
 // ============================
 
 function sb() {
@@ -109,6 +109,7 @@ function sb() {
 
 async function loadPlayerFromSupabase() {
   try {
+
     const supabase = sb();
     if (!supabase) return;
 
@@ -123,10 +124,10 @@ async function loadPlayerFromSupabase() {
       .eq("user_id", user.id)
       .single();
 
-    if (profile) {
-      window.player.level = profile.level ?? 1;
-      window.player.exp = profile.exp ?? 0;
-    }
+    if (!profile) return;
+
+    window.player.level = profile.level ?? 1;
+    window.player.exp = profile.exp ?? 0;
 
   } catch (e) {
     console.log("LOAD ERROR", e);
@@ -142,6 +143,7 @@ let lastSync = 0;
 
 async function syncPlayerToSupabase() {
   try {
+
     const supabase = sb();
     if (!supabase) return;
 
@@ -166,7 +168,7 @@ async function syncPlayerToSupabase() {
 
 
 // ============================
-// BACKFILL (SAFE FIXED)
+// BACKFILL (SAFE + NO CRASH)
 // ============================
 
 async function backfillEXPFromRoutesByDate() {
@@ -210,7 +212,7 @@ async function backfillEXPFromRoutesByDate() {
 
     totalExp = Math.floor(totalExp);
 
-    // 🔥 IMPORTANT: direct APPLY (no addEXP loop bug)
+    // APPLY DIRECT (safe)
     window.player.exp += totalExp;
 
     while (window.player.exp >= getExpNeeded(window.player.level)) {
@@ -234,6 +236,7 @@ async function backfillEXPFromRoutesByDate() {
 // ============================
 
 function addEXP(amount, source = "unknown") {
+
   if (!amount || amount <= 0) return;
 
   amount = Math.min(amount, 100);
@@ -245,26 +248,31 @@ function addEXP(amount, source = "unknown") {
     window.player.level++;
   }
 
-  // 🔥 SAFE GUARD (FIX CRASH)
+  // SAFE FALLBACK (fix crash)
   window.updateEXPUI = window.updateEXPUI || function(){};
 
-  updateEXPUI();
-  renderExpHeader?.();
-  lockHeader?.();
+  try {
+    updateEXPUI();
+    renderExpHeader?.();
+    lockHeader?.();
+  } catch (e) {
+    console.log("UI UPDATE ERROR", e);
+  }
 
   syncPlayerToSupabase();
 }
 
 
 // ============================
-// GPS
+// GPS TRACKING
 // ============================
 
 function trackMovementEXP(lat, lng, speed) {
+
   if (lat == null || lng == null) return;
   if (typeof L === "undefined") return;
 
-  if (window.expState.lastLat == null) {
+  if (!window.expState.lastLat) {
     window.expState.lastLat = lat;
     window.expState.lastLng = lng;
     saveEXPState();
@@ -276,8 +284,7 @@ function trackMovementEXP(lat, lng, speed) {
     window.expState.lastLng
   ).distanceTo(L.latLng(lat, lng));
 
-  if (!isFinite(dist)) return;
-  if (dist < 10) return;
+  if (!isFinite(dist) || dist < 10) return;
 
   if (dist > CONFIG.maxGpsJump) {
     window.expState.lastLat = lat;
@@ -292,6 +299,7 @@ function trackMovementEXP(lat, lng, speed) {
   window.expState.distance += dist;
 
   if (window.expState.distance >= 500) {
+
     let reward = CONFIG.expPer500m;
 
     if (isInForest()) reward *= CONFIG.forestMultiplier;
@@ -338,15 +346,24 @@ function renderExpHeader() {
 
 
 // ============================
-// INIT
+// INIT (SAFE SINGLE RUN)
 // ============================
 
+let expInitDone = false;
+
 async function initEXPSystem() {
+
+  if (expInitDone) return;
+  expInitDone = true;
+
   await loadPlayerFromSupabase();
   await backfillEXPFromRoutesByDate();
+
   renderExpHeader();
 }
 
+
+// auto start
 setTimeout(() => {
   initEXPSystem();
 }, 500);
