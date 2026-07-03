@@ -1,12 +1,12 @@
 // ============================
-// 🌿 EXP SYSTEM v8.4 STABLE FIX
+// 🌿 EXP SYSTEM v8.5 STABLE SAFE
 // ============================
 
 
-// 👤 PLAYER INIT
+// 👤 PLAYER INIT (NO RESET PROTECTION)
 window.player = window.player || {
-  exp: 0,
-  level: 1
+  exp: Number(localStorage.getItem("exp")) || 0,
+  level: Number(localStorage.getItem("level")) || 1
 };
 
 
@@ -104,7 +104,7 @@ function sb() {
 
 
 // ============================
-// LOAD PLAYER
+// LOAD PLAYER (NO RESET BUG FIX)
 // ============================
 
 async function loadPlayerFromSupabase() {
@@ -126,8 +126,15 @@ async function loadPlayerFromSupabase() {
 
     if (!profile) return;
 
-    window.player.level = profile.level ?? 1;
-    window.player.exp = profile.exp ?? 0;
+    if (profile.level != null) {
+      window.player.level = profile.level;
+      localStorage.setItem("level", profile.level);
+    }
+
+    if (profile.exp != null) {
+      window.player.exp = profile.exp;
+      localStorage.setItem("exp", profile.exp);
+    }
 
   } catch (e) {
     console.log("LOAD ERROR", e);
@@ -161,6 +168,9 @@ async function syncPlayerToSupabase() {
       exp: window.player.exp
     });
 
+    localStorage.setItem("level", window.player.level);
+    localStorage.setItem("exp", window.player.exp);
+
   } catch (e) {
     console.log("SYNC ERROR", e);
   }
@@ -168,7 +178,7 @@ async function syncPlayerToSupabase() {
 
 
 // ============================
-// BACKFILL (SAFE + NO CRASH)
+// BACKFILL SAFE (NO DOUBLE APPLY)
 // ============================
 
 async function backfillEXPFromRoutesByDate() {
@@ -212,7 +222,7 @@ async function backfillEXPFromRoutesByDate() {
 
     totalExp = Math.floor(totalExp);
 
-    // APPLY DIRECT (safe)
+    // APPLY SAFE
     window.player.exp += totalExp;
 
     while (window.player.exp >= getExpNeeded(window.player.level)) {
@@ -232,11 +242,10 @@ async function backfillEXPFromRoutesByDate() {
 
 
 // ============================
-// ADD EXP (SAFE)
+// ADD EXP SAFE
 // ============================
 
 function addEXP(amount, source = "unknown") {
-
   if (!amount || amount <= 0) return;
 
   amount = Math.min(amount, 100);
@@ -248,7 +257,6 @@ function addEXP(amount, source = "unknown") {
     window.player.level++;
   }
 
-  // SAFE FALLBACK (fix crash)
   window.updateEXPUI = window.updateEXPUI || function(){};
 
   try {
@@ -256,7 +264,7 @@ function addEXP(amount, source = "unknown") {
     renderExpHeader?.();
     lockHeader?.();
   } catch (e) {
-    console.log("UI UPDATE ERROR", e);
+    console.log("UI ERROR", e);
   }
 
   syncPlayerToSupabase();
@@ -346,13 +354,12 @@ function renderExpHeader() {
 
 
 // ============================
-// INIT (SAFE SINGLE RUN)
+// INIT SAFE
 // ============================
 
 let expInitDone = false;
 
 async function initEXPSystem() {
-
   if (expInitDone) return;
   expInitDone = true;
 
@@ -362,8 +369,6 @@ async function initEXPSystem() {
   renderExpHeader();
 }
 
-
-// auto start
 setTimeout(() => {
   initEXPSystem();
 }, 500);
