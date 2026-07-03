@@ -23,7 +23,7 @@ const CONFIG = {
 
 
 // ============================
-// BACKFILL GUARD (STRICT)
+// BACKFILL GUARD
 // ============================
 
 window.expBackfillDone =
@@ -102,7 +102,7 @@ function sb() {
 
 
 // ============================
-// LOAD PLAYER (NO RESET BUG FIXED)
+// LOAD PLAYER (NO RESET FIX)
 // ============================
 
 async function loadPlayerFromSupabase() {
@@ -123,16 +123,12 @@ async function loadPlayerFromSupabase() {
 
     if (!profile) return;
 
-    // IMPORTANT: NEVER overwrite with lower values
-    if (profile.level > (window.player.level || 1)) {
-      window.player.level = profile.level;
-      localStorage.setItem("level", profile.level);
-    }
+    // 🔥 SAFE MERGE (NO RESET)
+    window.player.level = Math.max(window.player.level || 1, profile.level || 1);
+    window.player.exp = Math.max(window.player.exp || 0, profile.exp || 0);
 
-    if (profile.exp != null) {
-      window.player.exp = profile.exp;
-      localStorage.setItem("exp", profile.exp);
-    }
+    localStorage.setItem("level", window.player.level);
+    localStorage.setItem("exp", window.player.exp);
 
   } catch (e) {
     console.log("LOAD ERROR", e);
@@ -175,7 +171,7 @@ async function syncPlayerToSupabase() {
 
 
 // ============================
-// BACKFILL (SAFE - NO DOUBLE APPLY + NO RESET LEVEL)
+// BACKFILL SAFE FIXED
 // ============================
 
 async function backfillEXPFromRoutesByDate() {
@@ -213,13 +209,16 @@ async function backfillEXPFromRoutesByDate() {
 
     totalExp = Math.floor(totalExp);
 
-    // APPLY SAFELY (BUT DO NOT RESET LEVEL)
+    // APPLY
     window.player.exp += totalExp;
 
     while (window.player.exp >= getExpNeeded(window.player.level)) {
       window.player.exp -= getExpNeeded(window.player.level);
       window.player.level++;
     }
+
+    // 🔥 FIX: ZAPIS DO SUPABASE (BRAKOWAŁO TEGO)
+    await syncPlayerToSupabase();
 
     window.expBackfillDone = true;
     localStorage.setItem("expBackfillDone", "true");
@@ -344,7 +343,7 @@ function renderExpHeader() {
 
 
 // ============================
-// INIT SAFE (NO DOUBLE RESET)
+// INIT SAFE
 // ============================
 
 let expInitDone = false;
