@@ -116,7 +116,7 @@ async function loadProfile() {
 
 
 // ============================
-// STATS (SAFE FIXED)
+// STATS (FIX SAFE NUMBERS)
 // ============================
 
 async function loadStats(sb, userId) {
@@ -129,7 +129,7 @@ async function loadStats(sb, userId) {
 
   if (error || !data) return;
 
-  profileData.routesCount = data.total_routes || 0;
+  profileData.routesCount = Number(data.total_routes) || 0;
 
   const dbKm = Number(data.total_distance) || 0;
   const liveKm = Number(window.expState?.distance) || 0;
@@ -139,12 +139,11 @@ async function loadStats(sb, userId) {
 
 
 // ============================
-// FOREST EXP (FIXED TABLE)
+// FOREST EXP (FIXED TABLE NAME)
 // ============================
 
 async function loadExploration(sb) {
 
-  // 🔥 FIX: correct table name (NO 404)
   const { data, error } = await sb
     .from("explored_forests")
     .select("*");
@@ -218,6 +217,8 @@ function renderProfile() {
 
   const best = profileData.bestForest;
 
+  const km = Number(profileData.totalDistance) || 0;
+
   box.innerHTML = `
 
   <div style="padding-top:20px;"></div>
@@ -255,7 +256,7 @@ function renderProfile() {
 
     <div class="card stat">
       📏<br>
-      <b>${profileData.totalDistance.toFixed(2)}</b> km
+      <b>${km.toFixed(2)}</b> km
       <div>Dystans</div>
     </div>
 
