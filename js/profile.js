@@ -1,5 +1,5 @@
 // ============================
-// 👤 PROFIL SYSTEM GAMING + AVATAR RING (STRAVA FIX FINAL)
+// 👤 PROFIL SYSTEM GAMING + AVATAR RING (FINAL STRAVA FIX + BACKFILL)
 // ============================
 
 console.log("👤 profile.js RING LOADED");
@@ -11,12 +11,52 @@ let profileData = {
   bestForest: null
 };
 
+// 🔥 BACKFILL FLAG (OLD ROUTES)
+window.routesBackfilled =
+  localStorage.getItem("routesBackfilled") === "true";
+
 // ============================
 // SAFE SUPABASE
 // ============================
 
 function sb() {
   return window.supabase || null;
+}
+
+// ============================
+// BACKFILL OLD ROUTES (ONLY ONCE)
+// ============================
+
+async function backfillOldRoutesOnce(supabase, userId) {
+
+  if (window.routesBackfilled) return;
+
+  const { data, error } = await supabase
+    .from("routes")
+    .select("distance")
+    .eq("user_id", userId);
+
+  if (error || !data) return;
+
+  let totalKm = 0;
+  let count = data.length || 0;
+
+  for (const r of data) {
+    totalKm += (r.distance || 0);
+  }
+
+  await supabase
+    .from("profiles")
+    .update({
+      total_distance: totalKm,
+      total_routes_lifetime: count
+    })
+    .eq("user_id", userId);
+
+  window.routesBackfilled = true;
+  localStorage.setItem("routesBackfilled", "true");
+
+  console.log("🚀 BACKFILL ROUTES DONE");
 }
 
 // ============================
@@ -51,6 +91,9 @@ async function loadProfile() {
       return;
     }
 
+    // 🔥 BACKFILL OLD DATA ONCE
+    await backfillOldRoutesOnce(supabase, user.id);
+
     await Promise.all([
       loadStats(supabase, user.id),
       loadExploration(supabase)
@@ -70,7 +113,7 @@ async function loadProfile() {
 }
 
 // ============================
-// STATS (STRAVA IMMUTABLE FIX)
+// STATS (STRAVA STYLE)
 // ============================
 
 async function loadStats(sb, userId) {
@@ -83,22 +126,12 @@ async function loadStats(sb, userId) {
 
   if (error || !data) return;
 
-  // =========================
-  // TRASY (NIGDY NIE SPADAJĄ)
-  // =========================
-
+  // TRASY (IMMUTABLE)
   profileData.routesCount =
     data.total_routes_lifetime || 0;
 
-  // =========================
-  // KM TOTAL (NIGDY NIE SPADAJĄ)
-  // =========================
-
-  let liveKm = 0;
-
-  if (window.expState?.distance) {
-    liveKm = window.expState.distance;
-  }
+  // KM TOTAL (IMMUTABLE + LIVE GPS)
+  let liveKm = window.expState?.distance || 0;
 
   profileData.totalDistance =
     ((data.total_distance || 0) + liveKm) / 1000;
@@ -132,17 +165,21 @@ async function loadExploration(sb) {
     }
   }
 
-  profileData.exploration = total ? Math.round((revealed / total) * 100) : 0;
+  profileData.exploration = total
+    ? Math.round((revealed / total) * 100)
+    : 0;
+
   profileData.bestForest = best;
 }
 
 // ============================
-// EXP RING (UNCHANGED)
+// EXP RING (NO CHANGE UI)
 // ============================
 
 function expRing(percent) {
 
-  const safePercent = isNaN(percent) ? 0 : Math.max(0, Math.min(100, percent));
+  const safePercent =
+    isNaN(percent) ? 0 : Math.max(0, Math.min(100, percent));
 
   const r = 52;
   const c = 2 * Math.PI * r;
@@ -158,7 +195,7 @@ function expRing(percent) {
 }
 
 // ============================
-// RENDER (UNCHANGED UI)
+// RENDER (UNCHANGED VISUAL)
 // ============================
 
 function renderProfile() {
@@ -171,7 +208,9 @@ function renderProfile() {
 
   const safeExp = isNaN(p.exp) ? 0 : p.exp;
 
-  const percent = need ? Math.min(100, (safeExp / need) * 100) : 0;
+  const percent = need
+    ? Math.min(100, (safeExp / need) * 100)
+    : 0;
 
   const best = profileData.bestForest;
 
@@ -197,7 +236,9 @@ function renderProfile() {
       <div class="name">${p.nick || "Gracz"}</div>
       <div class="rank">${window.getRank?.(p.level) || "Nowicjusz"}</div>
 
-      <div class="expText">${Math.floor(safeExp)} / ${need} EXP</div>
+      <div class="expText">
+        ${Math.floor(safeExp)} / ${need} EXP
+      </div>
 
       <div class="expBar">
         <div style="width:${percent}%"></div>
@@ -228,7 +269,8 @@ function renderProfile() {
     margin-top:15px;
   ">
 
-    <div class="card forest" style="width:100%;max-width:320px;text-align:center;">
+    <div class="card forest"
+      style="width:100%;max-width:320px;text-align:center;">
 
       <div class="title">🏆 Najlepszy las</div>
 
