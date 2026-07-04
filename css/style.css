@@ -35,7 +35,7 @@ html,body{
 
   color:white;
 
-  background: url("../images/panelgora.webp") center center / cover no-repeat;
+  background: url("../images/panelgora.webp") center/100% 100% no-repeat;
 
   overflow:hidden;
 }
@@ -57,6 +57,7 @@ html,body{
   display:none !important;
   content:none !important;
 }
+
 /* 🔥 FIX: przycisk i status nie zmniejszają wysokości */
 #menuBtn{
   flex-shrink:0;
