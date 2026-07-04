@@ -18,38 +18,39 @@ html,body{
 /* GÓRNY PANEL */
 
 .panel{
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:90px;
+  z-index:9999;
 
-position:absolute;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
 
-top:0;
+  padding:10px 15px;
+  gap:15px;
 
-left:0;
-
-width:100%;
-
-height:90px;
-
-z-index:2000;
-
-background:url("../images/panelgora.webp") center center no-repeat;
-
-background-size:100% 100%;
-
-color:white;
-
-display:flex;
-
-justify-content:space-between;
-
-align-items:center;
-
-padding:10px 15px;
-
-gap:15px;
-
+  color:white;
 }
 
+/* tło jako obraz (z HTML img .panelImage) */
+.panelImage{
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:90px;
+  object-fit:cover;
+  z-index:1;
+}
 
+/* elementy UI nad tłem */
+.panel > *{
+  position:relative;
+  z-index:2;
+}
 
 
 
