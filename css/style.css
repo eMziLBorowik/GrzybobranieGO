@@ -35,12 +35,12 @@ html,body{
 
   color:white;
 
-  background: url("../images/panelgora.webp") center top / cover no-repeat;
+  background: url("../images/panelgora.webp") center 70% / cover no-repeat;
 
   overflow:hidden;
 }
 
-/* bezpieczeństwo – brak drugiego tła */
+/* usuń stare IMG tła */
 .panelImage{
   display:none !important;
 }
