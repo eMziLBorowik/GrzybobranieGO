@@ -35,23 +35,23 @@ html,body{
 
   color:white;
 
-  background: url("../images/panelgora.webp") center/100% 100% no-repeat;
+  background: url("../images/panelgora.webp") center top / cover no-repeat;
 
   overflow:hidden;
 }
 
-/* usuń stare IMG tła (żeby nie było podwójnych grafik) */
+/* bezpieczeństwo – brak drugiego tła */
 .panelImage{
   display:none !important;
 }
 
-/* elementy UI nad tłem */
+/* UI nad tłem */
 .panel > *{
   position:relative;
   z-index:2;
 }
 
-/* bezpieczeństwo – brak pseudo-tła */
+/* brak pseudo-elementów */
 .panel::before,
 .panel::after{
   display:none !important;
