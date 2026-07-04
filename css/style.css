@@ -17,8 +17,6 @@ html,body{
 
 /* GÓRNY PANEL */
 
-/* GÓRNY PANEL */
-
 .panel{
   position:absolute;
   top:0;
@@ -34,7 +32,6 @@ html,body{
   align-items:center;
 
   padding:10px 15px;
-  gap:15px;
 
   color:white;
 
@@ -43,25 +40,23 @@ html,body{
   overflow:hidden;
 }
 
-/* TŁO PANELU */
+/* usuń stare IMG tła (żeby nie było podwójnych grafik) */
 .panelImage{
-  position:absolute;
-  top:0;
-  left:0;
-
-  width:100%;
-  height:100%;
-
-  object-fit:cover; /* 🔥 pełne wypełnienie */
-  z-index:1;
+  display:none !important;
 }
 
-/* TREŚĆ NAD TŁEM */
+/* elementy UI nad tłem */
 .panel > *{
   position:relative;
   z-index:2;
 }
 
+/* bezpieczeństwo – brak pseudo-tła */
+.panel::before,
+.panel::after{
+  display:none !important;
+  content:none !important;
+}
 /* 🔥 FIX: przycisk i status nie zmniejszają wysokości */
 #menuBtn{
   flex-shrink:0;
