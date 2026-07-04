@@ -17,7 +17,6 @@ html,body{
 
 /* GÓRNY PANEL */
 
-
 .panel{
 
 position:absolute;
@@ -32,27 +31,20 @@ height:90px;
 
 z-index:2000;
 
+background:url("../images/panelgora.webp") center center no-repeat;
 
-background:linear-gradient(
-135deg,
-#203719,
-#557a32
-);
-
+background-size:100% 100%;
 
 color:white;
 
-
 display:flex;
-
 
 justify-content:space-between;
 
-
 align-items:center;
 
-
 padding:10px 15px;
+
 gap:15px;
 
 }
@@ -84,7 +76,6 @@ color:#ddd;
 
 
 #forestStatus{
-
 
 background:#162013;
 
