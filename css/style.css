@@ -35,7 +35,7 @@ html,body{
 
   color:white;
 
-  background: url("../images/panelgora.webp") center 70% / cover no-repeat;
+  background: url("../images/panelgora.webp") center top / cover no-repeat;
 
   overflow:hidden;
 }
@@ -51,7 +51,7 @@ html,body{
   z-index:2;
 }
 
-/* brak pseudo-elementów */
+/* bezpieczeństwo */
 .panel::before,
 .panel::after{
   display:none !important;
