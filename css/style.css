@@ -17,6 +17,8 @@ html,body{
 
 /* GÓRNY PANEL */
 
+/* GÓRNY PANEL */
+
 .panel{
   position:absolute;
   top:0;
@@ -36,7 +38,9 @@ html,body{
 
   color:white;
 
-  overflow:hidden; /* 🔥 ważne */
+  background: url("../images/panelgora.webp") center center / cover no-repeat;
+
+  overflow:hidden;
 }
 
 /* TŁO PANELU */
