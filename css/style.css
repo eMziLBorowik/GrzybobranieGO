@@ -1437,14 +1437,14 @@ small{
 
 
 /* =========================
-   ⛔ START APP STATE
+   ⛔ START APP STATE (FIX)
    ========================= */
 
 #authPanel {
   display: flex;
 }
 
-.panel,
+/* ❌ NIE UKRYWAMY PANELU GÓRNEGO */
 .page,
 #sideMenu,
 #grzybdex,
@@ -1513,4 +1513,8 @@ small{
   font-family: Arial, sans-serif;
   z-index: 3;
   text-shadow: 0 2px 10px rgba(0,0,0,0.6);
+}
+
+.panel{
+  display:flex !important;
 }
