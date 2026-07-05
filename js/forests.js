@@ -20,6 +20,42 @@ function initForestLayer() {
 }
 
 // =========================
+// 🧠 FIX: BUDOWANIE POLYGONÓW (KLUCZ)
+// =========================
+function buildPolygon(el) {
+
+  // WAY (normalny przypadek)
+  if (el.type === "way" && el.geometry) {
+    return el.geometry.map(p => [p.lat, p.lon]);
+  }
+
+  // RELATION (multipolygon FIX – usuwa skrawki)
+  if (el.type === "relation" && el.members) {
+
+    let outer = [];
+
+    el.members.forEach(m => {
+      if (m.geometry) {
+        const pts = m.geometry.map(p => [p.lat, p.lon]);
+
+        if (pts.length > outer.length) {
+          outer = pts;
+        }
+      }
+    });
+
+    return outer;
+  }
+
+  // fallback
+  if (el.geometry) {
+    return el.geometry.map(p => [p.lat, p.lon]);
+  }
+
+  return [];
+}
+
+// =========================
 // 🚫 FILTR
 // =========================
 function isBadForest(el, pts) {
@@ -27,19 +63,17 @@ function isBadForest(el, pts) {
   if (!el.tags) return true;
   if (el.type === "node") return true;
 
-  // 🔥 NIE USUWAJ PARKÓW (FIX)
+  // 🔥 NIE USUWAJ PARKÓW
   if (
     el.tags.boundary === "protected_area" ||
     el.tags.boundary === "national_park" ||
     el.tags.protect_class ||
-    el.tags.protection_title ||
-    el.tags.boundary === "protected_area" ||
-    el.tags.protect_class
+    el.tags.protection_title
   ) {
     return false;
   }
 
-  // 🔥 FIX: lepsze łapanie nazw parków
+  // 🔥 lepsze łapanie nazw parków
   if (el.tags.name) {
     const n = el.tags.name.toLowerCase();
     if (
@@ -65,7 +99,7 @@ function isBadForest(el, pts) {
     return true;
   }
 
-  // 🔥 FIX (KLUCZ): NIE WYRZUCAJ DUŻYCH PARKÓW
+  // 🔥 FIX: NIE WYTNISZ DUŻYCH PARKÓW
   if (pts.length < 8 && !el.tags.boundary && el.tags.landuse !== "forest") return true;
 
   if (el.tags.place) return true;
@@ -100,17 +134,10 @@ async function loadForests(lat, lng) {
     way["natural"="wood"](around:18000,${lat},${lng});
 
     relation["type"="multipolygon"](around:18000,${lat},${lng});
-
     relation["boundary"="protected_area"](around:18000,${lat},${lng});
     relation["boundary"="national_park"](around:18000,${lat},${lng});
-
     relation["protect_class"](around:18000,${lat},${lng});
-
     relation["leisure"="nature_reserve"](around:18000,${lat},${lng});
-
-    // 🔥 FIX: lepsze łapanie parków PL
-    relation["boundary"="protected_area"](around:18000,${lat},${lng});
-    relation["protect_class"](around:18000,${lat},${lng});
 
     relation["name"~"Gostynińsko|Włocławski|Krajobrazowy|Rezerwat|Park",i]
     (around:18000,${lat},${lng});
@@ -151,16 +178,11 @@ async function loadForests(lat, lng) {
 
     data.elements.forEach(el => {
 
-      let pts = [];
-
-      if (el.geometry) {
-        pts = el.geometry.map(p => [p.lat, p.lon]);
-      }
+      // 🔥 KLUCZ FIX: tu składamy cały polygon
+      const pts = buildPolygon(el);
 
       if (!pts.length) return;
-
       if (isBadForest(el, pts)) return;
-
       if (pts.length < 3) return;
 
       let poly = L.polygon(pts, {
@@ -190,7 +212,7 @@ async function loadForests(lat, lng) {
 }
 
 // =========================
-// ℹ️ INFO
+// ℹ️ INFO (BEZ ZMIAN)
 // =========================
 async function showForestInfo(el, pts) {
 
@@ -272,7 +294,7 @@ document.addEventListener("click", (e) => {
 });
 
 // =========================
-// SAFE MAP CLICK BIND
+// SAFE MAP CLICK
 // =========================
 function bindForestMapEvents() {
   if (!map) return;
