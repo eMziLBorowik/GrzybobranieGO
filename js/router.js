@@ -1,7 +1,3 @@
-// =========================
-// 🧭 ROUTER / SCREEN MANAGER
-// =========================
-
 function showScreen(screen) {
 
   const mapEl = document.getElementById("map");
@@ -14,19 +10,15 @@ function showScreen(screen) {
   const weather = document.getElementById("weatherCard");
   const actionBar = document.getElementById("actionBar");
   const forestInfo = document.getElementById("forestInfoPanel");
-
   const centerBtn = document.getElementById("centerMapBtn");
 
   // =========================
-  // 🔻 UKRYJ WSZYSTKO
+  // 🔻 HIDE ALL
   // =========================
 
-  if (mapEl) mapEl.style.display = "none";
-  if (grzyd) grzyd.style.display = "none";
-  if (trails) trails.style.display = "none";
-  if (surv) surv.style.display = "none";
-  if (guide) guide.style.display = "none";
-  if (profile) profile.style.display = "none";
+  [mapEl, grzyd, trails, surv, guide, profile].forEach(el => {
+    if (el) el.style.display = "none";
+  });
 
   if (weather) weather.style.display = "none";
   if (actionBar) actionBar.style.display = "none";
@@ -36,7 +28,7 @@ function showScreen(screen) {
   document.body.classList.remove("screen-map");
 
   // =========================
-  // 🗺 MAPA
+  // 🗺 MAP SCREEN
   // =========================
 
   if (screen === "map") {
@@ -48,6 +40,11 @@ function showScreen(screen) {
     if (centerBtn) centerBtn.style.display = "flex";
 
     document.body.classList.add("screen-map");
+
+    // 🔥 WAŻNE: odśwież mapę (Leaflet bug fix)
+    setTimeout(() => {
+      window.map?.invalidateSize?.();
+    }, 150);
   }
 
   // =========================
@@ -65,22 +62,13 @@ function showScreen(screen) {
   if (screen === "trailsPanel") {
     if (trails) trails.style.display = "block";
 
+    // 🔥 NIE DOTYKAMY MAPY TU (fix crashy)
     requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-
-        if (!routeMap) initRouteMap();
-
-        setTimeout(() => {
-          routeMap?.invalidateSize(true);
-
-          routeMap?.setView(
-            [userLat || 52, userLng || 19],
-            userLat ? 16 : 6,
-            { animate: false }
-          );
-        }, 100);
-
-      });
+      setTimeout(() => {
+        if (window.routeMap) {
+          window.routeMap.invalidateSize(true);
+        }
+      }, 150);
     });
   }
 
@@ -108,15 +96,12 @@ function showScreen(screen) {
 
   if (screen === "profilePanel") {
     if (profile) profile.style.display = "block";
-
-    if (typeof loadProfile === "function") {
-      loadProfile();
-    }
+    loadProfile?.();
   }
 }
 
 // =========================
-// 🌍 GLOBAL EXPORT
+// 🌍 EXPORT
 // =========================
 
 window.showScreen = showScreen;
