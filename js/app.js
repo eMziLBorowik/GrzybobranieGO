@@ -3,7 +3,17 @@ let lastForestLng = null;
 let followGPS = true;
 let firstGPS = true;
 
+// 🔥 GLOBAL STATE (FIX CRASHY)
+let userLat = null;
+let userLng = null;
+
 window.onload = function () {
+
+  // =========================
+  // 🗺 INIT MAP (KLUCZOWE FIX)
+  // =========================
+
+  initMap?.();
 
   // =========================
   // 🔥 MENU
@@ -74,7 +84,7 @@ window.onload = function () {
       if (status) status.innerText = "📍 GPS OK";
 
       // =========================
-      // 🗺 MAPA (NOWY SYSTEM)
+      // 🗺 MAPA (SAFE)
       // =========================
 
       updateUserMarker?.(userLat, userLng, followGPS);
@@ -86,7 +96,7 @@ window.onload = function () {
       if (!lastForestLat || !lastForestLng) {
         lastForestLat = userLat;
         lastForestLng = userLng;
-        loadForests(userLat, userLng);
+        loadForests?.(userLat, userLng);
 
       } else {
         const d = L.latLng(lastForestLat, lastForestLng)
@@ -95,7 +105,7 @@ window.onload = function () {
         if (d > 1000) {
           lastForestLat = userLat;
           lastForestLng = userLng;
-          loadForests(userLat, userLng);
+          loadForests?.(userLat, userLng);
         }
       }
 
@@ -122,5 +132,13 @@ window.onload = function () {
       centerOnUser?.(userLat, userLng);
     };
   }
+
+  // =========================
+  // 🧠 MAP FOLLOW CONTROL
+  // =========================
+
+  map?.on("dragstart", () => {
+    followGPS = false;
+  });
 
 };
