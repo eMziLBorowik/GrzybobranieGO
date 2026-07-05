@@ -20,14 +20,13 @@ function initForestLayer() {
 }
 
 // =========================
-// 🚫 FIX FILTR (NAJWAŻNIEJSZY)
+// 🚫 FILTR (zostaje stabilny)
 // =========================
 function isBadForest(el, pts) {
 
   if (!el.tags) return true;
   if (el.type === "node") return true;
 
-  // 🔥 PRIORYTET: PARKI / REZERWATY ZAWSZE PRZEPUŚĆ
   const isProtected =
     el.tags.boundary === "protected_area" ||
     el.tags.boundary === "national_park" ||
@@ -37,10 +36,8 @@ function isBadForest(el, pts) {
 
   if (isProtected) return false;
 
-  // 🔥 LEPSZE WYKRYWANIE PO NAZWIE (NIE ZABIJA PARKÓW)
   if (el.tags.name) {
     const n = el.tags.name.toLowerCase();
-
     if (
       (n.includes("park") && n.includes("krajobraz")) ||
       n.includes("park narodowy") ||
@@ -50,7 +47,6 @@ function isBadForest(el, pts) {
     }
   }
 
-  // ❌ miejskie tereny zielone
   const urbanGreen = [
     "park",
     "garden",
@@ -62,7 +58,6 @@ function isBadForest(el, pts) {
 
   if (urbanGreen.includes(el.tags.leisure)) return true;
 
-  // 🔥 FIX: NIE WYCIERAJ PARKÓW PRZEZ LICZBĘ PUNKTÓW
   if (pts.length < 3 && !isProtected) return true;
 
   if (el.tags.place) return true;
@@ -71,7 +66,7 @@ function isBadForest(el, pts) {
 }
 
 // =========================
-// 🌲 LOAD FORESTS (POPRAWIONE PARKI)
+// 🌲 LOAD FORESTS (FIX RELATIONS)
 // =========================
 async function loadForests(lat, lng) {
 
@@ -93,7 +88,6 @@ async function loadForests(lat, lng) {
     way["natural"="wood"](around:18000,${lat},${lng});
 
     relation["type"="multipolygon"](around:18000,${lat},${lng});
-
     relation["boundary"="protected_area"](around:18000,${lat},${lng});
     relation["boundary"="national_park"](around:18000,${lat},${lng});
     relation["leisure"="nature_reserve"](around:18000,${lat},${lng});
@@ -114,7 +108,6 @@ async function loadForests(lat, lng) {
   try {
 
     const res = await fetch(url);
-
     if (res.status === 429) {
       setTimeout(() => loadForests(lat, lng), 10000);
       return;
@@ -128,18 +121,53 @@ async function loadForests(lat, lng) {
     forests = [];
     window.forestLayer.clearLayers();
 
-    const seen = new Set();
+    // =========================
+    // 🔥 KLUCZ: GRUPOWANIE RELACJI
+    // =========================
+    const groups = new Map();
 
     data.elements.forEach(el => {
 
       if (!el.geometry) return;
 
-      let pts = el.geometry.map(p => [p.lat, p.lon]);
-      if (!pts.length) return;
+      const id = el.id || el.relation || el.osm_id || "x";
 
-      const id = el.id || el.osm_id;
-      if (seen.has(id)) return;
-      seen.add(id);
+      if (!groups.has(id)) {
+        groups.set(id, {
+          el,
+          pts: []
+        });
+      }
+
+      const g = groups.get(id);
+
+      const pts = el.geometry.map(p => [p.lat, p.lon]);
+      g.pts.push(...pts);
+    });
+
+    // =========================
+    // 🔥 RENDER PO GRUPACH
+    // =========================
+    groups.forEach(group => {
+
+      let pts = group.pts;
+      const el = group.el;
+
+      if (!pts || pts.length < 3) return;
+
+      // usuwamy duplikaty punktów
+      const clean = [];
+      let last = null;
+
+      for (const p of pts) {
+        const key = p[0].toFixed(5) + "_" + p[1].toFixed(5);
+        if (key !== last) {
+          clean.push(p);
+          last = key;
+        }
+      }
+
+      pts = clean;
 
       if (isBadForest(el, pts)) return;
 
@@ -149,8 +177,6 @@ async function loadForests(lat, lng) {
         fillOpacity: 0.25,
         weight: 2
       });
-
-      poly._forestId = id;
 
       poly.addTo(window.forestLayer);
       forests.push(poly);
