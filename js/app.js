@@ -1,20 +1,23 @@
 let followGPS = true;
 
-// 🌍 tylko UI state (NIE GPS)
+// =========================
+// 🌍 APP CORE (UI ONLY)
+// =========================
+
 window.onload = function () {
 
   // =========================
   // 🗺 INIT MAP
   // =========================
   if (typeof initMap === "function") {
-    window.map = initMap();
+    window.GAME.map = initMap();
   }
 
   // =========================
-  // 🛰 START GPS MODULE (JEŚLI ISTNIEJE)
+  // 🛰 INIT GPS MODULE (JEŚLI ISTNIEJE)
   // =========================
-  if (typeof initGPS === "function" && window.map) {
-    initGPS(window.map);
+  if (typeof initGPS === "function" && window.GAME.map) {
+    initGPS(window.GAME.map);
   }
 
   // =========================
@@ -39,7 +42,7 @@ window.onload = function () {
     window.showScreen?.("map");
 
     setTimeout(() => {
-      window.map?.invalidateSize(true);
+      window.GAME.map?.invalidateSize(true);
     }, 300);
   });
 
@@ -84,8 +87,15 @@ window.onload = function () {
   // =========================
 
   document.getElementById("centerMapBtn")?.addEventListener("click", () => {
-    if (window.userLat && window.userLng && window.map) {
-      window.map.setView([window.userLat, window.userLng], 16);
+    if (
+      window.GAME.userLat &&
+      window.GAME.userLng &&
+      window.GAME.map
+    ) {
+      window.GAME.map.setView(
+        [window.GAME.userLat, window.GAME.userLng],
+        16
+      );
     }
   });
 
@@ -93,7 +103,7 @@ window.onload = function () {
   // 🧭 STOP FOLLOW (MAP DRAG)
   // =========================
 
-  window.map?.on("dragstart", () => {
+  window.GAME.map?.on("dragstart", () => {
     followGPS = false;
   });
 };
