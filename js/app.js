@@ -3,6 +3,12 @@ let lastForestLng = null;
 let followGPS = true;
 let firstGPS = true;
 
+let userMarker = null;
+let userLat = null;
+let userLng = null;
+
+let lastMoveUpdate = 0;
+
 window.onload = function () {
 
   // =========================
@@ -22,7 +28,6 @@ window.onload = function () {
     const actionBar = document.getElementById("actionBar");
     const forestInfo = document.getElementById("forestInfoPanel");
 
-    // ukryj wszystko
     if (mapEl) mapEl.style.display = "none";
     if (grzyd) grzyd.style.display = "none";
     if (trails) trails.style.display = "none";
@@ -36,9 +41,6 @@ window.onload = function () {
 
     document.body.classList.remove("screen-map");
 
-    // =========================
-    // MAPA
-    // =========================
     if (screen === "map") {
       if (mapEl) mapEl.style.display = "block";
       if (weather) weather.style.display = "block";
@@ -47,16 +49,10 @@ window.onload = function () {
       document.body.classList.add("screen-map");
     }
 
-    // =========================
-    // GRZYBDEX
-    // =========================
     if (screen === "grzybdex") {
       if (grzyd) grzyd.style.display = "block";
     }
 
-    // =========================
-    // TRASY
-    // =========================
     if (screen === "trailsPanel") {
       if (trails) trails.style.display = "block";
 
@@ -79,32 +75,19 @@ window.onload = function () {
       });
     }
 
-    // =========================
-    // SURVIVAL
-    // =========================
     if (screen === "survivalPanel") {
       if (surv) surv.style.display = "block";
       openSurvival?.();
     }
 
-    // =========================
-    // GUIDE
-    // =========================
     if (screen === "guidePanel") {
       if (guide) guide.style.display = "block";
       loadGuide?.();
     }
 
-    // =========================
-    // 👤 PROFILE (FIX)
-    // =========================
     if (screen === "profilePanel") {
       if (profile) profile.style.display = "block";
-
-      // 🔥 KLUCZOWE FIX: zawsze ładuj dane
-      if (typeof loadProfile === "function") {
-        loadProfile();
-      }
+      loadProfile?.();
     }
   }
 
@@ -155,10 +138,6 @@ window.onload = function () {
     showScreen("guidePanel");
   };
 
-  // =========================
-  // 👤 PROFILE BUTTON FIX
-  // =========================
-
   const profileBtn = document.getElementById("sideProfile");
   if (profileBtn) {
     profileBtn.onclick = () => {
@@ -181,7 +160,14 @@ window.onload = function () {
       loadWeather?.(userLat, userLng);
       trackMovementEXP?.(userLat, userLng, pos.coords.speed);
 
-      document.getElementById("forestStatus").innerText = "📍 GPS OK";
+      const status = document.getElementById("forestStatus");
+      if (status) status.innerText = "📍 GPS OK";
+
+      // =========================
+      // MARKER
+      // =========================
+
+      if (!map) return;
 
       if (!userMarker) {
         userMarker = L.marker([userLat, userLng]).addTo(map);
@@ -192,11 +178,25 @@ window.onload = function () {
         }
       } else {
         userMarker.setLatLng([userLat, userLng]);
+      }
+
+      // =========================
+      // MAP FOLLOW (FIXED)
+      // =========================
+
+      const now = Date.now();
+
+      if (now - lastMoveUpdate > 1000) {
+        lastMoveUpdate = now;
 
         if (followGPS && document.body.classList.contains("screen-map")) {
-          map.setView([userLat, userLng], 16);
+          map.panTo([userLat, userLng], { animate: true });
         }
       }
+
+      // =========================
+      // FORESTS LOAD (OPTIMIZED)
+      // =========================
 
       if (!lastForestLat || !lastForestLng) {
         lastForestLat = userLat;
@@ -215,7 +215,8 @@ window.onload = function () {
 
     },
     () => {
-      document.getElementById("forestStatus").innerText = "❌ GPS błąd";
+      const status = document.getElementById("forestStatus");
+      if (status) status.innerText = "❌ GPS błąd";
     },
     {
       enableHighAccuracy: true,
@@ -225,18 +226,25 @@ window.onload = function () {
   );
 
   // =========================
-  // CENTER MAP
+  // CENTER BUTTON (FIX)
   // =========================
 
   const centerMapBtn = document.getElementById("centerMapBtn");
 
   if (centerMapBtn) {
     centerMapBtn.onclick = () => {
-      if (userLat && userLng) {
+      if (userLat && userLng && map) {
+        followGPS = true;
         map.setView([userLat, userLng], 16);
       }
     };
   }
 
-  map.on("dragstart", () => followGPS = false);
+  // =========================
+  // STOP FOLLOW ON DRAG
+  // =========================
+
+  if (map) {
+    map.on("dragstart", () => followGPS = false);
+  }
 };
