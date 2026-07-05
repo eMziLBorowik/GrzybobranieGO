@@ -20,14 +20,14 @@ function initForestLayer() {
 }
 
 // =========================
-// 🚫 FILTER (FIXED + PROTECT_CLASS FIX)
+// 🚫 FILTER (FIX: protect_class FIXED)
 // =========================
 function isBadForest(el) {
   if (!el.tags) return true;
 
   const t = el.tags;
 
-  // ❌ WODA / RZEKI
+  // ❌ WODA
   if (
     t.waterway ||
     t.natural === "water" ||
@@ -36,31 +36,30 @@ function isBadForest(el) {
     t.landuse === "reservoir"
   ) return true;
 
-  // ❌ MAŁE MIEJSKIE ZIELONE (tylko gdy NIE są ochronne)
-  if (
-    (t.leisure === "park" ||
-     t.leisure === "garden" ||
-     t.leisure === "playground" ||
-     t.leisure === "recreation_ground") &&
-    !t.protect_class
-  ) {
-    return true;
-  }
-
-  // 🌲 LASY (ZOSTAJĄ)
+  // 🌲 LASY = ZAWSZE OK
   if (
     t.landuse === "forest" ||
     t.natural === "wood" ||
     t.natural === "forest"
   ) return false;
 
-  // 🏞 PARKI / OBSZARY CHRONIONE (WAŻNE FIX)
+  // 🏞 OBSZARY CHRONIONE (KLUCZ FIX)
+  // protect_class = np. 5 (parki krajobrazowe)
+  if (t.protect_class) return false;
+
   if (
     t.boundary === "protected_area" ||
     t.boundary === "national_park" ||
-    t.leisure === "nature_reserve" ||
-    t.protect_class
+    t.leisure === "nature_reserve"
   ) return false;
+
+  // ❌ MIEJSKIE ZIELONE (tylko jeśli NIE chronione)
+  if (
+    t.leisure === "park" ||
+    t.leisure === "garden" ||
+    t.leisure === "playground" ||
+    t.leisure === "recreation_ground"
+  ) return true;
 
   return true;
 }
@@ -91,8 +90,8 @@ async function loadForests(lat, lng) {
     relation["boundary"="protected_area"](around:18000,${lat},${lng});
     relation["boundary"="protected_area"]["protect_class"="5"](around:18000,${lat},${lng});
 
-    relation["leisure"="nature_reserve"](around:18000,${lat},${lng});
     relation["boundary"="national_park"](around:18000,${lat},${lng});
+    relation["leisure"="nature_reserve"](around:18000,${lat},${lng});
   );
 
   out geom;
