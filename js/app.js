@@ -24,7 +24,6 @@ window.onload = function () {
     sideMenu.classList.remove("active");
     document.getElementById("centerMapBtn").style.display = "flex";
     window.showScreen("map");
-    setTimeout(() => map?.invalidateSize(), 300);
   });
 
   document.getElementById("sideDex")?.addEventListener("click", () => {
@@ -74,23 +73,16 @@ window.onload = function () {
       const status = document.getElementById("forestStatus");
       if (status) status.innerText = "📍 GPS OK";
 
-      // marker
-      if (!userMarker) {
-        userMarker = L.marker([userLat, userLng]).addTo(map);
+      // =========================
+      // 🗺 MAPA (NOWY SYSTEM)
+      // =========================
 
-        if (firstGPS) {
-          map.setView([userLat, userLng], 16);
-          firstGPS = false;
-        }
-      } else {
-        userMarker.setLatLng([userLat, userLng]);
+      updateUserMarker?.(userLat, userLng, followGPS);
 
-        if (followGPS && document.body.classList.contains("screen-map")) {
-          map.setView([userLat, userLng], 16);
-        }
-      }
-
+      // =========================
       // 🌲 LASY
+      // =========================
+
       if (!lastForestLat || !lastForestLng) {
         lastForestLat = userLat;
         lastForestLng = userLng;
@@ -127,11 +119,8 @@ window.onload = function () {
 
   if (centerMapBtn) {
     centerMapBtn.onclick = () => {
-      if (userLat && userLng) {
-        map.setView([userLat, userLng], 16);
-      }
+      centerOnUser?.(userLat, userLng);
     };
   }
 
-  map?.on("dragstart", () => followGPS = false);
 };
