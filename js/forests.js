@@ -24,7 +24,7 @@ function initForestLayer() {
 }
 
 // =========================
-// 🌲 GOSTYNIN PARK CREATE (FIXED INIT SAFE)
+// 🌲 GOSTYNIN PARK
 // =========================
 function createGostyninPark() {
 
@@ -65,7 +65,7 @@ function getDistance(a, b) {
 }
 
 // =========================
-// 🧠 FILTER (UNCHANGED LOGIC)
+// 🧠 FILTER
 // =========================
 function isBadForest(el) {
   if (!el.tags) return true;
@@ -104,7 +104,7 @@ function isBadForest(el) {
 }
 
 // =========================
-// 🌲 LOAD FORESTS
+// 🌲 LOAD FORESTS (FIXED STABLE VERSION)
 // =========================
 async function loadForests(lat, lng) {
 
@@ -116,21 +116,22 @@ async function loadForests(lat, lng) {
 
   initForestLayer();
 
+  // 🔥 ZMNIEJSZONY ZASIĘG (STABILNOŚĆ)
   const q = `
-  [out:json];
+  [out:json][timeout:25];
 
   (
-    way["landuse"="forest"](around:40000,${lat},${lng});
-    relation["landuse"="forest"](around:40000,${lat},${lng});
+    way["landuse"="forest"](around:18000,${lat},${lng});
+    relation["landuse"="forest"](around:18000,${lat},${lng});
 
-    way["natural"="wood"](around:40000,${lat},${lng});
-    relation["natural"="wood"](around:40000,${lat},${lng});
+    way["natural"="wood"](around:18000,${lat},${lng});
+    relation["natural"="wood"](around:18000,${lat},${lng});
 
-    relation["boundary"="protected_area"](around:40000,${lat},${lng});
-    relation["boundary"="protected_area"]["protect_class"="5"](around:40000,${lat},${lng});
+    relation["boundary"="protected_area"](around:18000,${lat},${lng});
+    relation["boundary"="protected_area"]["protect_class"="5"](around:18000,${lat},${lng});
 
-    relation["boundary"="national_park"](around:40000,${lat},${lng});
-    relation["leisure"="nature_reserve"](around:40000,${lat},${lng});
+    relation["boundary"="national_park"](around:18000,${lat},${lng});
+    relation["leisure"="nature_reserve"](around:18000,${lat},${lng});
   );
 
   out geom;
@@ -143,7 +144,14 @@ async function loadForests(lat, lng) {
   try {
 
     const res = await fetch(url);
-    const data = await res.json();
+    const text = await res.text();
+
+    // 🔥 FIX: Overpass error detection (XML / HTML / overload)
+    if (!text || !text.trim().startsWith("{")) {
+      throw new Error("Overpass returned invalid response (XML/HTML)");
+    }
+
+    const data = JSON.parse(text);
 
     forests = [];
     window.forestLayer.clearLayers();
@@ -184,11 +192,14 @@ async function loadForests(lat, lng) {
 
   } catch (e) {
     console.log("forest error:", e);
+
+    const status = document.getElementById("forestStatus");
+    if (status) status.innerText = "⚠️ Błąd Overpass";
   }
 }
 
 // =========================
-// 🟢 GOSTYNIN VISIBILITY (FIXED SAFE INIT)
+// 🟢 GOSTYNIN VISIBILITY (15km)
 // =========================
 function updateGostyninVisibility(lat, lng) {
 
@@ -219,7 +230,7 @@ function updateGostyninVisibility(lat, lng) {
 }
 
 // =========================
-// INIT SYSTEM (🔥 KLUCZ FIX)
+// INIT SAFE
 // =========================
 function initSpecialParks() {
 
@@ -229,11 +240,6 @@ function initSpecialParks() {
   }
 
   createGostyninPark();
-
-  // WAŻNE: sprawdź od razu jeśli GPS już istnieje
-  if (window.lastLat && window.lastLng) {
-    updateGostyninVisibility(window.lastLat, window.lastLng);
-  }
 }
 
 // =========================
