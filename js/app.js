@@ -3,9 +3,7 @@ let lastForestLng = null;
 let followGPS = true;
 let firstGPS = true;
 
-let userMarker = null;
-let userLat = null;
-let userLng = null;
+let lastMapUpdate = 0;
 
 window.onload = function () {
 
@@ -104,57 +102,42 @@ window.onload = function () {
   // NAV
   // =========================
 
-  const sideMap = document.getElementById("sideMap");
-  if (sideMap) {
-    sideMap.onclick = () => {
-      sideMenu?.classList.remove("active");
-      document.getElementById("centerMapBtn").style.display = "flex";
-      showScreen("map");
-      setTimeout(() => map?.invalidateSize(), 300);
-    };
-  }
+  document.getElementById("sideMap").onclick = () => {
+    sideMenu.classList.remove("active");
+    document.getElementById("centerMapBtn").style.display = "flex";
+    showScreen("map");
+    setTimeout(() => map?.invalidateSize(), 300);
+  };
 
-  const sideDex = document.getElementById("sideDex");
-  if (sideDex) {
-    sideDex.onclick = () => {
-      sideMenu?.classList.remove("active");
-      document.getElementById("centerMapBtn").style.display = "none";
-      showScreen("grzybdex");
-      updateStats?.();
-    };
-  }
+  document.getElementById("sideDex").onclick = () => {
+    sideMenu.classList.remove("active");
+    document.getElementById("centerMapBtn").style.display = "none";
+    showScreen("grzybdex");
+    updateStats?.();
+  };
 
-  const sideTrails = document.getElementById("sideTrails");
-  if (sideTrails) {
-    sideTrails.onclick = () => {
-      sideMenu?.classList.remove("active");
-      document.getElementById("centerMapBtn").style.display = "none";
-      showScreen("trailsPanel");
-    };
-  }
+  document.getElementById("sideTrails").onclick = () => {
+    sideMenu.classList.remove("active");
+    document.getElementById("centerMapBtn").style.display = "none";
+    showScreen("trailsPanel");
+  };
 
-  const sideSurvival = document.getElementById("sideSurvival");
-  if (sideSurvival) {
-    sideSurvival.onclick = () => {
-      sideMenu?.classList.remove("active");
-      document.getElementById("centerMapBtn").style.display = "none";
-      showScreen("survivalPanel");
-    };
-  }
+  document.getElementById("sideSurvival").onclick = () => {
+    sideMenu.classList.remove("active");
+    document.getElementById("centerMapBtn").style.display = "none";
+    showScreen("survivalPanel");
+  };
 
-  const sideGuide = document.getElementById("sideGuide");
-  if (sideGuide) {
-    sideGuide.onclick = () => {
-      sideMenu?.classList.remove("active");
-      document.getElementById("centerMapBtn").style.display = "none";
-      showScreen("guidePanel");
-    };
-  }
+  document.getElementById("sideGuide").onclick = () => {
+    sideMenu.classList.remove("active");
+    document.getElementById("centerMapBtn").style.display = "none";
+    showScreen("guidePanel");
+  };
 
   const profileBtn = document.getElementById("sideProfile");
   if (profileBtn) {
     profileBtn.onclick = () => {
-      sideMenu?.classList.remove("active");
+      sideMenu.classList.remove("active");
       document.getElementById("centerMapBtn").style.display = "none";
       showScreen("profilePanel");
     };
@@ -179,7 +162,7 @@ window.onload = function () {
       if (!map) return;
 
       // =========================
-      // MARKER FIX
+      // MARKER
       // =========================
 
       if (!userMarker) {
@@ -194,15 +177,23 @@ window.onload = function () {
       }
 
       // =========================
-      // FOLLOW GPS FIX
+      // 🔥 GPS MAP FOLLOW FIX
       // =========================
 
-      if (followGPS && document.body.classList.contains("screen-map")) {
+      const now = Date.now();
+
+      if (
+        followGPS &&
+        document.body.classList.contains("screen-map") &&
+        now - lastMapUpdate > 1000
+      ) {
+        lastMapUpdate = now;
+
         map.setView([userLat, userLng], map.getZoom());
       }
 
       // =========================
-      // FOREST LOAD OPTIMIZED
+      // FOREST LOAD
       // =========================
 
       if (!lastForestLat || !lastForestLng) {
@@ -233,7 +224,7 @@ window.onload = function () {
   );
 
   // =========================
-  // CENTER BUTTON FIX
+  // CENTER BUTTON
   // =========================
 
   const centerMapBtn = document.getElementById("centerMapBtn");
@@ -247,14 +238,6 @@ window.onload = function () {
     };
   }
 
-  // =========================
-  // STOP FOLLOW ON DRAG
-  // =========================
-
-  if (map) {
-    map.on("dragstart", () => {
-      followGPS = false;
-    });
-  }
+  map.on("dragstart", () => followGPS = false);
 
 };
