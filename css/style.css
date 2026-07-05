@@ -1,11 +1,9 @@
-/* =========================
-   BASE
-   ========================= */
-
 *{
-  box-sizing:border-box;
-  font-family:Arial, sans-serif;
+box-sizing:border-box;
+font-family:Arial, sans-serif;
 }
+
+
 
 html,body{
   margin:0;
@@ -14,16 +12,19 @@ html,body{
   overflow-y:auto;
 }
 
-/* =========================
-   TOP PANEL
-   ========================= */
+
+
+
+/* GÓRNY PANEL */
 
 .panel{
   position:absolute;
   top:0;
   left:0;
+
   width:100%;
   height:70px;
+
   z-index:9999;
 
   display:flex;
@@ -31,232 +32,1503 @@ html,body{
   align-items:center;
 
   padding:10px 15px;
+
   color:white;
 
-  background:url("../images/panelgora.webp") center/cover no-repeat;
+  background: url("../images/panelgora.webp") center top / cover no-repeat;
+
   overflow:hidden;
 }
 
+/* usuń stare IMG tła */
 .panelImage{
   display:none !important;
 }
 
+/* UI nad tłem */
 .panel > *{
   position:relative;
   z-index:2;
 }
 
-#forestStatus{
-  background:#162013;
-  padding:8px 12px;
-  border-radius:12px;
-  font-size:12px;
+/* bezpieczeństwo */
+.panel::before,
+.panel::after{
+  display:none !important;
+  content:none !important;
 }
 
-/* =========================
-   MENU BUTTON
-   ========================= */
+/* 🔥 FIX: przycisk i status nie zmniejszają wysokości */
+#menuBtn{
+  flex-shrink:0;
+}
+
+#forestStatus{
+  flex-shrink:0;
+}
+
+
+
+.title{
+
+font-size:20px;
+
+font-weight:bold;
+
+}
+
+
+
+.sub{
+
+font-size:12px;
+
+color:#ddd;
+
+}
+
+
+
+
+
+#forestStatus{
+
+background:#162013;
+
+padding:8px 12px;
+
+border-radius:12px;
+
+font-size:12px;
+
+}
+
+
+
+
+
+#map{
+  width: calc(100% - 20px);
+  height: 60vh;
+  margin: 100px auto 10px auto;
+  border-radius: 18px;
+  overflow: hidden;
+  z-index: 1;
+}
+
+
+
+
+
+/* PRZYCISK */
+
+
+#actionBar{
+
+
+position:absolute;
+
+
+bottom:80px;
+
+
+left:10px;
+
+
+right:10px;
+
+
+z-index:2000;
+
+
+display:flex;
+
+
+justify-content:center;
+
+
+}
+
+
+
+
+
+button{
+
+
+background:#6b8f3d;
+
+
+border:none;
+
+
+color:white;
+
+
+padding:12px 18px;
+
+
+border-radius:15px;
+
+
+font-size:15px;
+
+
+}
+
+
+
+
+
+button:active{
+
+
+transform:scale(.95);
+
+
+}
+
+
+
+
+
+
+/* INFO LASU */
+
+
+#forestInfoPanel{
+
+
+display:none;
+
+
+position:absolute;
+
+
+top:100px;
+
+
+left:10px;
+
+
+right:10px;
+
+
+background:#162013;
+
+
+color:white;
+
+
+padding:15px;
+
+
+border-radius:15px;
+
+
+z-index:3000;
+
+
+box-shadow:0 5px 20px #000;
+
+
+}
+
+
+
+
+
+#forestInfoPanel div{
+
+
+margin:8px 0;
+
+
+}
+
+
+
+
+
+
+/* GRZYBDEX */
+
+
+#grzybdex{
+
+
+display:none;
+
+
+position:absolute;
+
+
+top:90px;
+
+
+bottom:70px;
+
+
+left:10px;
+
+
+right:10px;
+
+
+background:#1b2417;
+
+
+color:white;
+
+
+padding:15px;
+
+
+overflow-y:auto;
+
+
+z-index:2500;
+
+
+}
+
+
+
+
+
+#grzybdex h2{
+
+
+margin-top:5px;
+
+
+}
+
+
+
+
+
+.card{
+
+
+background:#162013;
+
+
+padding:12px;
+
+
+border-radius:15px;
+
+
+margin-bottom:12px;
+
+
+border:1px solid #314b25;
+
+
+}
+
+
+
+
+
+/* APARAT */
+
+
+#cameraInput{
+
+
+width:100%;
+
+
+background:#203719;
+
+
+padding:10px;
+
+
+border-radius:10px;
+
+
+color:white;
+
+
+}
+
+
+
+
+
+#aiResult{
+
+
+margin-top:10px;
+
+
+background:#203719;
+
+
+padding:12px;
+
+
+border-radius:12px;
+
+
+}
+
+
+
+
+
+/* ATLAS */
+
+
+#atlas{
+
+
+display:grid;
+
+
+grid-template-columns:repeat(2,1fr);
+
+
+gap:10px;
+
+
+}
+
+
+
+
+
+#atlas .card{
+
+
+min-height:110px;
+
+
+display:flex;
+
+
+flex-direction:column;
+
+
+justify-content:center;
+
+
+}
+
+
+
+
+
+#atlas h3{
+
+
+font-size:15px;
+
+
+margin:5px 0;
+
+
+}
+
+
+
+
+
+/* MENU DOLNE */
+
+
+.bottomMenu{
+
+
+position:absolute;
+
+
+bottom:0;
+
+
+left:0;
+
+
+width:100%;
+
+
+height:70px;
+
+
+background:#172014;
+
+
+border-top:3px solid #a57a32;
+
+
+display:flex;
+
+
+justify-content:space-around;
+
+
+align-items:center;
+
+
+color:white;
+
+
+z-index:4000;
+
+
+}
+
+
+
+
+
+.bottomMenu div{
+
+
+font-size:14px;
+
+
+padding:10px;
+
+
+cursor:pointer;
+
+
+}
+
+
+
+
+
+.bottomMenu div:active{
+
+
+background:#314b25;
+
+
+border-radius:12px;
+
+
+}
+
+
+
+
+
+
+/* TELEFON */
+
+
+@media(max-width:600px){
+
+
+.title{
+
+font-size:18px;
+
+}
+
+
+
+#atlas{
+
+
+grid-template-columns:repeat(2,1fr);
+
+
+}
+
+
+
+button{
+
+
+font-size:14px;
+
+
+}
+
+
+}
+
+
+
+
+
+
+/* ========================= */
+/* 🔐 LOGIN / AUTH PANEL */
+/* ========================= */
+
+.authPanel{
+position: fixed;
+inset: 0;
+background: rgba(0,0,0,0.88);
+display: flex;
+align-items: center;
+justify-content: center;
+z-index: 99999;
+}
+
+.authBox{
+width: 280px;
+background: #162013;
+border: 1px solid #314b25;
+border-radius: 15px;
+padding: 20px;
+text-align: center;
+color: white;
+box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+}
+
+.authBox h2{
+margin: 5px 0 10px;
+}
+
+.authBox p{
+font-size: 12px;
+color: #ccc;
+}
+
+.authBox input{
+width: 100%;
+margin: 6px 0;
+padding: 10px;
+border-radius: 10px;
+border: none;
+outline: none;
+background: #203719;
+color: white;
+}
+
+.authBox button{
+width: 100%;
+margin-top: 8px;
+}
+
+
+/* ================= */
+/* 🥾 TRASY */
+/* ================= */
+
+
+#trailsPanel{
+
+display:none;
+
+position:absolute;
+
+top:90px;
+
+bottom:70px;
+
+left:10px;
+
+right:10px;
+
+background:#1b2417;
+
+color:white;
+
+padding:15px;
+
+overflow-y:auto;
+
+z-index:2500;
+
+}
+
+
+
+
+#routeMapBox{
+
+background:#162013;
+
+padding:12px;
+
+border-radius:18px;
+
+}
+
+
+
+#routeMiniMap{
+
+height:320px;
+width:100%;
+
+border-radius:15px;
+
+overflow:hidden;
+
+}
+
+
+
+
+#routeButtons{
+
+display:flex;
+
+gap:10px;
+
+margin-top:12px;
+
+justify-content:center;
+
+}
+
+
+
+#routeButtons button{
+
+flex:1;
+
+}
+
+
+
+.routeStats{
+
+margin-top:15px;
+
+font-size:16px;
+
+}
+
+#routeMiniMap{
+
+height:280px;
+width:100%;
+
+border-radius:15px;
+
+overflow:hidden;
+
+}
+
+
+.gpsMarker{
+
+font-size:35px;
+
+transform:translate(-5px,-5px);
+
+}
+
+
+
+
+#centerRouteBtn{
+
+position: absolute;
+
+right: 30px;
+bottom: 200px;
+
+z-index: 5000;
+
+width: 80px;
+height: 25px;
+
+border-radius: 12px;
+
+background: #2e7d32;
+
+color: white;
+
+border: none;
+
+box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+
+display: flex;
+
+align-items: center;
+justify-content: center;
+
+font-size: 20px;
+
+padding: 0;
+
+transition: 0.2s ease;
+
+}
+
+#centerRouteBtn:active{
+transform: scale(0.92);
+}
+
+#centerRouteBtn:hover{
+transform: scale(1.05);
+}
+
+#routePreview{
+
+position:fixed;
+
+top:60px;
+
+left:10px;
+
+right:10px;
+
+bottom:80px;
+
+background:#162013;
+
+color:white;
+
+z-index:99999;
+
+padding:15px;
+
+border-radius:20px;
+
+}
+
+
+
+#previewMap{
+
+height:70%;
+
+margin-top:15px;
+
+border-radius:15px;
+
+}
+
+
+
+#routePreview button{
+
+width:100%;
+
+margin-top:10px;
+
+}
+
+.routeBox{
+
+background:#162013;
+
+padding:12px;
+
+border-radius:18px;
+
+}
+
+
+
+#routeMiniMap{
+
+height:280px;
+
+border-radius:15px;
+
+overflow:hidden;
+
+}
+
+
+
+.routeStats{
+
+display:flex;
+
+justify-content:space-around;
+
+padding:15px 0;
+
+font-size:14px;
+
+}
+
+
+
+.routeButtons{
+
+display:flex;
+
+gap:8px;
+
+flex-wrap:wrap;
+
+}
+
+
+
+.routeButtons button{
+
+flex:1;
+
+}
+
+
+
+.gpsMarker{
+
+font-size:40px;
+
+}
+
+/* 🎯 PRZYCISK WYŚRODKOWANIA MAPY */
+
+#centerMapBtn{
+
+position:absolute;
+
+right:9px;
+
+bottom:115px;
+
+z-index:3000;
+
+width:170px;
+
+height:30px;
+
+border-radius:14px;
+
+background:#6b8f3d;
+
+color:white;
+
+font-size:14px;
+
+font-weight:bold;
+
+border:2px solid white;
+
+box-shadow:0 4px 12px rgba(0,0,0,.5);
+
+display:flex;
+
+align-items:center;
+
+justify-content:center;
+
+padding:0;
+
+}
+
+
+#centerMapBtn:active{
+
+transform:scale(.95);
+
+}
+/* ☰ MENU */
 
 #menuBtn{
   width:40px;
   height:40px;
+
   font-size:22px;
+
+  padding:0;
   border-radius:12px;
+
   background:#162013;
-  color:white;
 
   display:flex;
   align-items:center;
   justify-content:center;
 
-  cursor:pointer;
+  flex-shrink:0;
+
+  margin-left:-5px; /* 🔥 przesunięcie w lewo */
 }
 
-/* =========================
-   SIDE MENU (FIXED - WORKING)
-   ========================= */
+/* ================= */
+/* MENU BOCZNE */
+/* ================= */
+
+
+/* MENU Z LEWEJ */
 
 #sideMenu{
-  position:fixed;
-  top:0;
-  left:0;
-  width:280px;
-  height:100vh;
 
-  background:#162013;
-  z-index:10000;
+position:absolute;
 
-  padding:20px;
-  box-shadow:5px 0 20px rgba(0,0,0,.5);
-  color:white;
+top:0;
 
-  transform:translateX(-100%);
-  transition:transform .25s ease;
+left:-280px;
+
+width:280px;
+
+height:100%;
+
+background:#162013;
+
+z-index:10000;
+
+padding:20px;
+
+transition:.3s ease;
+
+box-shadow:5px 0 20px rgba(0,0,0,.5);
+
+color:white;
+
 }
+
 
 #sideMenu.active{
-  transform:translateX(0);
+
+left:0;
+
 }
+
+
 
 #closeMenu{
-  font-size:25px;
-  text-align:right;
-  margin-bottom:20px;
-  cursor:pointer;
+
+font-size:25px;
+
+text-align:right;
+
+margin-bottom:20px;
+
+cursor:pointer;
+
 }
+
+
 
 #sideMenu div:not(#closeMenu){
-  background:#203719;
-  padding:15px;
-  border-radius:15px;
-  margin-bottom:12px;
-  cursor:pointer;
+
+background:#203719;
+
+padding:15px;
+
+border-radius:15px;
+
+margin-bottom:12px;
+
+font-size:16px;
+
+cursor:pointer;
+
 }
+
+
 
 #sideMenu div:not(#closeMenu):active{
-  transform:scale(.97);
+
+transform:scale(.95);
+
 }
 
-/* =========================
-   MAP
-   ========================= */
+/* 🌤️ POGODA */
 
-#map{
-  width:calc(100% - 20px);
-  height:60vh;
-  margin:100px auto 10px auto;
-  border-radius:18px;
-  overflow:hidden;
+
+#weatherCard{
+
+width:90%;
+
+margin:20px auto;
+
+background:linear-gradient(
+135deg,
+#24351d,
+#314d25
+);
+
+border-radius:20px;
+
+padding:18px;
+
+color:white;
+
+box-shadow:
+0 5px 15px rgba(0,0,0,.4);
+
 }
 
-/* =========================
-   BUTTONS
-   ========================= */
 
-button{
-  background:#6b8f3d;
-  border:none;
-  color:white;
-  padding:12px 18px;
-  border-radius:15px;
-  font-size:15px;
-  cursor:pointer;
+
+.weatherTitle{
+
+font-size:20px;
+
+font-weight:bold;
+
+text-align:center;
+
+margin-bottom:15px;
+
 }
 
-button:active{
-  transform:scale(.95);
+
+
+.weatherGrid{
+
+display:grid;
+
+grid-template-columns:repeat(4,1fr);
+
+gap:12px;
+
 }
 
-/* =========================
-   CENTER MAP BTN
-   ========================= */
 
-#centerMapBtn{
+
+.weatherItem{
+
+background:rgba(255,255,255,.08);
+
+border-radius:15px;
+
+padding:15px;
+
+text-align:center;
+
+font-size:22px;
+
+}
+
+
+
+.weatherItem span{
+
+display:block;
+
+font-size:20px;
+
+font-weight:bold;
+
+}
+
+
+
+.weatherItem small{
+
+display:block;
+
+font-size:12px;
+
+opacity:.8;
+
+}
+
+
+
+@media(max-width:700px){
+
+.weatherGrid{
+
+grid-template-columns:repeat(2,1fr);
+
+}
+
+}
+.hudBottom{
   position:absolute;
-  right:9px;
-  bottom:115px;
-  z-index:3000;
+  bottom:80px;
+  left:0;
+  width:100%;
 
-  width:170px;
-  height:30px;
+  display:none;
 
-  border-radius:14px;
-  background:#6b8f3d;
-  color:white;
-
-  font-size:14px;
-  font-weight:bold;
-
-  border:2px solid white;
-
-  display:flex;
-  align-items:center;
   justify-content:center;
+  align-items:center; /* 🔥 DODAJ TO */
+
+  z-index:5000;
+  pointer-events:none;
 }
 
-/* =========================
-   WEATHER
-   ========================= */
-
+body.screen-map .hudBottom{
+  display:flex;
+}
 #weatherCard{
   width:92%;
   max-width:520px;
-  margin:20px auto;
+  pointer-events:auto;
+  backdrop-filter: blur(10px);
+}
+#survivalPanel{
+  display:none;
 
-  background:linear-gradient(135deg,#24351d,#314d25);
-  border-radius:20px;
-  padding:18px;
+  position:absolute;
+  top:90px;
+  bottom:70px;
+  left:10px;
+  right:10px;
+
+  background:#1b2417;
   color:white;
+
+  padding:15px;
+
+  overflow:hidden;
+
+  z-index:2500;
 }
 
-.weatherGrid{
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:12px;
+#survivalContent{
+  height:100%;
+  overflow-y:auto;
+  padding-right:5px;
+}
+
+#guidePanel{
+
+display:none;
+
+position:absolute;
+
+top:90px;
+
+bottom:70px;
+
+left:10px;
+
+right:10px;
+
+background:#1b2417;
+
+color:white;
+
+padding:15px;
+
+overflow-y:auto;
+
+z-index:2500;
+
+}
+/* =========================
+   👤 PROFIL - FIXED (COMPATIBLE Z profile.js)
+   ========================= */
+
+#profilePanel{
+  width:100%;
+  height:calc(100vh - 90px);
+
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+
+  padding:20px;
+  overflow-y:auto;
+
+  background: radial-gradient(circle at top, #0b1a12, #050a07);
+}
+
+/* kontener */
+#profileContent{
+  width:100%;
+  max-width:900px;
+
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+
+  gap:20px;
+  color:#eaffea;
 }
 
 /* =========================
-   PANELS (DEFAULT HIDDEN)
+   TOP SECTION
    ========================= */
 
+.profileTop{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+
+  gap:15px;
+}
+
+/* =========================
+   AVATAR + RING FIX (KLUCZ)
+   ========================= */
+
+.avatarWrap{
+  position:relative;
+  width:130px;
+  height:130px;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+/* 🔥 RING (z JS: xpRing) */
+.xpRing{
+  position:absolute;
+  top:50%;
+  left:50%;
+
+  transform:translate(-50%, -50%) rotate(-90deg);
+
+  width:160px;
+  height:160px;
+
+  z-index:1;
+  pointer-events:none;
+}
+
+/* tło ringa */
+.xpRing circle:first-child{
+  fill:none;
+  stroke:#1b2a1b;
+  stroke-width:10;
+}
+
+/* progress ring */
+.xpRing circle:last-child{
+  fill:none;
+  stroke:#00ff88;
+  stroke-width:10;
+  stroke-linecap:round;
+}
+
+/* avatar NA RINGU */
+.avatar{
+  width:90px;
+  height:90px;
+
+  border-radius:50%;
+  overflow:hidden;
+
+  border:2px solid #2a3d2a;
+  background:#0f1a12;
+
+  position:relative;
+  z-index:2;
+}
+
+.avatar img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+/* level badge */
+.lvlBadge{
+  position:absolute;
+  bottom:0;
+  right:0;
+
+  background:#00ff88;
+  color:#000;
+
+  font-size:11px;
+  padding:3px 6px;
+
+  border-radius:6px;
+  font-weight:bold;
+
+  z-index:3;
+}
+
+/* =========================
+   INFO
+   ========================= */
+
+.info .name{
+  font-size:18px;
+  font-weight:bold;
+}
+
+.rank{
+  font-size:13px;
+  color:#9fd9b8;
+}
+
+.expText{
+  font-size:13px;
+  margin-top:5px;
+}
+
+/* EXP BAR */
+.expBar{
+  width:200px;
+  height:8px;
+
+  background:#08110b;
+  border-radius:10px;
+
+  margin-top:8px;
+  overflow:hidden;
+}
+
+.expBar div{
+  height:100%;
+  background: linear-gradient(90deg, #00ff88, #00c777);
+}
+
+/* =========================
+   GRID
+   ========================= */
+
+.grid{
+  width:100%;
+
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));
+  gap:12px;
+}
+
+/* stat card */
+.stat{
+  text-align:center;
+  padding:15px;
+
+  background: linear-gradient(135deg, #14261a, #0d1711);
+  border:1px solid rgba(0,255,136,0.15);
+
+  border-radius:14px;
+  color:#eaffea;
+}
+
+/* =========================
+   CARD BASE
+   ========================= */
+
+.card{
+  background: linear-gradient(135deg, #122016, #0a140e);
+  border:1px solid rgba(0,255,136,0.12);
+
+  border-radius:14px;
+  padding:15px;
+
+  color:#eaffea;
+
+  transition:0.2s ease;
+}
+
+.card:hover{
+  transform:translateY(-2px);
+  box-shadow:0 0 15px rgba(0,255,136,0.15);
+}
+
+/* =========================
+   PROGRESS BAR (FOREST)
+   ========================= */
+
+.bar{
+  height:10px;
+  background:#08110b;
+
+  border:1px solid rgba(0,255,136,0.2);
+  border-radius:10px;
+
+  margin-top:10px;
+  overflow:hidden;
+}
+
+.bar div{
+  height:100%;
+  background: linear-gradient(90deg, #00ff88, #00c777);
+  box-shadow: 0 0 10px rgba(0,255,136,0.4);
+}
+
+/* text */
+small{
+  color:#9fd9b8;
+}
+
+.loaderBox{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:12px;
+}
+
+.loadingImg{
+  width:140px;
+  height:140px;
+  object-fit:contain;
+}
+
+
+/* =========================
+   ⛔ START APP STATE (FIX)
+   ========================= */
+
+#authPanel {
+  display: flex;
+}
+
+/* ❌ NIE UKRYWAMY PANELU GÓRNEGO */
+.page,
+#sideMenu,
 #grzybdex,
 #trailsPanel,
 #survivalPanel,
 #guidePanel,
 #profilePanel,
 #actionBar,
-#forestInfoPanel{
-  display:none;
+#forestInfoPanel,
+#centerMapBtn {
+  display: none;
 }
 
 /* =========================
-   ROUTER PAGE FIX
+   ⏳ LOADER FULL SCREEN
    ========================= */
 
-.page{
-  width:100%;
+#loadingScreen {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #1b2417;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999999;
 }
 
 /* =========================
-   LOADING
+   🌲 LOADER CONTENT
    ========================= */
 
-#loadingScreen{
-  position:fixed;
-  inset:0;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  background:#1b2417;
-  z-index:999999;
-}
-
-.loadingImg{
-  position:fixed;
-  width:100vw;
-  height:100vh;
-  object-fit:cover;
-  filter:brightness(0.8);
+.loaderBox {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  z-index: 2;
 }
 
 /* =========================
-   AUTH
+   🖼️ IMAGE FULL SCREEN
    ========================= */
 
-.authPanel{
-  position:fixed;
-  inset:0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  background:rgba(0,0,0,0.88);
-  z-index:99999;
+.loadingImg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  object-fit: cover;   /* full ekran jak gra */
+  z-index: 1;
+  filter: brightness(0.8);
 }
 
-.authBox{
-  width:280px;
-  background:#162013;
-  border-radius:15px;
-  padding:20px;
-  color:white;
+/* =========================
+   ⏳ TEXT LOADING
+   ========================= */
+
+#loadingText {
+  font-size: 20px;
+  color: #cfe8c4;
+  font-family: Arial, sans-serif;
+  z-index: 3;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.6);
+}
+
+.panel{
+  display:flex !important;
 }
