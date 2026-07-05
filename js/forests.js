@@ -7,7 +7,7 @@ let lastForestRequest = 0;
 window.forestLayer = null;
 
 // =========================
-// 🚧 INIT LAYER (SAFE)
+// 🚧 INIT LAYER
 // =========================
 function initForestLayer() {
   if (!map) return false;
@@ -20,60 +20,22 @@ function initForestLayer() {
 }
 
 // =========================
-// 🧠 FIX: BUDOWANIE POLYGONÓW (KLUCZ)
-// =========================
-function buildPolygon(el) {
-
-  // WAY (normalny przypadek)
-  if (el.type === "way" && el.geometry) {
-    return el.geometry.map(p => [p.lat, p.lon]);
-  }
-
-  // RELATION (multipolygon FIX – usuwa skrawki)
-  if (el.type === "relation" && el.members) {
-
-    let outer = [];
-
-    el.members.forEach(m => {
-      if (m.geometry) {
-        const pts = m.geometry.map(p => [p.lat, p.lon]);
-
-        if (pts.length > outer.length) {
-          outer = pts;
-        }
-      }
-    });
-
-    return outer;
-  }
-
-  // fallback
-  if (el.geometry) {
-    return el.geometry.map(p => [p.lat, p.lon]);
-  }
-
-  return [];
-}
-
-// =========================
-// 🚫 FILTR
+// 🚫 FILTR (STABILNY)
 // =========================
 function isBadForest(el, pts) {
 
   if (!el.tags) return true;
   if (el.type === "node") return true;
 
-  // 🔥 NIE USUWAJ PARKÓW
+  // ✔ NIE USUWAJ PARKÓW
   if (
     el.tags.boundary === "protected_area" ||
     el.tags.boundary === "national_park" ||
     el.tags.protect_class ||
     el.tags.protection_title
-  ) {
-    return false;
-  }
+  ) return false;
 
-  // 🔥 lepsze łapanie nazw parków
+  // ✔ lepsze wykrywanie PL parków
   if (el.tags.name) {
     const n = el.tags.name.toLowerCase();
     if (
@@ -81,9 +43,7 @@ function isBadForest(el, pts) {
       n.includes("park narodowy") ||
       n.includes("rezerwat") ||
       n.includes("krajobrazowy")
-    ) {
-      return false;
-    }
+    ) return false;
   }
 
   const urbanGreen = [
@@ -95,11 +55,8 @@ function isBadForest(el, pts) {
     "meadow"
   ];
 
-  if (urbanGreen.includes(el.tags.leisure)) {
-    return true;
-  }
+  if (urbanGreen.includes(el.tags.leisure)) return true;
 
-  // 🔥 FIX: NIE WYTNISZ DUŻYCH PARKÓW
   if (pts.length < 8 && !el.tags.boundary && el.tags.landuse !== "forest") return true;
 
   if (el.tags.place) return true;
@@ -108,17 +65,36 @@ function isBadForest(el, pts) {
 }
 
 // =========================
-// 🌲 LOAD FORESTS
+// 🔧 FIX GEOMETRII (ANTY "PLAMA")
+// =========================
+function normalizePolygon(pts) {
+  const out = [];
+  let last = null;
+
+  for (const p of pts) {
+    const key = p[0].toFixed(5) + "_" + p[1].toFixed(5);
+    if (key !== last) {
+      out.push(p);
+      last = key;
+    }
+  }
+
+  return out;
+}
+
+// blokuje gigantyczne multipolygony (to robiło "jedną plamę")
+function isHugeForest(pts) {
+  return pts.length > 900;
+}
+
+// =========================
+// 🌲 LOAD FORESTS (POPRAWIONE)
 // =========================
 async function loadForests(lat, lng) {
 
   const now = Date.now();
 
-  if (now - lastForestRequest < 15000) {
-    console.log("⏳ cooldown forests API");
-    return;
-  }
-
+  if (now - lastForestRequest < 15000) return;
   lastForestRequest = now;
 
   if (!map) return;
@@ -136,7 +112,6 @@ async function loadForests(lat, lng) {
     relation["type"="multipolygon"](around:18000,${lat},${lng});
     relation["boundary"="protected_area"](around:18000,${lat},${lng});
     relation["boundary"="national_park"](around:18000,${lat},${lng});
-    relation["protect_class"](around:18000,${lat},${lng});
     relation["leisure"="nature_reserve"](around:18000,${lat},${lng});
 
     relation["name"~"Gostynińsko|Włocławski|Krajobrazowy|Rezerwat|Park",i]
@@ -157,41 +132,49 @@ async function loadForests(lat, lng) {
     const res = await fetch(url);
 
     if (res.status === 429) {
-      console.warn("⚠️ Overpass limit");
       setTimeout(() => loadForests(lat, lng), 10000);
       return;
     }
 
     const text = await res.text();
 
-    if (!text.startsWith("{")) {
-      console.error("❌ Overpass error:", text);
-      document.getElementById("forestStatus").innerText = "❌ Błąd lasów";
-      return;
-    }
+    if (!text.startsWith("{")) return;
 
     const data = JSON.parse(text);
 
     forests = [];
-
     window.forestLayer.clearLayers();
+
+    const seen = new Set();
 
     data.elements.forEach(el => {
 
-      // 🔥 KLUCZ FIX: tu składamy cały polygon
-      const pts = buildPolygon(el);
+      if (!el.geometry) return;
+
+      let pts = el.geometry.map(p => [p.lat, p.lon]);
 
       if (!pts.length) return;
+
+      pts = normalizePolygon(pts);
+
+      if (isHugeForest(pts)) return;
       if (isBadForest(el, pts)) return;
       if (pts.length < 3) return;
+
+      const id = el.id || el.osm_id;
+      if (seen.has(id)) return;
+      seen.add(id);
 
       let poly = L.polygon(pts, {
         color: "#2e8b57",
         fillColor: "#3cb371",
         fillOpacity: 0.25,
         weight: 2
-      }).addTo(window.forestLayer);
+      });
 
+      poly._forestId = id;
+
+      poly.addTo(window.forestLayer);
       forests.push(poly);
 
       poly.on("click", (e) => {
@@ -212,7 +195,7 @@ async function loadForests(lat, lng) {
 }
 
 // =========================
-// ℹ️ INFO (BEZ ZMIAN)
+// ℹ️ INFO (bez zmian)
 // =========================
 async function showForestInfo(el, pts) {
 
@@ -294,11 +277,10 @@ document.addEventListener("click", (e) => {
 });
 
 // =========================
-// SAFE MAP CLICK
+// SAFE MAP BIND
 // =========================
 function bindForestMapEvents() {
   if (!map) return;
-
   map.on("click", () => {
     const panel = document.getElementById("forestInfoPanel");
     if (panel) panel.style.display = "none";
