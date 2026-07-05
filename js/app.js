@@ -7,9 +7,14 @@ let followGPS = true;
 window.onload = function () {
 
   // =========================
-  // 🧠 SAFE STATE INIT
+  // 🧠 INIT GLOBAL STATE SAFE
   // =========================
-  window.GAME = window.GAME || {};
+  window.GAME = window.GAME || {
+    map: null,
+    userLat: null,
+    userLng: null,
+    userMarker: null
+  };
 
   // =========================
   // 🗺 INIT MAP
@@ -20,6 +25,7 @@ window.onload = function () {
 
   // =========================
   // 🛰 INIT GPS MODULE
+  // (TYLKO jeśli istnieje i mapa gotowa)
   // =========================
   if (typeof initGPS === "function" && window.GAME.map) {
     initGPS(window.GAME.map);
@@ -99,13 +105,13 @@ window.onload = function () {
     const lat = window.GAME.userLat;
     const lng = window.GAME.userLng;
 
-    if (lat && lng && window.GAME.map) {
+    if (lat != null && lng != null && window.GAME.map) {
       window.GAME.map.setView([lat, lng], 16);
     }
   });
 
   // =========================
-  // 🧭 STOP FOLLOW (MAP DRAG)
+  // 🧭 STOP FOLLOW ON DRAG
   // =========================
   window.GAME.map?.on("dragstart", () => {
     followGPS = false;
