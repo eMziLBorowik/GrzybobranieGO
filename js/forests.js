@@ -3,53 +3,65 @@ let forests = [];
 // ⏳ COOLDOWN
 let lastForestRequest = 0;
 
+// 🧱 WARSTWA LASÓW (SAFE)
+window.forestLayer = null;
+
+// =========================
+// 🚧 INIT LAYER (SAFE)
+// =========================
+function initForestLayer() {
+  if (!map) return false;
+
+  if (!window.forestLayer) {
+    window.forestLayer = L.layerGroup().addTo(map);
+  }
+
+  return true;
+}
+
 // =========================
 // 🚫 FILTR
 // =========================
 function isBadForest(el, pts) {
 
-if (!el.tags) return true;
-if (el.type === "node") return true;
+  if (!el.tags) return true;
+  if (el.type === "node") return true;
 
-// 🔥 NIE USUWAJ PARKÓW
-if (
-el.tags.boundary === "protected_area" ||
-el.tags.boundary === "national_park" ||
-el.tags.protect_class ||
-el.tags.protection_title ||
-(el.tags.name && (
-el.tags.name.includes("Park Krajobrazowy") ||
-el.tags.name.includes("Park Narodowy") ||
-el.tags.name.includes("Rezerwat")
-))
-) {
-return false;
-}
+  // 🔥 NIE USUWAJ PARKÓW
+  if (
+    el.tags.boundary === "protected_area" ||
+    el.tags.boundary === "national_park" ||
+    el.tags.protect_class ||
+    el.tags.protection_title ||
+    (el.tags.name && (
+      el.tags.name.includes("Park Krajobrazowy") ||
+      el.tags.name.includes("Park Narodowy") ||
+      el.tags.name.includes("Rezerwat")
+    ))
+  ) {
+    return false;
+  }
 
-// 🌆 miejskie
-const urbanGreen = [
-"park",
-"garden",
-"grass",
-"village_green",
-"recreation_ground",
-"meadow"
-];
+  const urbanGreen = [
+    "park",
+    "garden",
+    "grass",
+    "village_green",
+    "recreation_ground",
+    "meadow"
+  ];
 
-if (urbanGreen.includes(el.tags.leisure)) {
-return true;
-}
+  if (urbanGreen.includes(el.tags.leisure)) {
+    return true;
+  }
 
-// 🚫 małe
-if (pts.length < 25 && !el.tags.boundary) return true;
+  if (pts.length < 25 && !el.tags.boundary) return true;
 
-// 🚫 małe lasy
-if (el.tags.landuse === "forest" && pts.length < 40) return true;
+  if (el.tags.landuse === "forest" && pts.length < 40) return true;
 
-// 🚫 miejscowości
-if (el.tags.place) return true;
+  if (el.tags.place) return true;
 
-return false;
+  return false;
 }
 
 // =========================
@@ -57,189 +69,203 @@ return false;
 // =========================
 async function loadForests(lat, lng) {
 
-const now = Date.now();
+  const now = Date.now();
 
-if (now - lastForestRequest < 15000) {
-console.log("⏳ cooldown forests API");
-return;
-}
+  if (now - lastForestRequest < 15000) {
+    console.log("⏳ cooldown forests API");
+    return;
+  }
 
-lastForestRequest = now;
+  lastForestRequest = now;
 
-// 🔥 KLUCZ: multipolygon + relacje
-const q = `
-[out:json];
+  if (!map) return;
 
-(
-  way["landuse"="forest"](around:15000,${lat},${lng});
-  way["natural"="wood"](around:15000,${lat},${lng});
+  initForestLayer();
+  if (!window.forestLayer) return;
 
-  relation["type"="multipolygon"](around:15000,${lat},${lng});
+  const q = `
+  [out:json];
 
-  relation["boundary"="protected_area"](around:15000,${lat},${lng});
-  relation["boundary"="national_park"](around:15000,${lat},${lng});
+  (
+    way["landuse"="forest"](around:15000,${lat},${lng});
+    way["natural"="wood"](around:15000,${lat},${lng});
 
-  relation["leisure"="nature_reserve"](around:15000,${lat},${lng});
+    relation["type"="multipolygon"](around:15000,${lat},${lng});
 
-  relation["name"~"Gostynińsko|Włocławski|Krajobrazowy|Rezerwat|Park",i]
-  (around:15000,${lat},${lng});
-);
+    relation["boundary"="protected_area"](around:15000,${lat},${lng});
+    relation["boundary"="national_park"](around:15000,${lat},${lng});
 
-out geom;
->;
-out geom;
-`;
+    relation["leisure"="nature_reserve"](around:15000,${lat},${lng});
 
-const url =
-"https://overpass-api.de/api/interpreter?data=" +
-encodeURIComponent(q);
+    relation["name"~"Gostynińsko|Włocławski|Krajobrazowy|Rezerwat|Park",i]
+    (around:15000,${lat},${lng});
+  );
 
-try {
+  out geom;
+  >;
+  out geom;
+  `;
 
-const res = await fetch(url);
+  const url =
+    "https://overpass-api.de/api/interpreter?data=" +
+    encodeURIComponent(q);
 
-if (res.status === 429) {
-console.warn("⚠️ Overpass limit");
-setTimeout(() => loadForests(lat, lng), 10000);
-return;
-}
+  try {
 
-const text = await res.text();
+    const res = await fetch(url);
 
-if (!text.startsWith("{")) {
-console.error("❌ Overpass error:", text);
-document.getElementById("forestStatus").innerText =
-"❌ Błąd lasów";
-return;
-}
+    if (res.status === 429) {
+      console.warn("⚠️ Overpass limit");
+      setTimeout(() => loadForests(lat, lng), 10000);
+      return;
+    }
 
-const data = JSON.parse(text);
+    const text = await res.text();
 
-forests = [];
-window.forestLayer.clearLayers();
+    if (!text.startsWith("{")) {
+      console.error("❌ Overpass error:", text);
+      document.getElementById("forestStatus").innerText = "❌ Błąd lasów";
+      return;
+    }
 
-data.elements.forEach(el => {
+    const data = JSON.parse(text);
 
-let pts = [];
+    forests = [];
 
-// 🔥 geometry dla ways i relations
-if (el.geometry) {
-pts = el.geometry.map(p => [p.lat, p.lon]);
-}
+    window.forestLayer.clearLayers();
 
-if (!pts.length) return;
+    data.elements.forEach(el => {
 
-if (isBadForest(el, pts)) return;
+      let pts = [];
 
-if (pts.length < 3) return;
+      if (el.geometry) {
+        pts = el.geometry.map(p => [p.lat, p.lon]);
+      }
 
-let poly = L.polygon(pts, {
-color: "#2e8b57",
-fillColor: "#3cb371",
-fillOpacity: 0.25,
-weight: 2
-}).addTo(window.forestLayer);
+      if (!pts.length) return;
 
-forests.push(poly);
+      if (isBadForest(el, pts)) return;
 
-poly.on("click", (e) => {
-L.DomEvent.stopPropagation(e);
-showForestInfo(el, pts);
-});
+      if (pts.length < 3) return;
 
-});
+      let poly = L.polygon(pts, {
+        color: "#2e8b57",
+        fillColor: "#3cb371",
+        fillOpacity: 0.25,
+        weight: 2
+      }).addTo(window.forestLayer);
 
-document.getElementById("forestStatus").innerText =
-"🌲 Lasy i parki gotowe";
+      forests.push(poly);
 
-} catch (e) {
-console.log(e);
-document.getElementById("forestStatus").innerText =
-"❌ Błąd lasów";
-}
+      poly.on("click", (e) => {
+        L.DomEvent.stopPropagation(e);
+        showForestInfo(el, pts);
+      });
+
+    });
+
+    document.getElementById("forestStatus").innerText =
+      "🌲 Lasy i parki gotowe";
+
+  } catch (e) {
+    console.log(e);
+    document.getElementById("forestStatus").innerText =
+      "❌ Błąd lasów";
+  }
 }
 
 // =========================
-// ℹ️ INFO (NIE RUSZAM)
+// ℹ️ INFO
 // =========================
 async function showForestInfo(el, pts) {
 
-let panel = document.getElementById("forestInfoPanel");
-panel.style.display = "block";
+  let panel = document.getElementById("forestInfoPanel");
+  if (!panel) return;
 
-let name = "🌲 Teren zielony";
+  panel.style.display = "block";
 
-if (el.tags) {
-if (el.tags.name) name = "🌲 " + el.tags.name;
-else if (el.tags.official_name) name = "🌲 " + el.tags.official_name;
-else if (el.tags.short_name) name = "🌲 " + el.tags.short_name;
-}
+  let name = "🌲 Teren zielony";
 
-document.getElementById("forestName").innerText = name;
-document.getElementById("forestRain").innerText = "🌧️ Sprawdzanie...";
-document.getElementById("forestChance").innerText = "🍄 Liczenie...";
+  if (el.tags) {
+    if (el.tags.name) name = "🌲 " + el.tags.name;
+    else if (el.tags.official_name) name = "🌲 " + el.tags.official_name;
+    else if (el.tags.short_name) name = "🌲 " + el.tags.short_name;
+  }
 
-let lat = pts[0][0];
-let lng = pts[0][1];
+  document.getElementById("forestName").innerText = name;
+  document.getElementById("forestRain").innerText = "🌧️ Sprawdzanie...";
+  document.getElementById("forestChance").innerText = "🍄 Liczenie...";
 
-try {
+  let lat = pts[0][0];
+  let lng = pts[0][1];
 
-let r = await fetch(
-`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=precipitation_sum,temperature_2m_max&past_days=30&timezone=auto`
-);
+  try {
 
-let d = await r.json();
+    let r = await fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=precipitation_sum,temperature_2m_max&past_days=30&timezone=auto`
+    );
 
-let rains = d.daily.precipitation_sum || [];
-let temps = d.daily.temperature_2m_max || [];
+    let d = await r.json();
 
-let rain30 = rains.reduce((a, b) => a + (b || 0), 0);
-let avgRain = rain30 / 30;
+    let rains = d.daily.precipitation_sum || [];
+    let temps = d.daily.temperature_2m_max || [];
 
-let rain7 = rains.slice(-7).reduce((a, b) => a + (b || 0), 0) / 7;
+    let rain30 = rains.reduce((a, b) => a + (b || 0), 0);
+    let avgRain = rain30 / 30;
 
-let temp = temps.reduce((a, b) => a + b, 0) / (temps.length || 1);
+    let rain7 = rains.slice(-7).reduce((a, b) => a + (b || 0), 0) / 7;
 
-let chance = 30;
+    let temp = temps.reduce((a, b) => a + b, 0) / (temps.length || 1);
 
-if (avgRain > 4 && rain7 > 5) chance += 35;
-else if (avgRain > 2) chance += 15;
-else chance -= 20;
+    let chance = 30;
 
-if (temp >= 10 && temp <= 22) chance += 15;
-if (temp < 5) chance -= 15;
-if (temp > 28) chance -= 20;
+    if (avgRain > 4 && rain7 > 5) chance += 35;
+    else if (avgRain > 2) chance += 15;
+    else chance -= 20;
 
-let month = new Date().getMonth() + 1;
+    if (temp >= 10 && temp <= 22) chance += 15;
+    if (temp < 5) chance -= 15;
+    if (temp > 28) chance -= 20;
 
-if (month === 9 || month === 10) chance += 30;
-if (month === 7 || month === 8) chance -= 15;
+    let month = new Date().getMonth() + 1;
 
-if (chance > 95) chance = 95;
-if (chance < 5) chance = 5;
+    if (month === 9 || month === 10) chance += 30;
+    if (month === 7 || month === 8) chance -= 15;
 
-document.getElementById("forestRain").innerText =
-"🌧️ 30 dni: " + rain30.toFixed(1) + " mm";
+    chance = Math.max(5, Math.min(95, chance));
 
-document.getElementById("forestChance").innerText =
-"🍄 Szansa: " + Math.round(chance) + "%";
+    document.getElementById("forestRain").innerText =
+      "🌧️ 30 dni: " + rain30.toFixed(1) + " mm";
 
-} catch (e) {
-document.getElementById("forestRain").innerText = "🌧️ Brak danych";
-}
+    document.getElementById("forestChance").innerText =
+      "🍄 Szansa: " + Math.round(chance) + "%";
+
+  } catch (e) {
+    document.getElementById("forestRain").innerText = "🌧️ Brak danych";
+  }
 }
 
 // =========================
-// CLICK CLOSE (NIE RUSZAM)
+// CLICK CLOSE
 // =========================
 document.addEventListener("click", (e) => {
-const panel = document.getElementById("forestInfoPanel");
-if (!panel) return;
-if (panel.contains(e.target)) return;
-if (e.target.closest(".leaflet-interactive")) return;
-panel.style.display = "none";
+  const panel = document.getElementById("forestInfoPanel");
+  if (!panel) return;
+  if (panel.contains(e.target)) return;
+  if (e.target.closest(".leaflet-interactive")) return;
+  panel.style.display = "none";
 });
 
-map.on("click", () => {
-document.getElementById("forestInfoPanel").style.display = "none";
-});
+// =========================
+// SAFE MAP CLICK BIND
+// =========================
+function bindForestMapEvents() {
+  if (!map) return;
+
+  map.on("click", () => {
+    const panel = document.getElementById("forestInfoPanel");
+    if (panel) panel.style.display = "none";
+  });
+}
+
+window.bindForestMapEvents = bindForestMapEvents;
