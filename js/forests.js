@@ -81,20 +81,19 @@ async function loadForests(lat, lng) {
   if (!map) return;
 
   initForestLayer();
-  if (!window.forestLayer) return;
 
   const q = `
   [out:json];
 
   (
-    way["landuse"="forest"](around:18000,${lat},${lng});
-    way["natural"="wood"](around:18000,${lat},${lng});
-
     relation["boundary"="protected_area"](around:18000,${lat},${lng});
     relation["boundary"="national_park"](around:18000,${lat},${lng});
+    relation["boundary"="protected_area"]["protect_class"](around:18000,${lat},${lng});
     relation["leisure"="nature_reserve"](around:18000,${lat},${lng});
 
-    relation["protect_class"](around:18000,${lat},${lng});
+    // 🔥 KLUCZ: tylko duże naturalne obszary jako relation
+    relation["landuse"="forest"](around:18000,${lat},${lng});
+    relation["natural"="wood"](around:18000,${lat},${lng});
   );
 
   out geom;
@@ -122,9 +121,11 @@ async function loadForests(lat, lng) {
 
       let pts = el.geometry.map(p => [p.lat, p.lon]);
 
-      if (pts.length < 3) return;
+      // 🔥 KLUCZ FIX: eliminuj śmieciowe fragmenty
+      if (pts.length < 8) return;
 
-      if (isBadForest(el, pts)) return;
+      // NIE rysuj jeśli to jest droga/linia
+      if (el.type === "way" && pts.length < 30) return;
 
       const poly = L.polygon(pts, {
         color: "#2e8b57",
@@ -139,10 +140,11 @@ async function loadForests(lat, lng) {
         L.DomEvent.stopPropagation(e);
         showForestInfo(el, pts);
       });
+
     });
 
     document.getElementById("forestStatus").innerText =
-      "🌲 Lasy i parki gotowe";
+      "🌲 Parki i lasy OK";
 
   } catch (e) {
     console.log(e);
