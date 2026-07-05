@@ -13,13 +13,17 @@ function showScreen(screen) {
   const centerBtn = document.getElementById("centerMapBtn");
 
   // =========================
-  // 🔻 HIDE ALL
+  // 🔻 HIDE ALL SCREENS (SAFE)
   // =========================
 
-  [mapEl, grzyd, trails, surv, guide, profile].forEach(el => {
-    if (el) el.style.display = "none";
+  const screens = [mapEl, grzyd, trails, surv, guide, profile];
+
+  screens.forEach(el => {
+    if (!el) return;
+    el.style.display = "none";
   });
 
+  // UI elements always reset
   if (weather) weather.style.display = "none";
   if (actionBar) actionBar.style.display = "none";
   if (forestInfo) forestInfo.style.display = "none";
@@ -28,7 +32,7 @@ function showScreen(screen) {
   document.body.classList.remove("screen-map");
 
   // =========================
-  // 🗺 MAP SCREEN
+  // 🗺 MAP
   // =========================
 
   if (screen === "map") {
@@ -41,10 +45,12 @@ function showScreen(screen) {
 
     document.body.classList.add("screen-map");
 
-    // 🔥 WAŻNE: odśwież mapę (Leaflet bug fix)
-    setTimeout(() => {
-      window.map?.invalidateSize?.();
-    }, 150);
+    // 🔥 FIX Leaflet render bug
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        window.map?.invalidateSize?.();
+      }, 100);
+    });
   }
 
   // =========================
@@ -62,12 +68,9 @@ function showScreen(screen) {
   if (screen === "trailsPanel") {
     if (trails) trails.style.display = "block";
 
-    // 🔥 NIE DOTYKAMY MAPY TU (fix crashy)
     requestAnimationFrame(() => {
       setTimeout(() => {
-        if (window.routeMap) {
-          window.routeMap.invalidateSize(true);
-        }
+        window.routeMap?.invalidateSize?.();
       }, 150);
     });
   }
@@ -99,9 +102,5 @@ function showScreen(screen) {
     loadProfile?.();
   }
 }
-
-// =========================
-// 🌍 EXPORT
-// =========================
 
 window.showScreen = showScreen;
