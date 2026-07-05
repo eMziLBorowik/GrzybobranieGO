@@ -247,6 +247,7 @@ function initRouteMap(){
 if(routeMap) return;
 
 
+// 🥾 osobna mapa dla zakładki trasy
 routeMap = L.map("routeMiniMap", {
 zoomControl:false,
 attributionControl:false
@@ -283,15 +284,15 @@ routeMap.setView(
 setTimeout(()=>{
 
 if(routeMap){
+
 routeMap.invalidateSize();
+
 }
 
 },300);
 
 
-// ============================
-// 📍 GPS MARKER
-// ============================
+// 📍 marker GPS dla mapy tras
 
 if(userLat && userLng){
 
@@ -318,7 +319,12 @@ if(userLat && userLng){
 
 }
 
-}
+
+// ============================
+// KONIEC INIT MAPY
+// ============================
+
+} 
 
 
 // ============================
@@ -364,15 +370,25 @@ gpsInterval = setInterval(()=>{
 
 if(!routeRunning || routePaused) return;
 
+
 if(userLat && userLng){
-addRoutePoint(userLat,userLng);
+
+addRoutePoint(
+userLat,
+userLng
+);
+
 }
+
 
 },15000);
 
 
 
-routeTimer = setInterval(updateRouteTime,1000);
+routeTimer = setInterval(
+updateRouteTime,
+1000
+);
 }
 
 
@@ -506,7 +522,6 @@ if(!activeForest || normalizeForestId(activeForest)!==normalizeForestId(forest))
 
 activeForest=forest;
 createForestGrid(forest);
-
 }
 
 revealForestCell(lat,lng);
