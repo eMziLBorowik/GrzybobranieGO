@@ -7,6 +7,11 @@ let followGPS = true;
 window.onload = function () {
 
   // =========================
+  // 🧠 SAFE STATE INIT
+  // =========================
+  window.GAME = window.GAME || {};
+
+  // =========================
   // 🗺 INIT MAP
   // =========================
   if (typeof initMap === "function") {
@@ -14,7 +19,7 @@ window.onload = function () {
   }
 
   // =========================
-  // 🛰 INIT GPS MODULE (JEŚLI ISTNIEJE)
+  // 🛰 INIT GPS MODULE
   // =========================
   if (typeof initGPS === "function" && window.GAME.map) {
     initGPS(window.GAME.map);
@@ -23,13 +28,17 @@ window.onload = function () {
   // =========================
   // 🔥 MENU
   // =========================
-
   const menuBtn = document.getElementById("menuBtn");
   const sideMenu = document.getElementById("sideMenu");
   const closeMenu = document.getElementById("closeMenu");
 
-  menuBtn?.addEventListener("click", () => sideMenu?.classList.add("active"));
-  closeMenu?.addEventListener("click", () => sideMenu?.classList.remove("active"));
+  menuBtn?.addEventListener("click", () => {
+    sideMenu?.classList.add("active");
+  });
+
+  closeMenu?.addEventListener("click", () => {
+    sideMenu?.classList.remove("active");
+  });
 
   // =========================
   // 🧭 ROUTER NAV
@@ -37,8 +46,8 @@ window.onload = function () {
 
   document.getElementById("sideMap")?.addEventListener("click", () => {
     sideMenu?.classList.remove("active");
-    document.getElementById("centerMapBtn").style.display = "flex";
 
+    document.getElementById("centerMapBtn").style.display = "flex";
     window.showScreen?.("map");
 
     setTimeout(() => {
@@ -85,24 +94,19 @@ window.onload = function () {
   // =========================
   // 🎯 CENTER BUTTON
   // =========================
-
   document.getElementById("centerMapBtn")?.addEventListener("click", () => {
-    if (
-      window.GAME.userLat &&
-      window.GAME.userLng &&
-      window.GAME.map
-    ) {
-      window.GAME.map.setView(
-        [window.GAME.userLat, window.GAME.userLng],
-        16
-      );
+
+    const lat = window.GAME.userLat;
+    const lng = window.GAME.userLng;
+
+    if (lat && lng && window.GAME.map) {
+      window.GAME.map.setView([lat, lng], 16);
     }
   });
 
   // =========================
   // 🧭 STOP FOLLOW (MAP DRAG)
   // =========================
-
   window.GAME.map?.on("dragstart", () => {
     followGPS = false;
   });
