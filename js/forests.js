@@ -27,19 +27,29 @@ function isBadForest(el, pts) {
   if (!el.tags) return true;
   if (el.type === "node") return true;
 
-  // 🔥 NIE USUWAJ PARKÓW
+  // 🔥 NIE USUWAJ PARKÓW (FIX)
   if (
     el.tags.boundary === "protected_area" ||
     el.tags.boundary === "national_park" ||
     el.tags.protect_class ||
     el.tags.protection_title ||
-    (el.tags.name && (
-      el.tags.name.includes("Park Krajobrazowy") ||
-      el.tags.name.includes("Park Narodowy") ||
-      el.tags.name.includes("Rezerwat")
-    ))
+    el.tags.boundary === "protected_area" ||
+    el.tags.protect_class
   ) {
     return false;
+  }
+
+  // 🔥 FIX: lepsze łapanie nazw parków
+  if (el.tags.name) {
+    const n = el.tags.name.toLowerCase();
+    if (
+      n.includes("park krajobrazowy") ||
+      n.includes("park narodowy") ||
+      n.includes("rezerwat") ||
+      n.includes("krajobrazowy")
+    ) {
+      return false;
+    }
   }
 
   const urbanGreen = [
@@ -55,9 +65,8 @@ function isBadForest(el, pts) {
     return true;
   }
 
-  if (pts.length < 25 && !el.tags.boundary) return true;
-
-  if (el.tags.landuse === "forest" && pts.length < 40) return true;
+  // 🔥 FIX (KLUCZ): NIE WYRZUCAJ DUŻYCH PARKÓW
+  if (pts.length < 8 && !el.tags.boundary && el.tags.landuse !== "forest") return true;
 
   if (el.tags.place) return true;
 
@@ -95,7 +104,13 @@ async function loadForests(lat, lng) {
     relation["boundary"="protected_area"](around:15000,${lat},${lng});
     relation["boundary"="national_park"](around:15000,${lat},${lng});
 
+    relation["protect_class"](around:15000,${lat},${lng});
+
     relation["leisure"="nature_reserve"](around:15000,${lat},${lng});
+
+    // 🔥 FIX: lepsze łapanie parków PL
+    relation["boundary"="protected_area"](around:15000,${lat},${lng});
+    relation["protect_class"](around:15000,${lat},${lng});
 
     relation["name"~"Gostynińsko|Włocławski|Krajobrazowy|Rezerwat|Park",i]
     (around:15000,${lat},${lng});
