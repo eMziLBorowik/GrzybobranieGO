@@ -372,24 +372,30 @@ Brak zapisanych tras
 <script src="js/supabase.js"></script>
 <script src="js/login.js"></script>
 
-<!-- MAPA / ŚWIAT -->
+<!-- MAPA (najpierw mapa) -->
 <script src="js/map.js?v=2"></script>
-<script src="js/forests.js?v=2"></script>
 
-<!-- FUNKCJE ŚWIATA -->
+<!-- 🔥 STATE (musi być przed GPS i APP) -->
+<script src="js/state.js"></script>
+
+<!-- 🛰 GPS (USTAWIA window.userLat + marker + forests trigger) -->
+<script src="js/gps.js?v=2"></script>
+
+<!-- 🌲 ŚWIAT / LOGIKA MAPY -->
+<script src="js/forests.js?v=2"></script>
 <script src="js/weather.js?v=2"></script>
+
+<!-- FUNKCJE GRY -->
 <script src="js/mushrooms.js?v=2"></script>
 <script src="js/grzybdex.js?v=2"></script>
 <script src="js/stats.js?v=2"></script>
 <script src="js/exp.js?v=1"></script>
 <script src="js/profile.js?v=1"></script>
 
-<!-- ROUTER (WAŻNE PRZED APP) -->
+<!-- ROUTER -->
 <script src="js/router.js"></script>
 
-<script src="js/state.js"></script>
-
-<!-- APP (GPS + LOGIKA GRY) -->
+<!-- APP (UI + MENU + MAP INIT) -->
 <script src="js/app.js?v=3"></script>
 
 <!-- MODUŁY UI -->
