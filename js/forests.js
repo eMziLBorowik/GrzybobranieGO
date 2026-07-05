@@ -20,32 +20,37 @@ function initForestLayer() {
 }
 
 // =========================
-// 🚫 FILTR (STABILNY)
+// 🚫 FIX FILTR (NAJWAŻNIEJSZY)
 // =========================
 function isBadForest(el, pts) {
 
   if (!el.tags) return true;
   if (el.type === "node") return true;
 
-  // ✔ NIE USUWAJ PARKÓW
-  if (
+  // 🔥 PRIORYTET: PARKI / REZERWATY ZAWSZE PRZEPUŚĆ
+  const isProtected =
     el.tags.boundary === "protected_area" ||
     el.tags.boundary === "national_park" ||
     el.tags.protect_class ||
-    el.tags.protection_title
-  ) return false;
+    el.tags.protection_title ||
+    el.tags.leisure === "nature_reserve";
 
-  // ✔ lepsze wykrywanie PL parków
+  if (isProtected) return false;
+
+  // 🔥 LEPSZE WYKRYWANIE PO NAZWIE (NIE ZABIJA PARKÓW)
   if (el.tags.name) {
     const n = el.tags.name.toLowerCase();
+
     if (
-      n.includes("park krajobrazowy") ||
+      (n.includes("park") && n.includes("krajobraz")) ||
       n.includes("park narodowy") ||
-      n.includes("rezerwat") ||
-      n.includes("krajobrazowy")
-    ) return false;
+      n.includes("rezerwat")
+    ) {
+      return false;
+    }
   }
 
+  // ❌ miejskie tereny zielone
   const urbanGreen = [
     "park",
     "garden",
@@ -57,7 +62,8 @@ function isBadForest(el, pts) {
 
   if (urbanGreen.includes(el.tags.leisure)) return true;
 
-  if (pts.length < 8 && !el.tags.boundary && el.tags.landuse !== "forest") return true;
+  // 🔥 FIX: NIE WYCIERAJ PARKÓW PRZEZ LICZBĘ PUNKTÓW
+  if (pts.length < 3 && !isProtected) return true;
 
   if (el.tags.place) return true;
 
@@ -65,36 +71,13 @@ function isBadForest(el, pts) {
 }
 
 // =========================
-// 🔧 FIX GEOMETRII (ANTY "PLAMA")
-// =========================
-function normalizePolygon(pts) {
-  const out = [];
-  let last = null;
-
-  for (const p of pts) {
-    const key = p[0].toFixed(5) + "_" + p[1].toFixed(5);
-    if (key !== last) {
-      out.push(p);
-      last = key;
-    }
-  }
-
-  return out;
-}
-
-// blokuje gigantyczne multipolygony (to robiło "jedną plamę")
-function isHugeForest(pts) {
-  return pts.length > 900;
-}
-
-// =========================
-// 🌲 LOAD FORESTS (POPRAWIONE)
+// 🌲 LOAD FORESTS (POPRAWIONE PARKI)
 // =========================
 async function loadForests(lat, lng) {
 
   const now = Date.now();
-
   if (now - lastForestRequest < 15000) return;
+
   lastForestRequest = now;
 
   if (!map) return;
@@ -110,6 +93,7 @@ async function loadForests(lat, lng) {
     way["natural"="wood"](around:18000,${lat},${lng});
 
     relation["type"="multipolygon"](around:18000,${lat},${lng});
+
     relation["boundary"="protected_area"](around:18000,${lat},${lng});
     relation["boundary"="national_park"](around:18000,${lat},${lng});
     relation["leisure"="nature_reserve"](around:18000,${lat},${lng});
@@ -137,7 +121,6 @@ async function loadForests(lat, lng) {
     }
 
     const text = await res.text();
-
     if (!text.startsWith("{")) return;
 
     const data = JSON.parse(text);
@@ -152,18 +135,13 @@ async function loadForests(lat, lng) {
       if (!el.geometry) return;
 
       let pts = el.geometry.map(p => [p.lat, p.lon]);
-
       if (!pts.length) return;
-
-      pts = normalizePolygon(pts);
-
-      if (isHugeForest(pts)) return;
-      if (isBadForest(el, pts)) return;
-      if (pts.length < 3) return;
 
       const id = el.id || el.osm_id;
       if (seen.has(id)) return;
       seen.add(id);
+
+      if (isBadForest(el, pts)) return;
 
       let poly = L.polygon(pts, {
         color: "#2e8b57",
@@ -277,10 +255,11 @@ document.addEventListener("click", (e) => {
 });
 
 // =========================
-// SAFE MAP BIND
+// SAFE BIND
 // =========================
 function bindForestMapEvents() {
   if (!map) return;
+
   map.on("click", () => {
     const panel = document.getElementById("forestInfoPanel");
     if (panel) panel.style.display = "none";
