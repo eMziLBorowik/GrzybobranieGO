@@ -1,38 +1,29 @@
 let followGPS = true;
 
-// =========================
-// 🌍 APP CORE (UI ONLY)
-// =========================
-
 window.onload = function () {
 
   // =========================
-  // 🧠 INIT GLOBAL STATE SAFE
+  // 🧠 SAFE STATE
   // =========================
-  window.GAME = window.GAME || {
-    map: null,
-    userLat: null,
-    userLng: null,
-    userMarker: null
-  };
+  window.GAME = window.GAME || {};
+  window.GAME.map = window.GAME.map || null;
 
   // =========================
-  // 🗺 INIT MAP
+  // 🗺 INIT MAP (SAFE)
   // =========================
-  if (typeof initMap === "function") {
+  if (typeof initMap === "function" && !window.GAME.map) {
     window.GAME.map = initMap();
   }
 
   // =========================
-  // 🛰 INIT GPS MODULE
-  // (TYLKO jeśli istnieje i mapa gotowa)
+  // 🛰 GPS (SAFE)
   // =========================
   if (typeof initGPS === "function" && window.GAME.map) {
     initGPS(window.GAME.map);
   }
 
   // =========================
-  // 🔥 MENU
+  // 🔥 MENU (SAFE DOM)
   // =========================
   const menuBtn = document.getElementById("menuBtn");
   const sideMenu = document.getElementById("sideMenu");
@@ -47,55 +38,56 @@ window.onload = function () {
   });
 
   // =========================
-  // 🧭 ROUTER NAV
+  // 🧭 SAFE SCREEN SWITCH
+  // =========================
+  function go(screen) {
+
+    sideMenu?.classList.remove("active");
+
+    const centerBtn = document.getElementById("centerMapBtn");
+
+    // reset UI
+    if (centerBtn) centerBtn.style.display = "none";
+
+    window.showScreen?.(screen);
+
+    // =========================
+    // 🗺 MAP FIX (KLUCZ!)
+    // =========================
+    if (screen === "map") {
+
+      if (centerBtn) centerBtn.style.display = "flex";
+
+      setTimeout(() => {
+        if (window.GAME.map) {
+          window.GAME.map.invalidateSize(true);
+
+          const lat = window.GAME.userLat;
+          const lng = window.GAME.userLng;
+
+          if (lat != null && lng != null) {
+            window.GAME.map.setView([lat, lng], 16);
+          }
+        }
+      }, 200);
+    }
+  }
+
+  // =========================
+  // 🧭 ROUTER
   // =========================
 
-  document.getElementById("sideMap")?.addEventListener("click", () => {
-    sideMenu?.classList.remove("active");
-
-    document.getElementById("centerMapBtn").style.display = "flex";
-    window.showScreen?.("map");
-
-    setTimeout(() => {
-      window.GAME.map?.invalidateSize(true);
-    }, 300);
-  });
+  document.getElementById("sideMap")?.addEventListener("click", () => go("map"));
 
   document.getElementById("sideDex")?.addEventListener("click", () => {
-    sideMenu?.classList.remove("active");
-    document.getElementById("centerMapBtn").style.display = "none";
-
-    window.showScreen?.("grzybdex");
+    go("grzybdex");
     updateStats?.();
   });
 
-  document.getElementById("sideTrails")?.addEventListener("click", () => {
-    sideMenu?.classList.remove("active");
-    document.getElementById("centerMapBtn").style.display = "none";
-
-    window.showScreen?.("trailsPanel");
-  });
-
-  document.getElementById("sideSurvival")?.addEventListener("click", () => {
-    sideMenu?.classList.remove("active");
-    document.getElementById("centerMapBtn").style.display = "none";
-
-    window.showScreen?.("survivalPanel");
-  });
-
-  document.getElementById("sideGuide")?.addEventListener("click", () => {
-    sideMenu?.classList.remove("active");
-    document.getElementById("centerMapBtn").style.display = "none";
-
-    window.showScreen?.("guidePanel");
-  });
-
-  document.getElementById("sideProfile")?.addEventListener("click", () => {
-    sideMenu?.classList.remove("active");
-    document.getElementById("centerMapBtn").style.display = "none";
-
-    window.showScreen?.("profilePanel");
-  });
+  document.getElementById("sideTrails")?.addEventListener("click", () => go("trailsPanel"));
+  document.getElementById("sideSurvival")?.addEventListener("click", () => go("survivalPanel"));
+  document.getElementById("sideGuide")?.addEventListener("click", () => go("guidePanel"));
+  document.getElementById("sideProfile")?.addEventListener("click", () => go("profilePanel"));
 
   // =========================
   // 🎯 CENTER BUTTON
@@ -111,7 +103,7 @@ window.onload = function () {
   });
 
   // =========================
-  // 🧭 STOP FOLLOW ON DRAG
+  // 🧭 STOP FOLLOW
   // =========================
   window.GAME.map?.on("dragstart", () => {
     followGPS = false;
