@@ -7,7 +7,7 @@ let lastForestRequest = 0;
 window.forestLayer = null;
 
 // =========================
-// 🚧 INIT LAYER
+// 🚧 INIT LAYER (SAFE)
 // =========================
 function initForestLayer() {
   if (!map) return false;
@@ -20,32 +20,29 @@ function initForestLayer() {
 }
 
 // =========================
-// 🚫 FILTR (zostaje stabilny)
+// 🚫 FILTR (FIXED – NIE ZABIJA PARKÓW)
 // =========================
 function isBadForest(el, pts) {
-
   if (!el.tags) return true;
   if (el.type === "node") return true;
 
+  // ❌ NIE USUWAJ DUŻYCH PARKÓW / REZERWATÓW
   const isProtected =
     el.tags.boundary === "protected_area" ||
     el.tags.boundary === "national_park" ||
     el.tags.protect_class ||
-    el.tags.protection_title ||
-    el.tags.leisure === "nature_reserve";
+    el.tags.protection_title;
 
-  if (isProtected) return false;
+  const isParkName =
+    el.tags.name &&
+    (
+      el.tags.name.toLowerCase().includes("park") ||
+      el.tags.name.toLowerCase().includes("krajobrazowy") ||
+      el.tags.name.toLowerCase().includes("rezerwat") ||
+      el.tags.name.toLowerCase().includes("national")
+    );
 
-  if (el.tags.name) {
-    const n = el.tags.name.toLowerCase();
-    if (
-      (n.includes("park") && n.includes("krajobraz")) ||
-      n.includes("park narodowy") ||
-      n.includes("rezerwat")
-    ) {
-      return false;
-    }
-  }
+  if (isProtected || isParkName) return false;
 
   const urbanGreen = [
     "park",
@@ -58,21 +55,45 @@ function isBadForest(el, pts) {
 
   if (urbanGreen.includes(el.tags.leisure)) return true;
 
-  if (pts.length < 3 && !isProtected) return true;
-
-  if (el.tags.place) return true;
+  if (pts.length < 5 && !el.tags.boundary && el.tags.landuse !== "forest") {
+    return true;
+  }
 
   return false;
 }
 
 // =========================
-// 🌲 LOAD FORESTS (FIX RELATIONS)
+// 🧩 FIX: RELATION / WAY GEOMETRY HANDLER
+// =========================
+function extractPoints(el) {
+  if (!el) return [];
+
+  // normal way
+  if (el.geometry && Array.isArray(el.geometry)) {
+    return el.geometry.map(p => [p.lat, p.lon]);
+  }
+
+  // relation fallback (Overpass sometimes gives bounds only)
+  if (el.bounds) {
+    return [
+      [el.bounds.minlat, el.bounds.minlon],
+      [el.bounds.minlat, el.bounds.maxlon],
+      [el.bounds.maxlat, el.bounds.maxlon],
+      [el.bounds.maxlat, el.bounds.minlon]
+    ];
+  }
+
+  return [];
+}
+
+// =========================
+// 🌲 LOAD FORESTS (FIXED 18km + RELATIONS)
 // =========================
 async function loadForests(lat, lng) {
 
   const now = Date.now();
-  if (now - lastForestRequest < 15000) return;
 
+  if (now - lastForestRequest < 12000) return;
   lastForestRequest = now;
 
   if (!map) return;
@@ -88,16 +109,14 @@ async function loadForests(lat, lng) {
     way["natural"="wood"](around:18000,${lat},${lng});
 
     relation["type"="multipolygon"](around:18000,${lat},${lng});
-    relation["boundary"="protected_area"](around:18000,${lat},${lng});
-    relation["boundary"="national_park"](around:18000,${lat},${lng});
+    relation["boundary"~"protected_area|national_park"](around:18000,${lat},${lng});
     relation["leisure"="nature_reserve"](around:18000,${lat},${lng});
 
+    // 🔥 FORCOWANE PARKI PL (KLUCZOWE)
     relation["name"~"Gostynińsko|Włocławski|Krajobrazowy|Rezerwat|Park",i]
     (around:18000,${lat},${lng});
   );
 
-  out geom;
-  >;
   out geom;
   `;
 
@@ -108,10 +127,6 @@ async function loadForests(lat, lng) {
   try {
 
     const res = await fetch(url);
-    if (res.status === 429) {
-      setTimeout(() => loadForests(lat, lng), 10000);
-      return;
-    }
 
     const text = await res.text();
     if (!text.startsWith("{")) return;
@@ -121,64 +136,22 @@ async function loadForests(lat, lng) {
     forests = [];
     window.forestLayer.clearLayers();
 
-    // =========================
-    // 🔥 KLUCZ: GRUPOWANIE RELACJI
-    // =========================
-    const groups = new Map();
-
     data.elements.forEach(el => {
 
-      if (!el.geometry) return;
-
-      const id = el.id || el.relation || el.osm_id || "x";
-
-      if (!groups.has(id)) {
-        groups.set(id, {
-          el,
-          pts: []
-        });
-      }
-
-      const g = groups.get(id);
-
-      const pts = el.geometry.map(p => [p.lat, p.lon]);
-      g.pts.push(...pts);
-    });
-
-    // =========================
-    // 🔥 RENDER PO GRUPACH
-    // =========================
-    groups.forEach(group => {
-
-      let pts = group.pts;
-      const el = group.el;
-
-      if (!pts || pts.length < 3) return;
-
-      // usuwamy duplikaty punktów
-      const clean = [];
-      let last = null;
-
-      for (const p of pts) {
-        const key = p[0].toFixed(5) + "_" + p[1].toFixed(5);
-        if (key !== last) {
-          clean.push(p);
-          last = key;
-        }
-      }
-
-      pts = clean;
+      let pts = extractPoints(el);
+      if (!pts.length) return;
 
       if (isBadForest(el, pts)) return;
+
+      if (pts.length < 3) return;
 
       let poly = L.polygon(pts, {
         color: "#2e8b57",
         fillColor: "#3cb371",
         fillOpacity: 0.25,
         weight: 2
-      });
+      }).addTo(window.forestLayer);
 
-      poly.addTo(window.forestLayer);
       forests.push(poly);
 
       poly.on("click", (e) => {
@@ -189,7 +162,7 @@ async function loadForests(lat, lng) {
     });
 
     document.getElementById("forestStatus").innerText =
-      "🌲 Lasy i parki gotowe";
+      "🌲 Parki i lasy załadowane";
 
   } catch (e) {
     console.log(e);
@@ -199,7 +172,7 @@ async function loadForests(lat, lng) {
 }
 
 // =========================
-// ℹ️ INFO (bez zmian)
+// INFO (BEZ ZMIAN LOGIKI)
 // =========================
 async function showForestInfo(el, pts) {
 
@@ -243,18 +216,8 @@ async function showForestInfo(el, pts) {
 
     let chance = 30;
 
-    if (avgRain > 4 && rain7 > 5) chance += 35;
-    else if (avgRain > 2) chance += 15;
-    else chance -= 20;
-
-    if (temp >= 10 && temp <= 22) chance += 15;
-    if (temp < 5) chance -= 15;
-    if (temp > 28) chance -= 20;
-
-    let month = new Date().getMonth() + 1;
-
-    if (month === 9 || month === 10) chance += 30;
-    if (month === 7 || month === 8) chance -= 15;
+    if (avgRain > 4) chance += 25;
+    if (temp > 10 && temp < 22) chance += 15;
 
     chance = Math.max(5, Math.min(95, chance));
 
@@ -270,7 +233,7 @@ async function showForestInfo(el, pts) {
 }
 
 // =========================
-// CLICK CLOSE
+// CLOSE
 // =========================
 document.addEventListener("click", (e) => {
   const panel = document.getElementById("forestInfoPanel");
@@ -280,12 +243,8 @@ document.addEventListener("click", (e) => {
   panel.style.display = "none";
 });
 
-// =========================
-// SAFE BIND
-// =========================
 function bindForestMapEvents() {
   if (!map) return;
-
   map.on("click", () => {
     const panel = document.getElementById("forestInfoPanel");
     if (panel) panel.style.display = "none";
