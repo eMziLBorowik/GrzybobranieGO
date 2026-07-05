@@ -81,17 +81,17 @@ async function loadForests(lat, lng) {
   [out:json];
 
   (
-    way["landuse"="forest"](around:18000,${lat},${lng});
-    relation["landuse"="forest"](around:18000,${lat},${lng});
+    way["landuse"="forest"](around:30000,${lat},${lng});
+    relation["landuse"="forest"](around:30000,${lat},${lng});
 
-    way["natural"="wood"](around:18000,${lat},${lng});
-    relation["natural"="wood"](around:18000,${lat},${lng});
+    way["natural"="wood"](around:30000,${lat},${lng});
+    relation["natural"="wood"](around:30000,${lat},${lng});
 
-    relation["boundary"="protected_area"](around:18000,${lat},${lng});
-    relation["boundary"="protected_area"]["protect_class"="5"](around:18000,${lat},${lng});
+    relation["boundary"="protected_area"](around:30000,${lat},${lng});
+    relation["boundary"="protected_area"]["protect_class"="5"](around:30000,${lat},${lng});
 
-    relation["boundary"="national_park"](around:18000,${lat},${lng});
-    relation["leisure"="nature_reserve"](around:18000,${lat},${lng});
+    relation["boundary"="national_park"](around:30000,${lat},${lng});
+    relation["leisure"="nature_reserve"](around:30000,${lat},${lng});
   );
 
   out geom;
