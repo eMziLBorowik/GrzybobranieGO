@@ -20,14 +20,14 @@ function initForestLayer() {
 }
 
 // =========================
-// 🚫 FILTER (STABLE FIX)
+// 🚫 FILTER (FIXED + PROTECT_CLASS FIX)
 // =========================
 function isBadForest(el) {
   if (!el.tags) return true;
 
   const t = el.tags;
 
-  // ❌ WATER FIX (Wisła + inne wody)
+  // ❌ WODA / RZEKI
   if (
     t.waterway ||
     t.natural === "water" ||
@@ -36,35 +36,37 @@ function isBadForest(el) {
     t.landuse === "reservoir"
   ) return true;
 
-  // ❌ TINY URBAN GREEN (skwery itd)
+  // ❌ MAŁE MIEJSKIE ZIELONE (tylko gdy NIE są ochronne)
   if (
-    t.leisure === "park" ||
-    t.leisure === "garden" ||
-    t.leisure === "playground" ||
-    t.leisure === "recreation_ground"
-  ) return true;
+    (t.leisure === "park" ||
+     t.leisure === "garden" ||
+     t.leisure === "playground" ||
+     t.leisure === "recreation_ground") &&
+    !t.protect_class
+  ) {
+    return true;
+  }
 
-  // 🌲 KEEP TRUE FOREST AREAS
+  // 🌲 LASY (ZOSTAJĄ)
   if (
     t.landuse === "forest" ||
     t.natural === "wood" ||
     t.natural === "forest"
   ) return false;
 
-  // 🏞 PROTECTED AREAS ALWAYS KEEP
+  // 🏞 PARKI / OBSZARY CHRONIONE (WAŻNE FIX)
   if (
     t.boundary === "protected_area" ||
     t.boundary === "national_park" ||
-    t.protect_class ||
-    t.protection_title ||
-    t.leisure === "nature_reserve"
+    t.leisure === "nature_reserve" ||
+    t.protect_class
   ) return false;
 
   return true;
 }
 
 // =========================
-// 🌲 LOAD FORESTS (FIXED 18KM)
+// 🌲 LOAD FORESTS (18KM FIXED)
 // =========================
 async function loadForests(lat, lng) {
 
@@ -87,7 +89,10 @@ async function loadForests(lat, lng) {
     relation["natural"="wood"](around:18000,${lat},${lng});
 
     relation["boundary"="protected_area"](around:18000,${lat},${lng});
+    relation["boundary"="protected_area"]["protect_class"="5"](around:18000,${lat},${lng});
+
     relation["leisure"="nature_reserve"](around:18000,${lat},${lng});
+    relation["boundary"="national_park"](around:18000,${lat},${lng});
   );
 
   out geom;
@@ -113,10 +118,8 @@ async function loadForests(lat, lng) {
 
       const pts = el.geometry.map(p => [p.lat, p.lon]);
 
-      // ❌ REAL FIX: nie używaj length jako "area"
       if (pts.length < 6) return;
 
-      // 🔥 DEDUPLICATION (usuwa “kwadraty”/duplikaty)
       const key = pts[0][0].toFixed(4) + ":" + pts[0][1].toFixed(4);
       if (seen.has(key)) return;
       seen.add(key);
