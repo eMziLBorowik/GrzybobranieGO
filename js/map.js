@@ -1,25 +1,66 @@
 let map;
-let userLat = null;
-let userLng = null;
 let userMarker = null;
 
-map = L.map("map").setView([52.2, 21], 15);
+function initMap() {
 
-L.tileLayer(
-"https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-{
-    attribution:"© OpenStreetMap"
+  if (map) return map; // już istnieje
+
+  map = L.map("map", {
+    zoomControl: true
+  }).setView([52, 19], 6);
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "&copy; OpenStreetMap"
+  }).addTo(map);
+
+  return map;
 }
-).addTo(map);
 
-window.mainMap = map;
+// =========================
+// 🎯 CENTER USER
+// =========================
 
-// WARSTWY APLIKACJI
-window.userLayer = L.layerGroup();
-window.forestLayer = L.layerGroup();
-window.routeLayer = L.layerGroup();
+function centerOnUser(lat, lng) {
+  if (!map) return;
+  if (!lat || !lng) return;
+  map.setView([lat, lng], 16);
+}
 
-// DODANIE WARSTW DO MAPY
-window.userLayer.addTo(map);
-window.forestLayer.addTo(map);
-window.routeLayer.addTo(map);
+// =========================
+// 👤 USER MARKER
+// =========================
+
+function updateUserMarker(lat, lng, followGPS) {
+
+  if (!map) return;
+
+  if (!userMarker) {
+    userMarker = L.marker([lat, lng]).addTo(map);
+    map.setView([lat, lng], 16);
+  } else {
+    userMarker.setLatLng([lat, lng]);
+
+    if (followGPS) {
+      map.setView([lat, lng], 16);
+    }
+  }
+}
+
+// =========================
+// 🔧 RESIZE FIX
+// =========================
+
+function fixMapSize() {
+  setTimeout(() => {
+    map?.invalidateSize(true);
+  }, 200);
+}
+
+// =========================
+// 🌍 EXPORT
+// =========================
+
+window.initMap = initMap;
+window.centerOnUser = centerOnUser;
+window.updateUserMarker = updateUserMarker;
+window.fixMapSize = fixMapSize;
