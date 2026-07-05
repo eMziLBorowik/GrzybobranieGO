@@ -7,7 +7,7 @@ let lastForestRequest = 0;
 window.forestLayer = null;
 
 // =========================
-// 🚧 INIT LAYER (SAFE)
+// 🚧 INIT LAYER
 // =========================
 function initForestLayer() {
   if (!map) return false;
@@ -20,30 +20,30 @@ function initForestLayer() {
 }
 
 // =========================
-// 🚫 FILTR (FIXED – NIE ZABIJA PARKÓW)
+// 🚫 FILTR (POPRAWIONY – NIE WYCIERA PARKÓW)
 // =========================
 function isBadForest(el, pts) {
   if (!el.tags) return true;
   if (el.type === "node") return true;
 
-  // ❌ NIE USUWAJ DUŻYCH PARKÓW / REZERWATÓW
-  const isProtected =
+  const name = (el.tags.name || "").toLowerCase();
+
+  // ❌ NIE USUWAJ PARKÓW / REZERWATÓW
+  if (
     el.tags.boundary === "protected_area" ||
     el.tags.boundary === "national_park" ||
     el.tags.protect_class ||
-    el.tags.protection_title;
+    el.tags.protection_title
+  ) return false;
 
-  const isParkName =
-    el.tags.name &&
-    (
-      el.tags.name.toLowerCase().includes("park") ||
-      el.tags.name.toLowerCase().includes("krajobrazowy") ||
-      el.tags.name.toLowerCase().includes("rezerwat") ||
-      el.tags.name.toLowerCase().includes("national")
-    );
+  if (
+    name.includes("park krajobrazowy") ||
+    name.includes("park narodowy") ||
+    name.includes("rezerwat") ||
+    name.includes("krajobrazowy")
+  ) return false;
 
-  if (isProtected || isParkName) return false;
-
+  // 🌿 usuń małe miejskie zielenie
   const urbanGreen = [
     "park",
     "garden",
@@ -55,7 +55,8 @@ function isBadForest(el, pts) {
 
   if (urbanGreen.includes(el.tags.leisure)) return true;
 
-  if (pts.length < 5 && !el.tags.boundary && el.tags.landuse !== "forest") {
+  // ❗ tylko naprawdę małe śmieci
+  if (pts.length < 4 && !el.tags.boundary && el.tags.landuse !== "forest") {
     return true;
   }
 
@@ -63,36 +64,37 @@ function isBadForest(el, pts) {
 }
 
 // =========================
-// 🧩 FIX: RELATION / WAY GEOMETRY HANDLER
+// 🧩 GEOMETRIA (ONLY REAL DATA – ZERO KWADRATÓW)
 // =========================
 function extractPoints(el) {
-  if (!el) return [];
 
-  // normal way
-  if (el.geometry && Array.isArray(el.geometry)) {
+  if (el.geometry && Array.isArray(el.geometry) && el.geometry.length) {
     return el.geometry.map(p => [p.lat, p.lon]);
   }
 
-  // relation fallback (Overpass sometimes gives bounds only)
-  if (el.bounds) {
-    return [
-      [el.bounds.minlat, el.bounds.minlon],
-      [el.bounds.minlat, el.bounds.maxlon],
-      [el.bounds.maxlat, el.bounds.maxlon],
-      [el.bounds.maxlat, el.bounds.minlon]
-    ];
+  // relacje multipolygon
+  if (el.type === "relation" && el.members) {
+    let pts = [];
+
+    el.members.forEach(m => {
+      if (m.geometry) {
+        pts.push(...m.geometry.map(p => [p.lat, p.lon]));
+      }
+    });
+
+    if (pts.length > 0) return pts;
   }
 
+  // ❌ NIE MA FALLBACKÓW (TO ROBIŁO KWADRATY)
   return [];
 }
 
 // =========================
-// 🌲 LOAD FORESTS (FIXED 18km + RELATIONS)
+// 🌲 LOAD FORESTS (18km + LEPSZE PARKI PL)
 // =========================
 async function loadForests(lat, lng) {
 
   const now = Date.now();
-
   if (now - lastForestRequest < 12000) return;
   lastForestRequest = now;
 
@@ -102,17 +104,18 @@ async function loadForests(lat, lng) {
   if (!window.forestLayer) return;
 
   const q = `
-  [out:json];
+  [out:json][timeout:25];
 
   (
     way["landuse"="forest"](around:18000,${lat},${lng});
     way["natural"="wood"](around:18000,${lat},${lng});
 
     relation["type"="multipolygon"](around:18000,${lat},${lng});
+
     relation["boundary"~"protected_area|national_park"](around:18000,${lat},${lng});
     relation["leisure"="nature_reserve"](around:18000,${lat},${lng});
 
-    // 🔥 FORCOWANE PARKI PL (KLUCZOWE)
+    // 🔥 KLUCZOWE: Polska klasyfikacja parków
     relation["name"~"Gostynińsko|Włocławski|Krajobrazowy|Rezerwat|Park",i]
     (around:18000,${lat},${lng});
   );
@@ -127,8 +130,8 @@ async function loadForests(lat, lng) {
   try {
 
     const res = await fetch(url);
-
     const text = await res.text();
+
     if (!text.startsWith("{")) return;
 
     const data = JSON.parse(text);
@@ -138,14 +141,14 @@ async function loadForests(lat, lng) {
 
     data.elements.forEach(el => {
 
-      let pts = extractPoints(el);
+      const pts = extractPoints(el);
       if (!pts.length) return;
 
       if (isBadForest(el, pts)) return;
 
       if (pts.length < 3) return;
 
-      let poly = L.polygon(pts, {
+      const poly = L.polygon(pts, {
         color: "#2e8b57",
         fillColor: "#3cb371",
         fillOpacity: 0.25,
@@ -172,7 +175,7 @@ async function loadForests(lat, lng) {
 }
 
 // =========================
-// INFO (BEZ ZMIAN LOGIKI)
+// ℹ️ INFO (bez zmian)
 // =========================
 async function showForestInfo(el, pts) {
 
@@ -208,8 +211,8 @@ async function showForestInfo(el, pts) {
     let temps = d.daily.temperature_2m_max || [];
 
     let rain30 = rains.reduce((a, b) => a + (b || 0), 0);
-    let avgRain = rain30 / 30;
 
+    let avgRain = rain30 / 30;
     let rain7 = rains.slice(-7).reduce((a, b) => a + (b || 0), 0) / 7;
 
     let temp = temps.reduce((a, b) => a + b, 0) / (temps.length || 1);
@@ -233,7 +236,7 @@ async function showForestInfo(el, pts) {
 }
 
 // =========================
-// CLOSE
+// CLOSE PANEL
 // =========================
 document.addEventListener("click", (e) => {
   const panel = document.getElementById("forestInfoPanel");
