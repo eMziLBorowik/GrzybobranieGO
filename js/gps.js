@@ -1,71 +1,87 @@
 // =========================
-// 🛰 GPS MODULE
+// 🛰 GPS MODULE (STATE VERSION)
 // =========================
-
-let lastForestLat = null;
-let lastForestLng = null;
 
 let followGPS = true;
 let firstGPS = true;
 
-window.userLat = null;
-window.userLng = null;
+let lastForestLat = null;
+let lastForestLng = null;
 
 function initGPS(mapInstance) {
 
   if (!navigator.geolocation) return;
 
+  window.GAME.map = mapInstance;
+
   navigator.geolocation.watchPosition(
     (pos) => {
 
-      window.userLat = pos.coords.latitude;
-      window.userLng = pos.coords.longitude;
+      // =========================
+      // 🌍 STATE UPDATE
+      // =========================
+      window.GAME.userLat = pos.coords.latitude;
+      window.GAME.userLng = pos.coords.longitude;
 
-      // 🌤 weather
-      loadWeather?.(userLat, userLng);
+      const lat = window.GAME.userLat;
+      const lng = window.GAME.userLng;
 
+      // =========================
+      // 🌤 WEATHER
+      // =========================
+      loadWeather?.(lat, lng);
+
+      // =========================
       // 📈 EXP
-      trackMovementEXP?.(userLat, userLng, pos.coords.speed);
+      // =========================
+      trackMovementEXP?.(lat, lng, pos.coords.speed);
 
+      // =========================
+      // 📡 STATUS UI
+      // =========================
       const status = document.getElementById("forestStatus");
       if (status) status.innerText = "📍 GPS OK";
 
-      // 🧍 marker
-      if (!window.userMarker) {
+      // =========================
+      // 👤 MARKER
+      // =========================
+      if (!window.GAME.userMarker) {
 
-        window.userMarker = L.marker([userLat, userLng]).addTo(mapInstance);
+        window.GAME.userMarker = L.marker([lat, lng]).addTo(mapInstance);
 
         if (firstGPS) {
-          mapInstance.setView([userLat, userLng], 16);
+          mapInstance.setView([lat, lng], 16);
           firstGPS = false;
         }
 
       } else {
 
-        window.userMarker.setLatLng([userLat, userLng]);
+        window.GAME.userMarker.setLatLng([lat, lng]);
 
         if (followGPS && document.body.classList.contains("screen-map")) {
-          mapInstance.setView([userLat, userLng], 16);
+          mapInstance.setView([lat, lng], 16);
         }
       }
 
+      // =========================
       // 🌲 FORESTS TRIGGER
+      // =========================
       if (!lastForestLat || !lastForestLng) {
 
-        lastForestLat = userLat;
-        lastForestLng = userLng;
+        lastForestLat = lat;
+        lastForestLng = lng;
 
-        loadForests?.(userLat, userLng);
+        loadForests?.(lat, lng);
 
       } else {
 
         const d = L.latLng(lastForestLat, lastForestLng)
-          .distanceTo(L.latLng(userLat, userLng));
+          .distanceTo(L.latLng(lat, lng));
 
         if (d > 1000) {
-          lastForestLat = userLat;
-          lastForestLng = userLng;
-          loadForests?.(userLat, userLng);
+          lastForestLat = lat;
+          lastForestLng = lng;
+          loadForests?.(lat, lng);
         }
       }
 
@@ -81,14 +97,25 @@ function initGPS(mapInstance) {
     }
   );
 
-  // 🧭 center button
+  // =========================
+  // 🎯 CENTER BUTTON
+  // =========================
   document.getElementById("centerMapBtn")?.addEventListener("click", () => {
-    if (window.userLat && window.userLng && mapInstance) {
-      mapInstance.setView([window.userLat, window.userLng], 16);
+
+    const lat = window.GAME.userLat;
+    const lng = window.GAME.userLng;
+
+    if (lat && lng && mapInstance) {
+      mapInstance.setView([lat, lng], 16);
     }
   });
 
-  mapInstance.on("dragstart", () => followGPS = false);
+  // =========================
+  // 🧭 STOP FOLLOW ON DRAG
+  // =========================
+  mapInstance.on("dragstart", () => {
+    followGPS = false;
+  });
 }
 
 window.initGPS = initGPS;
