@@ -39,7 +39,6 @@ function initRouteMap() {
     attribution: "© OpenStreetMap"
   }).addTo(routeMap);
 
-  // 🔥 FIX: bezpieczny GPS
   const lat = window.userLat;
   const lng = window.userLng;
 
@@ -51,13 +50,16 @@ function initRouteMap() {
 
   setTimeout(() => routeMap?.invalidateSize(), 300);
 
-  // 🔥 marker GPS
+  // =========================
+  // 📍 GPS MARKER + BLINK
+  // =========================
+
   if (lat && lng) {
     routeGpsMarker = L.marker([lat, lng], {
       icon: L.divIcon({
         className: "gpsMarker",
-        html: "📍",
-        iconSize: [30, 30]
+        html: `<div class="gps-dot"></div>`,
+        iconSize: [20, 20]
       })
     }).addTo(routeMap);
   }
@@ -133,29 +135,6 @@ async function endRoute() {
 }
 
 // ============================
-// 📏 LIMIT 15 TRAS
-// ============================
-
-async function enforceRouteLimit() {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
-
-  const { data } = await supabase
-    .from("routes")
-    .select("id,created_at")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: true });
-
-  if (!data || data.length <= 15) return;
-
-  const toDelete = data.slice(0, data.length - 15);
-
-  await supabase.from("routes")
-    .delete()
-    .in("id", toDelete.map(r => r.id));
-}
-
-// ============================
 // ⏱ TIMER
 // ============================
 
@@ -201,6 +180,22 @@ function addRoutePoint(lat, lng) {
     routeGpsMarker.setLatLng([lat, lng]);
   }
 }
+
+// ============================
+// 📍 BLINK EFFECT (GPS)
+// ============================
+
+setInterval(() => {
+  const dot = document.querySelector(".gps-dot");
+  if (!dot) return;
+
+  dot.style.opacity = "0.3";
+
+  setTimeout(() => {
+    dot.style.opacity = "1";
+  }, 300);
+
+}, 1000);
 
 // ============================
 // 📜 SHOW SAVED ROUTES
