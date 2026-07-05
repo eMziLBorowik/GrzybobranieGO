@@ -20,30 +20,31 @@ function initForestLayer() {
 }
 
 // =========================
-// 🚫 FILTER (FIXED LOGIC)
+// 🚫 FILTER (STABLE FIX)
 // =========================
-function isBadForest(el, pts) {
-
+function isBadForest(el) {
   if (!el.tags) return true;
-  if (el.type === "node") return true;
 
   const t = el.tags;
 
-  // ❌ WATER / RIVERS (Wisła fix)
-  if (t.waterway || t.natural === "water" || t.natural === "bay") return true;
-  if (t.landuse === "reservoir") return true;
+  // ❌ WATER FIX (Wisła + inne wody)
+  if (
+    t.waterway ||
+    t.natural === "water" ||
+    t.natural === "bay" ||
+    t.natural === "river" ||
+    t.landuse === "reservoir"
+  ) return true;
 
-  // ❌ URBAN SMALL GREEN (skwery itd)
+  // ❌ TINY URBAN GREEN (skwery itd)
   if (
     t.leisure === "park" ||
     t.leisure === "garden" ||
     t.leisure === "playground" ||
     t.leisure === "recreation_ground"
-  ) {
-    if (pts.length < 40) return true;
-  }
+  ) return true;
 
-  // 🌲 KEEP BIG GREEN AREAS
+  // 🌲 KEEP TRUE FOREST AREAS
   if (
     t.landuse === "forest" ||
     t.natural === "wood" ||
@@ -54,28 +55,21 @@ function isBadForest(el, pts) {
   if (
     t.boundary === "protected_area" ||
     t.boundary === "national_park" ||
-    t.boundary === "national_park" ||
     t.protect_class ||
     t.protection_title ||
     t.leisure === "nature_reserve"
   ) return false;
 
-  // 🌳 PARKI KRAJOBRAZOWE (najważniejsze)
-  if (t.boundary === "protected_area" || t.protect_class) return false;
-
-  // ❌ SMALL FRAGMENTS ONLY
-  if (pts.length < 6) return true;
-
-  return false;
+  return true;
 }
 
 // =========================
-// 🌲 LOAD FORESTS (18km FIXED)
+// 🌲 LOAD FORESTS (FIXED 18KM)
 // =========================
 async function loadForests(lat, lng) {
 
   const now = Date.now();
-  if (now - lastForestRequest < 15000) return;
+  if (now - lastForestRequest < 12000) return;
   lastForestRequest = now;
 
   if (!map) return;
@@ -86,14 +80,14 @@ async function loadForests(lat, lng) {
   [out:json];
 
   (
-    relation["boundary"="protected_area"](around:18000,${lat},${lng});
-    relation["boundary"="national_park"](around:18000,${lat},${lng});
-    relation["boundary"="protected_area"]["protect_class"](around:18000,${lat},${lng});
-    relation["leisure"="nature_reserve"](around:18000,${lat},${lng});
-
-    // 🔥 KLUCZ: tylko duże naturalne obszary jako relation
+    way["landuse"="forest"](around:18000,${lat},${lng});
     relation["landuse"="forest"](around:18000,${lat},${lng});
+
+    way["natural"="wood"](around:18000,${lat},${lng});
     relation["natural"="wood"](around:18000,${lat},${lng});
+
+    relation["boundary"="protected_area"](around:18000,${lat},${lng});
+    relation["leisure"="nature_reserve"](around:18000,${lat},${lng});
   );
 
   out geom;
@@ -104,33 +98,33 @@ async function loadForests(lat, lng) {
     encodeURIComponent(q);
 
   try {
-
     const res = await fetch(url);
-    const text = await res.text();
-
-    if (!text.startsWith("{")) return;
-
-    const data = JSON.parse(text);
+    const data = await res.json();
 
     forests = [];
     window.forestLayer.clearLayers();
 
+    const seen = new Set();
+
     data.elements.forEach(el => {
 
       if (!el.geometry) return;
+      if (isBadForest(el)) return;
 
-      let pts = el.geometry.map(p => [p.lat, p.lon]);
+      const pts = el.geometry.map(p => [p.lat, p.lon]);
 
-      // 🔥 KLUCZ FIX: eliminuj śmieciowe fragmenty
-      if (pts.length < 8) return;
+      // ❌ REAL FIX: nie używaj length jako "area"
+      if (pts.length < 6) return;
 
-      // NIE rysuj jeśli to jest droga/linia
-      if (el.type === "way" && pts.length < 30) return;
+      // 🔥 DEDUPLICATION (usuwa “kwadraty”/duplikaty)
+      const key = pts[0][0].toFixed(4) + ":" + pts[0][1].toFixed(4);
+      if (seen.has(key)) return;
+      seen.add(key);
 
       const poly = L.polygon(pts, {
         color: "#2e8b57",
         fillColor: "#3cb371",
-        fillOpacity: 0.25,
+        fillOpacity: 0.22,
         weight: 2
       }).addTo(window.forestLayer);
 
@@ -143,18 +137,19 @@ async function loadForests(lat, lng) {
 
     });
 
-    document.getElementById("forestStatus").innerText =
-      "🌲 Parki i lasy OK";
+    const status = document.getElementById("forestStatus");
+    if (status) status.innerText = "🌲 Lasy OK";
 
   } catch (e) {
-    console.log(e);
-    document.getElementById("forestStatus").innerText =
-      "❌ Błąd lasów";
+    console.log("forest error:", e);
+
+    const status = document.getElementById("forestStatus");
+    if (status) status.innerText = "❌ Błąd lasów";
   }
 }
 
 // =========================
-// INFO (bez zmian)
+// INFO PANEL
 // =========================
 async function showForestInfo(el, pts) {
 
@@ -163,9 +158,9 @@ async function showForestInfo(el, pts) {
 
   panel.style.display = "block";
 
-  let name = "🌲 Teren zielony";
-
-  if (el.tags?.name) name = "🌲 " + el.tags.name;
+  let name = el.tags?.name
+    ? "🌲 " + el.tags.name
+    : "🌲 Teren leśny";
 
   document.getElementById("forestName").innerText = name;
 
@@ -173,22 +168,20 @@ async function showForestInfo(el, pts) {
   let lng = pts[0][1];
 
   try {
-
     let r = await fetch(
       `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=precipitation_sum,temperature_2m_max&past_days=30&timezone=auto`
     );
 
     let d = await r.json();
 
-    let rains = d.daily.precipitation_sum || [];
-    let temps = d.daily.temperature_2m_max || [];
+    let rains = d.daily?.precipitation_sum || [];
 
     let rain30 = rains.reduce((a, b) => a + (b || 0), 0);
 
-    let chance = 40;
+    let chance = 35;
 
     if (rain30 > 60) chance += 20;
-    if (rain30 < 20) chance -= 15;
+    if (rain30 < 20) chance -= 10;
 
     document.getElementById("forestRain").innerText =
       "🌧️ 30 dni: " + rain30.toFixed(1) + " mm";
@@ -197,15 +190,20 @@ async function showForestInfo(el, pts) {
       "🍄 Szansa: " + Math.round(chance) + "%";
 
   } catch (e) {
-    document.getElementById("forestRain").innerText = "🌧️ Brak danych";
+    document.getElementById("forestRain").innerText =
+      "🌧️ Brak danych";
   }
 }
 
 // =========================
+// CLOSE PANEL FIX
+// =========================
 document.addEventListener("click", (e) => {
   const panel = document.getElementById("forestInfoPanel");
   if (!panel) return;
+
   if (panel.contains(e.target)) return;
   if (e.target.closest(".leaflet-interactive")) return;
+
   panel.style.display = "none";
 });
