@@ -6,7 +6,7 @@ let lastForestRequest = 0;
 // 🧱 WARSTWA LASÓW
 window.forestLayer = null;
 
-// 🏞 SPECJALNY PARK (Gostynińsko-Włocławski)
+// 🏞 SPECJALNY PARK
 let gostyninPark = null;
 let gostyninLayer = null;
 
@@ -24,7 +24,7 @@ function initForestLayer() {
 }
 
 // =========================
-// 🌲 GOSTYNIN PARK CREATE
+// 🌲 GOSTYNIN PARK CREATE (FIXED INIT SAFE)
 // =========================
 function createGostyninPark() {
 
@@ -65,14 +65,13 @@ function getDistance(a, b) {
 }
 
 // =========================
-// 🧠 FIXED FILTER
+// 🧠 FILTER (UNCHANGED LOGIC)
 // =========================
 function isBadForest(el) {
   if (!el.tags) return true;
 
   const t = el.tags;
 
-  // ❌ WODA
   if (
     t.waterway ||
     t.natural === "water" ||
@@ -81,14 +80,12 @@ function isBadForest(el) {
     t.landuse === "reservoir"
   ) return true;
 
-  // 🌲 LASY
   if (
     t.landuse === "forest" ||
     t.natural === "wood" ||
     t.natural === "forest"
   ) return false;
 
-  // 🏞 PARKI / CHRONIONE
   if (
     t.protect_class ||
     t.boundary === "protected_area" ||
@@ -96,7 +93,6 @@ function isBadForest(el) {
     t.leisure === "nature_reserve"
   ) return false;
 
-  // ❌ MIEJSKIE ZIELONE
   if (
     t.leisure === "park" ||
     t.leisure === "garden" ||
@@ -188,14 +184,11 @@ async function loadForests(lat, lng) {
 
   } catch (e) {
     console.log("forest error:", e);
-
-    const status = document.getElementById("forestStatus");
-    if (status) status.innerText = "❌ Błąd lasów";
   }
 }
 
 // =========================
-// 🟢 GOSTYNIN VISIBILITY (15km)
+// 🟢 GOSTYNIN VISIBILITY (FIXED SAFE INIT)
 // =========================
 function updateGostyninVisibility(lat, lng) {
 
@@ -208,7 +201,7 @@ function updateGostyninVisibility(lat, lng) {
     { lat: center.lat, lng: center.lng }
   );
 
-  const RADIUS = 15000; // 15 km
+  const RADIUS = 15000;
 
   if (dist < RADIUS) {
 
@@ -226,66 +219,24 @@ function updateGostyninVisibility(lat, lng) {
 }
 
 // =========================
-// INFO PANEL
+// INIT SYSTEM (🔥 KLUCZ FIX)
 // =========================
-async function showForestInfo(el, pts) {
+function initSpecialParks() {
 
-  let panel = document.getElementById("forestInfoPanel");
-  if (!panel) return;
+  if (!map) {
+    setTimeout(initSpecialParks, 300);
+    return;
+  }
 
-  panel.style.display = "block";
+  createGostyninPark();
 
-  let name = el.tags?.name
-    ? "🌲 " + el.tags.name
-    : "🌲 Teren leśny";
-
-  document.getElementById("forestName").innerText = name;
-
-  let lat = pts[0][0];
-  let lng = pts[0][1];
-
-  try {
-    let r = await fetch(
-      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=precipitation_sum,temperature_2m_max&past_days=30&timezone=auto`
-    );
-
-    let d = await r.json();
-
-    let rains = d.daily?.precipitation_sum || [];
-
-    let rain30 = rains.reduce((a, b) => a + (b || 0), 0);
-
-    let chance = 35;
-
-    if (rain30 > 60) chance += 20;
-    if (rain30 < 20) chance -= 10;
-
-    document.getElementById("forestRain").innerText =
-      "🌧️ 30 dni: " + rain30.toFixed(1) + " mm";
-
-    document.getElementById("forestChance").innerText =
-      "🍄 Szansa: " + Math.round(chance) + "%";
-
-  } catch (e) {
-    document.getElementById("forestRain").innerText =
-      "🌧️ Brak danych";
+  // WAŻNE: sprawdź od razu jeśli GPS już istnieje
+  if (window.lastLat && window.lastLng) {
+    updateGostyninVisibility(window.lastLat, window.lastLng);
   }
 }
 
 // =========================
-// CLOSE PANEL
+// START
 // =========================
-document.addEventListener("click", (e) => {
-  const panel = document.getElementById("forestInfoPanel");
-  if (!panel) return;
-
-  if (panel.contains(e.target)) return;
-  if (e.target.closest(".leaflet-interactive")) return;
-
-  panel.style.display = "none";
-});
-
-// =========================
-// INIT SPECIAL PARK
-// =========================
-createGostyninPark();
+initSpecialParks();
