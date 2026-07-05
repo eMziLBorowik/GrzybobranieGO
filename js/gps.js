@@ -1,5 +1,5 @@
 // =========================
-// 🛰 GPS MODULE (STATE VERSION)
+// 🛰 GPS MODULE (FIXED STATE)
 // =========================
 
 let followGPS = true;
@@ -12,19 +12,24 @@ function initGPS(mapInstance) {
 
   if (!navigator.geolocation) return;
 
+  window.GAME = window.GAME || {};
   window.GAME.map = mapInstance;
 
   navigator.geolocation.watchPosition(
     (pos) => {
 
       // =========================
-      // 🌍 STATE UPDATE
+      // 🌍 GLOBAL SYNC (KLUCZ FIX)
       // =========================
-      window.GAME.userLat = pos.coords.latitude;
-      window.GAME.userLng = pos.coords.longitude;
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
 
-      const lat = window.GAME.userLat;
-      const lng = window.GAME.userLng;
+      window.GAME.userLat = lat;
+      window.GAME.userLng = lng;
+
+      // 🔥 FIX DLA RESZTY APP
+      window.userLat = lat;
+      window.userLng = lng;
 
       // =========================
       // 🌤 WEATHER
@@ -70,7 +75,6 @@ function initGPS(mapInstance) {
 
         lastForestLat = lat;
         lastForestLng = lng;
-
         loadForests?.(lat, lng);
 
       } else {
@@ -102,8 +106,8 @@ function initGPS(mapInstance) {
   // =========================
   document.getElementById("centerMapBtn")?.addEventListener("click", () => {
 
-    const lat = window.GAME.userLat;
-    const lng = window.GAME.userLng;
+    const lat = window.userLat;
+    const lng = window.userLng;
 
     if (lat && lng && mapInstance) {
       mapInstance.setView([lat, lng], 16);
@@ -111,7 +115,7 @@ function initGPS(mapInstance) {
   });
 
   // =========================
-  // 🧭 STOP FOLLOW ON DRAG
+  // 🧭 STOP FOLLOW
   // =========================
   mapInstance.on("dragstart", () => {
     followGPS = false;
