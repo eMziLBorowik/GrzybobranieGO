@@ -1,137 +1,242 @@
+let lastForestLat = null;
+let lastForestLng = null;
 let followGPS = true;
+let firstGPS = true;
 
 window.onload = function () {
 
   // =========================
-  // 🧠 SAFE STATE
+  // 🔥 UI SYSTEM
   // =========================
-  window.GAME = window.GAME || {};
 
-  // =========================
-  // 🗺 INIT MAP (SAFE + NO DOUBLE INIT)
-  // =========================
-  if (typeof initMap === "function" && !window.GAME.map) {
-    window.GAME.map = initMap();
-  }
+  function showScreen(screen) {
 
-  // =========================
-  // 🛰 GPS (SAFE)
-  // =========================
-  if (typeof initGPS === "function") {
-    const waitMap = setInterval(() => {
-      if (window.GAME.map) {
-        initGPS(window.GAME.map);
-        clearInterval(waitMap);
+    const mapEl = document.getElementById("map");
+    const grzyd = document.getElementById("grzybdex");
+    const trails = document.getElementById("trailsPanel");
+    const surv = document.getElementById("survivalPanel");
+    const guide = document.getElementById("guidePanel");
+    const profile = document.getElementById("profilePanel");
+
+    const weather = document.getElementById("weatherCard");
+    const actionBar = document.getElementById("actionBar");
+    const forestInfo = document.getElementById("forestInfoPanel");
+
+    // ukryj wszystko
+    if (mapEl) mapEl.style.display = "none";
+    if (grzyd) grzyd.style.display = "none";
+    if (trails) trails.style.display = "none";
+    if (surv) surv.style.display = "none";
+    if (guide) guide.style.display = "none";
+    if (profile) profile.style.display = "none";
+
+    if (weather) weather.style.display = "none";
+    if (actionBar) actionBar.style.display = "none";
+    if (forestInfo) forestInfo.style.display = "none";
+
+    document.body.classList.remove("screen-map");
+
+    // =========================
+    // MAPA
+    // =========================
+    if (screen === "map") {
+      if (mapEl) mapEl.style.display = "block";
+      if (weather) weather.style.display = "block";
+      if (actionBar) actionBar.style.display = "block";
+      if (forestInfo) forestInfo.style.display = "block";
+      document.body.classList.add("screen-map");
+    }
+
+    // =========================
+    // GRZYBDEX
+    // =========================
+    if (screen === "grzybdex") {
+      if (grzyd) grzyd.style.display = "block";
+    }
+
+    // =========================
+    // TRASY
+    // =========================
+    if (screen === "trailsPanel") {
+      if (trails) trails.style.display = "block";
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+
+          if (!routeMap) initRouteMap();
+
+          setTimeout(() => {
+            routeMap?.invalidateSize(true);
+
+            routeMap.setView(
+              [userLat || 52, userLng || 19],
+              userLat ? 16 : 6,
+              { animate: false }
+            );
+          }, 100);
+
+        });
+      });
+    }
+
+    // =========================
+    // SURVIVAL
+    // =========================
+    if (screen === "survivalPanel") {
+      if (surv) surv.style.display = "block";
+      openSurvival?.();
+    }
+
+    // =========================
+    // GUIDE
+    // =========================
+    if (screen === "guidePanel") {
+      if (guide) guide.style.display = "block";
+      loadGuide?.();
+    }
+
+    // =========================
+    // 👤 PROFILE (FIX)
+    // =========================
+    if (screen === "profilePanel") {
+      if (profile) profile.style.display = "block";
+
+      // 🔥 KLUCZOWE FIX: zawsze ładuj dane
+      if (typeof loadProfile === "function") {
+        loadProfile();
       }
-    }, 200);
+    }
   }
 
   // =========================
-  // 🔥 MENU (SAFE + STRONG FIX)
+  // MENU
   // =========================
+
   const menuBtn = document.getElementById("menuBtn");
   const sideMenu = document.getElementById("sideMenu");
   const closeMenu = document.getElementById("closeMenu");
 
-  function openMenu() {
-    if (sideMenu) sideMenu.classList.add("active");
-  }
-
-  function closeMenuFn() {
-    if (sideMenu) sideMenu.classList.remove("active");
-  }
-
-  menuBtn?.addEventListener("click", openMenu);
-  closeMenu?.addEventListener("click", closeMenuFn);
-
-  // klik poza menu = zamknij
-  document.addEventListener("click", (e) => {
-    if (!sideMenu || !menuBtn) return;
-
-    const inside =
-      sideMenu.contains(e.target) || menuBtn.contains(e.target);
-
-    if (!inside) closeMenuFn();
-  });
+  if (menuBtn) menuBtn.onclick = () => sideMenu.classList.add("active");
+  if (closeMenu) closeMenu.onclick = () => sideMenu.classList.remove("active");
 
   // =========================
-  // 🧭 SCREEN SWITCH
+  // NAV
   // =========================
-  function go(screen) {
 
-    closeMenuFn();
+  document.getElementById("sideMap").onclick = () => {
+    sideMenu.classList.remove("active");
+    document.getElementById("centerMapBtn").style.display = "flex";
+    showScreen("map");
+    setTimeout(() => map?.invalidateSize(), 300);
+  };
 
-    const centerBtn = document.getElementById("centerMapBtn");
-
-    if (centerBtn) centerBtn.style.display = "none";
-
-    window.showScreen?.(screen);
-
-    // =========================
-    // 🗺 MAP FIX (IMPORTANT)
-    // =========================
-    if (screen === "map") {
-
-      if (centerBtn) centerBtn.style.display = "flex";
-
-      // fix Leaflet render bug
-      setTimeout(() => {
-
-        if (window.GAME.map) {
-          window.GAME.map.invalidateSize(true);
-
-          const lat = window.userLat;
-          const lng = window.userLng;
-
-          if (lat != null && lng != null) {
-            window.GAME.map.setView([lat, lng], 16);
-          }
-        }
-
-        // 🔥 dodatkowy fix (DOM repaint bug)
-        const mapEl = document.getElementById("map");
-        if (mapEl) mapEl.style.display = "block";
-
-      }, 200);
-    }
-  }
-
-  // =========================
-  // 🧭 ROUTER BUTTONS
-  // =========================
-  document.getElementById("sideMap")?.addEventListener("click", () => go("map"));
-
-  document.getElementById("sideDex")?.addEventListener("click", () => {
-    go("grzybdex");
+  document.getElementById("sideDex").onclick = () => {
+    sideMenu.classList.remove("active");
+    document.getElementById("centerMapBtn").style.display = "none";
+    showScreen("grzybdex");
     updateStats?.();
-  });
+  };
 
-  document.getElementById("sideTrails")?.addEventListener("click", () => go("trailsPanel"));
-  document.getElementById("sideSurvival")?.addEventListener("click", () => go("survivalPanel"));
-  document.getElementById("sideGuide")?.addEventListener("click", () => go("guidePanel"));
-  document.getElementById("sideProfile")?.addEventListener("click", () => go("profilePanel"));
+  document.getElementById("sideTrails").onclick = () => {
+    sideMenu.classList.remove("active");
+    document.getElementById("centerMapBtn").style.display = "none";
+    showScreen("trailsPanel");
+  };
+
+  document.getElementById("sideSurvival").onclick = () => {
+    sideMenu.classList.remove("active");
+    document.getElementById("centerMapBtn").style.display = "none";
+    showScreen("survivalPanel");
+  };
+
+  document.getElementById("sideGuide").onclick = () => {
+    sideMenu.classList.remove("active");
+    document.getElementById("centerMapBtn").style.display = "none";
+    showScreen("guidePanel");
+  };
 
   // =========================
-  // 🎯 CENTER MAP BUTTON
+  // 👤 PROFILE BUTTON FIX
   // =========================
-  document.getElementById("centerMapBtn")?.addEventListener("click", () => {
 
-    const lat = window.userLat;
-    const lng = window.userLng;
+  const profileBtn = document.getElementById("sideProfile");
+  if (profileBtn) {
+    profileBtn.onclick = () => {
+      sideMenu.classList.remove("active");
+      document.getElementById("centerMapBtn").style.display = "none";
+      showScreen("profilePanel");
+    };
+  }
 
-    if (lat != null && lng != null && window.GAME.map) {
-      window.GAME.map.setView([lat, lng], 16);
+  // =========================
+  // GPS
+  // =========================
+
+  navigator.geolocation.watchPosition(
+    (pos) => {
+
+      userLat = pos.coords.latitude;
+      userLng = pos.coords.longitude;
+
+      loadWeather?.(userLat, userLng);
+      trackMovementEXP?.(userLat, userLng, pos.coords.speed);
+
+      document.getElementById("forestStatus").innerText = "📍 GPS OK";
+
+      if (!userMarker) {
+        userMarker = L.marker([userLat, userLng]).addTo(map);
+
+        if (firstGPS) {
+          map.setView([userLat, userLng], 16);
+          firstGPS = false;
+        }
+      } else {
+        userMarker.setLatLng([userLat, userLng]);
+
+        if (followGPS && document.body.classList.contains("screen-map")) {
+          map.setView([userLat, userLng], 16);
+        }
+      }
+
+      if (!lastForestLat || !lastForestLng) {
+        lastForestLat = userLat;
+        lastForestLng = userLng;
+        loadForests(userLat, userLng);
+      } else {
+        const d = L.latLng(lastForestLat, lastForestLng)
+          .distanceTo(L.latLng(userLat, userLng));
+
+        if (d > 1000) {
+          lastForestLat = userLat;
+          lastForestLng = userLng;
+          loadForests(userLat, userLng);
+        }
+      }
+
+    },
+    () => {
+      document.getElementById("forestStatus").innerText = "❌ GPS błąd";
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 0
     }
-  });
+  );
 
   // =========================
-  // 🧭 STOP FOLLOW (SAFE)
+  // CENTER MAP
   // =========================
-  setTimeout(() => {
-    if (window.GAME.map) {
-      window.GAME.map.on("dragstart", () => {
-        followGPS = false;
-      });
-    }
-  }, 500);
+
+  const centerMapBtn = document.getElementById("centerMapBtn");
+
+  if (centerMapBtn) {
+    centerMapBtn.onclick = () => {
+      if (userLat && userLng) {
+        map.setView([userLat, userLng], 16);
+      }
+    };
+  }
+
+  map.on("dragstart", () => followGPS = false);
 };
