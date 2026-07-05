@@ -6,6 +6,10 @@ let lastForestRequest = 0;
 // 🧱 WARSTWA LASÓW
 window.forestLayer = null;
 
+// 🏞 SPECJALNY PARK (Gostynińsko-Włocławski)
+let gostyninPark = null;
+let gostyninLayer = null;
+
 // =========================
 // INIT LAYER
 // =========================
@@ -20,7 +24,48 @@ function initForestLayer() {
 }
 
 // =========================
-// 🚫 FILTER (FIX: protect_class FIXED)
+// 🌲 GOSTYNIN PARK CREATE
+// =========================
+function createGostyninPark() {
+
+  const coords = [
+    [52.45, 19.35],
+    [52.60, 19.35],
+    [52.60, 19.80],
+    [52.45, 19.80]
+  ];
+
+  gostyninPark = L.polygon(coords, {
+    color: "#00b050",
+    weight: 4,
+    fill: false,
+    dashArray: "10,6"
+  });
+}
+
+// =========================
+// 📡 DISTANCE
+// =========================
+function getDistance(a, b) {
+  const R = 6371000;
+  const toRad = x => x * Math.PI / 180;
+
+  const dLat = toRad(b.lat - a.lat);
+  const dLon = toRad(b.lng - a.lng);
+
+  const lat1 = toRad(a.lat);
+  const lat2 = toRad(b.lat);
+
+  const x =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) *
+    Math.sin(dLon / 2) ** 2;
+
+  return R * (2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x)));
+}
+
+// =========================
+// 🧠 FIXED FILTER
 // =========================
 function isBadForest(el) {
   if (!el.tags) return true;
@@ -36,24 +81,22 @@ function isBadForest(el) {
     t.landuse === "reservoir"
   ) return true;
 
-  // 🌲 LASY = ZAWSZE OK
+  // 🌲 LASY
   if (
     t.landuse === "forest" ||
     t.natural === "wood" ||
     t.natural === "forest"
   ) return false;
 
-  // 🏞 OBSZARY CHRONIONE (KLUCZ FIX)
-  // protect_class = np. 5 (parki krajobrazowe)
-  if (t.protect_class) return false;
-
+  // 🏞 PARKI / CHRONIONE
   if (
+    t.protect_class ||
     t.boundary === "protected_area" ||
     t.boundary === "national_park" ||
     t.leisure === "nature_reserve"
   ) return false;
 
-  // ❌ MIEJSKIE ZIELONE (tylko jeśli NIE chronione)
+  // ❌ MIEJSKIE ZIELONE
   if (
     t.leisure === "park" ||
     t.leisure === "garden" ||
@@ -65,7 +108,7 @@ function isBadForest(el) {
 }
 
 // =========================
-// 🌲 LOAD FORESTS (18KM FIXED)
+// 🌲 LOAD FORESTS
 // =========================
 async function loadForests(lat, lng) {
 
@@ -81,17 +124,17 @@ async function loadForests(lat, lng) {
   [out:json];
 
   (
-    way["landuse"="forest"](around:30000,${lat},${lng});
-    relation["landuse"="forest"](around:30000,${lat},${lng});
+    way["landuse"="forest"](around:18000,${lat},${lng});
+    relation["landuse"="forest"](around:18000,${lat},${lng});
 
-    way["natural"="wood"](around:30000,${lat},${lng});
-    relation["natural"="wood"](around:30000,${lat},${lng});
+    way["natural"="wood"](around:18000,${lat},${lng});
+    relation["natural"="wood"](around:18000,${lat},${lng});
 
-    relation["boundary"="protected_area"](around:30000,${lat},${lng});
-    relation["boundary"="protected_area"]["protect_class"="5"](around:30000,${lat},${lng});
+    relation["boundary"="protected_area"](around:18000,${lat},${lng});
+    relation["boundary"="protected_area"]["protect_class"="5"](around:18000,${lat},${lng});
 
-    relation["boundary"="national_park"](around:30000,${lat},${lng});
-    relation["leisure"="nature_reserve"](around:30000,${lat},${lng});
+    relation["boundary"="national_park"](around:18000,${lat},${lng});
+    relation["leisure"="nature_reserve"](around:18000,${lat},${lng});
   );
 
   out geom;
@@ -102,6 +145,7 @@ async function loadForests(lat, lng) {
     encodeURIComponent(q);
 
   try {
+
     const res = await fetch(url);
     const data = await res.json();
 
@@ -147,6 +191,37 @@ async function loadForests(lat, lng) {
 
     const status = document.getElementById("forestStatus");
     if (status) status.innerText = "❌ Błąd lasów";
+  }
+}
+
+// =========================
+// 🟢 GOSTYNIN VISIBILITY (15km)
+// =========================
+function updateGostyninVisibility(lat, lng) {
+
+  if (!gostyninPark) return;
+
+  const center = gostyninPark.getBounds().getCenter();
+
+  const dist = getDistance(
+    { lat, lng },
+    { lat: center.lat, lng: center.lng }
+  );
+
+  const RADIUS = 15000; // 15 km
+
+  if (dist < RADIUS) {
+
+    if (!gostyninLayer) {
+      gostyninLayer = L.layerGroup([gostyninPark]).addTo(map);
+    }
+
+  } else {
+
+    if (gostyninLayer) {
+      map.removeLayer(gostyninLayer);
+      gostyninLayer = null;
+    }
   }
 }
 
@@ -198,7 +273,7 @@ async function showForestInfo(el, pts) {
 }
 
 // =========================
-// CLOSE PANEL FIX
+// CLOSE PANEL
 // =========================
 document.addEventListener("click", (e) => {
   const panel = document.getElementById("forestInfoPanel");
@@ -209,3 +284,8 @@ document.addEventListener("click", (e) => {
 
   panel.style.display = "none";
 });
+
+// =========================
+// INIT SPECIAL PARK
+// =========================
+createGostyninPark();
