@@ -96,24 +96,24 @@ async function loadForests(lat, lng) {
   [out:json];
 
   (
-    way["landuse"="forest"](around:15000,${lat},${lng});
-    way["natural"="wood"](around:15000,${lat},${lng});
+    way["landuse"="forest"](around:18000,${lat},${lng});
+    way["natural"="wood"](around:18000,${lat},${lng});
 
-    relation["type"="multipolygon"](around:15000,${lat},${lng});
+    relation["type"="multipolygon"](around:18000,${lat},${lng});
 
-    relation["boundary"="protected_area"](around:15000,${lat},${lng});
-    relation["boundary"="national_park"](around:15000,${lat},${lng});
+    relation["boundary"="protected_area"](around:18000,${lat},${lng});
+    relation["boundary"="national_park"](around:18000,${lat},${lng});
 
-    relation["protect_class"](around:15000,${lat},${lng});
+    relation["protect_class"](around:18000,${lat},${lng});
 
-    relation["leisure"="nature_reserve"](around:15000,${lat},${lng});
+    relation["leisure"="nature_reserve"](around:18000,${lat},${lng});
 
     // 🔥 FIX: lepsze łapanie parków PL
-    relation["boundary"="protected_area"](around:15000,${lat},${lng});
-    relation["protect_class"](around:15000,${lat},${lng});
+    relation["boundary"="protected_area"](around:18000,${lat},${lng});
+    relation["protect_class"](around:18000,${lat},${lng});
 
     relation["name"~"Gostynińsko|Włocławski|Krajobrazowy|Rezerwat|Park",i]
-    (around:15000,${lat},${lng});
+    (around:18000,${lat},${lng});
   );
 
   out geom;
