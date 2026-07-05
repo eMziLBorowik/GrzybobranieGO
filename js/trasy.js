@@ -39,14 +39,19 @@ function initRouteMap() {
     attribution: "© OpenStreetMap"
   }).addTo(routeMap);
 
-  const lat = window.userLat || 52;
-  const lng = window.userLng || 19;
+  // 🔥 FIX: bezpieczny GPS
+  const lat = window.userLat;
+  const lng = window.userLng;
 
-  routeMap.setView([lat, lng], window.userLat ? 17 : 6);
+  if (lat && lng) {
+    routeMap.setView([lat, lng], 17);
+  } else {
+    routeMap.setView([52, 19], 6);
+  }
 
   setTimeout(() => routeMap?.invalidateSize(), 300);
 
-  // GPS marker
+  // 🔥 marker GPS
   if (lat && lng) {
     routeGpsMarker = L.marker([lat, lng], {
       icon: L.divIcon({
@@ -112,7 +117,6 @@ async function endRoute() {
 
   if (routePoints.length > 1) {
     const { data: { user } } = await supabase.auth.getUser();
-
     if (!user) return;
 
     await supabase.from("routes").insert([{
@@ -162,11 +166,10 @@ function updateRouteTime() {
     (Date.now() - routeStartTime - totalPausedTime) / 1000
   );
 
-  const min = Math.floor(sec / 60);
-  const seconds = sec % 60;
-
   const el = document.getElementById("routeTime");
-  if (el) el.innerText = `${min} min ${seconds} s`;
+  if (el) {
+    el.innerText = `${Math.floor(sec / 60)} min ${sec % 60} s`;
+  }
 }
 
 // ============================
